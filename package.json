@@ -1,0 +1,15 @@
+{
+  "name": "tiddlywiki-on-fission",
+  "version": "0.1.0",
+  "description": "A TiddlyWiki App for Fission",
+  "dependencies": {
+    "http-server": "^0.12.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "tiddlywiki app-wiki --build index && ./node_modules/http-server/bin/http-server app-wiki/output",
+    "build": "tiddlywiki app-wiki --build index"
+  },
+  "author": "Jeremy Ruston",
+  "license": "MIT"
+}

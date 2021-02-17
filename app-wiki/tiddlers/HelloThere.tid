@@ -1,0 +1,12 @@
+title: HelloThere
+
+Username: <$text text={{$:/status/UserName}}/>
+
+<$button message="tm-fission-authorise">
+Authorise with Fission
+</$button>
+
+
+<$button message="tm-fission-open-tiddlywiki" param="public/index.html">
+Open wiki at public/index.html
+</$button>

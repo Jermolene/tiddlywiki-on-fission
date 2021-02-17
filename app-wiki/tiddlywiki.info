@@ -1,0 +1,18 @@
+{
+	"description": "TiddlyWiki on Fission",
+	"plugins": [
+		"tiddlywiki/highlight",
+		"tiddlywiki/menubar"
+	],
+	"themes": [
+		"tiddlywiki/vanilla",
+		"tiddlywiki/snowwhite"
+	],
+	"languages": [
+	],
+	"build": {
+		"index": [
+			"--rendertiddler","$:/core/save/all","index.html","text/plain",
+			"--rendertiddler","$:/plugins/tiddlywiki/fission/templates/editor","editor.html","text/plain"]
+	}
+}

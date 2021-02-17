@@ -1,0 +1,13 @@
+title: $:/plugins/tiddlywiki/fission/templates/editor
+
+`<!doctype html>
+<head>
+<title>TiddlyWiki on Fission Editor</title>
+<style>`
+{{$:/plugins/tiddlywiki/fission/templates/editor/styles||$:/core/templates/plain-text-tiddler}}
+`</style>
+</head>
+<body><iframe style='border: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%;' sandbox='allow-same-origin allow-downloads allow-popups allow-presentation allow-scripts'></iframe></body>`
+{{$:/plugins/tiddlywiki/fission/webnative.js||$:/core/templates/javascript-tiddler}}
+{{$:/plugins/tiddlywiki/fission/templates/editor/script||$:/core/templates/javascript-tiddler}}
+`</html>`

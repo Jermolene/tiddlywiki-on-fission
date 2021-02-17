@@ -1,0 +1,12 @@
+title: $:/plugins/tiddlywiki/fission/empty-wiki-template
+
+\define saveTiddlerFilter()
+$:/boot/boot.css
+$:/boot/boot.js
+$:/boot/bootprefix.js
+$:/core
+$:/library/sjcl.js
+$:/themes/tiddlywiki/snowwhite
+$:/themes/tiddlywiki/vanilla
+\end
+{{$:/core/templates/tiddlywiki5.html}}

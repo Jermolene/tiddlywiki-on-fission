@@ -1,0 +1,12 @@
+{
+	"tiddlers": [
+		{
+			"file": "webnative.js",
+			"fields": {
+				"type": "application/javascript",
+				"title": "$:/plugins/tiddlywiki/fission/webnative.js",
+				"module-type": "library"
+			}
+		}
+	]
+}

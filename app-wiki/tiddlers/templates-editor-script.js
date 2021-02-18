@@ -59,7 +59,7 @@ async function loadWiki(filepath) {
 		iframe.srcdoc = await fs.read(filepath);
 	} else {
 		// Make an empty wiki template by inception
-		iframe.srcdoc = $tw.wiki.renderTiddler("text/plain","$:/plugins/tiddlywiki/fission/empty-wiki-template");		
+		iframe.srcdoc = "Not found: " + filepath;
 	}
 	window.addEventListener("message",function(event) {
 		if(event.data.verb === "NOTIFY" && event.data.url === "pagetitle") {

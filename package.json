@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "description": "A TiddlyWiki App for Fission",
   "dependencies": {
-    "http-server": "^0.12.3"
+    "http-server": "^0.12.3",
+    "tiddlywiki": "^5.1.23"
   },
   "devDependencies": {},
   "scripts": {

@@ -1,0 +1,3 @@
+ignore: []
+url: tiddlywiki.fission.app
+build: ./app-wiki/output/

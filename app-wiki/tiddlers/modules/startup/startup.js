@@ -28,7 +28,6 @@ const fissionInit = {
 };
 
 exports.startup = function(callback) {
-	var fs, permissions;
 	$tw.fission = new Fission();
 	$tw.fission.initialise(callback);
 }
@@ -43,7 +42,7 @@ function Fission() {
 Fission.prototype.initialise = function(callback) {
 	var self = this;
 	$tw.rootWidget.addEventListener("tm-fission-authorise",function(event) {
-		if(fs && permissions) {
+		if(self.fs && self.permissions) {
 		  self.webnative.redirectToLobby(self.permissions);
 		}
 		return false;

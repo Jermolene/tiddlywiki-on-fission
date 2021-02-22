@@ -68,35 +68,34 @@ async function loadWiki(filepath,initialisationHandler) {
 				onsubscribe: function(err) {
 					initialisationHandler(err);
 				},
-				onmessage: function(data) {
+				onmessage: function(data,callback) {
 					console.log("Would be saving to ",filepath);
-					// fs.write(filepath,data.body).then(function() {
-					// 	fs.publish().then(function() {
-					// 		console.log("Successfully saved wiki");
-					// 	});
-					// }).catch(function(err) {
-					// 	alert("Saving error: " + err);
-					// });
-					return {verb: "OK"};
+					fs.write(filepath,data.body).then(function() {
+						fs.publish().then(function() {
+							callback({verb: "OK"});
+						});
+					}).catch(function(err) {
+						callback({verb: "ERROR", message: "Saving error: " + err});
+					});
 				}
 			});
 		// Subscribe to title changes
 		var titleSubscriber = new messaging.BrowserMessagingSubscriber({
 				target: iframe.contentWindow,
 				type: "PAGETITLE",
-				onmessage: function(data) {
+				onmessage: function(data,callback) {
 					document.title = data.body;
-					return {verb: "OK"};
+					return callback({verb: "OK"});
 				}
 			});
 		// Subscribe to favicon changes
 		var faviconSubscriber = new messaging.BrowserMessagingSubscriber({
 				target: iframe.contentWindow,
 				type: "FAVICON",
-				onmessage: function(data) {
+				onmessage: function(data,callback) {
 					var faviconLink = document.getElementById("faviconLink");
 					faviconLink.setAttribute("href",data.body);
-					return {verb: "OK"};
+					return callback({verb: "OK"});
 				}
 			});
 	});

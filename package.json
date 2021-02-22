@@ -4,12 +4,12 @@
   "description": "A TiddlyWiki App for Fission",
   "dependencies": {
     "http-server": "^0.12.3",
-    "tiddlywiki": "^5.1.23"
+    "tiddlywiki": "Jermolene/TiddlyWiki5#browser-messaging-saver"
   },
   "devDependencies": {},
   "scripts": {
-    "start": "tiddlywiki app-wiki --build index && ./node_modules/http-server/bin/http-server app-wiki/output",
-    "build": "tiddlywiki app-wiki --build index"
+    "start": "npx tiddlywiki app-wiki --build index && npx http-server app-wiki/output",
+    "build": "npx tiddlywiki app-wiki --build index"
   },
   "author": "Jeremy Ruston",
   "license": "MIT"

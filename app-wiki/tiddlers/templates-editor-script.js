@@ -20,7 +20,12 @@ document.addEventListener("DOMContentLoaded",function(event) {
 			return;
 		}
 		if(fs) {
-			loadWiki(params.path).then(function() {
+			loadWiki(params.path,function(err) {
+				if(err) {
+					document.getElementById("banner").hidden = false;
+					console.log("Load wiki status: " + status);
+				}
+			}).then(function() {
 			}).catch(function(err) {
 				alert("Error opening wiki: " + err);
 			});
@@ -52,28 +57,59 @@ function initialiseWebnative(callback) {
 	});
 }
 
-async function loadWiki(filepath) {
+async function loadWiki(filepath,initialisationHandler) {
+	const iframe = document.getElementsByTagName("iframe")[0];
+	// Set up the message channel for talking to the iframe
+	iframe.addEventListener("load",function() {
+		// Subscribe to saving messages
+		var saveSubscriber = new messaging.BrowserMessagingSubscriber({
+				target: iframe.contentWindow,
+				type: "SAVE",
+				onsubscribe: function(err) {
+					initialisationHandler(err);
+				},
+				onmessage: function(data) {
+					console.log("Would be saving to ",filepath);
+					// fs.write(filepath,data.body).then(function() {
+					// 	fs.publish().then(function() {
+					// 		console.log("Successfully saved wiki");
+					// 	});
+					// }).catch(function(err) {
+					// 	alert("Saving error: " + err);
+					// });
+					return {verb: "OK"};
+				}
+			});
+		// Subscribe to title changes
+		var titleSubscriber = new messaging.BrowserMessagingSubscriber({
+				target: iframe.contentWindow,
+				type: "PAGETITLE",
+				onmessage: function(data) {
+					document.title = data.body;
+					return {verb: "OK"};
+				}
+			});
+		// Subscribe to favicon changes
+		var faviconSubscriber = new messaging.BrowserMessagingSubscriber({
+				target: iframe.contentWindow,
+				type: "FAVICON",
+				onmessage: function(data) {
+					var faviconLink = document.getElementById("faviconLink");
+					faviconLink.setAttribute("href",data.body);
+					return {verb: "OK"};
+				}
+			});
+	});
 	// Try to load the file content
-	var iframe = document.getElementsByTagName("iframe")[0];
 	if(await fs.exists(filepath)) {
 		iframe.srcdoc = await fs.read(filepath);
 	} else {
-		// Make an empty wiki template by inception
-		iframe.srcdoc = "Not found: " + filepath;
+		// Grab an empty wiki
+		const response = await fetch("empty.html");
+		if(response.ok && response.status === 200) {
+			iframe.srcdoc = await response.text();
+		} else {
+			iframe.srcdoc = "Cannot load empty.html";
+		}
 	}
-	window.addEventListener("message",function(event) {
-		if(event.data.verb === "NOTIFY" && event.data.url === "pagetitle") {
-			document.title = event.data.body;
-		}
-		if(event.data.verb === "SAVE") {
-			fs.write(filepath,event.data.body).then(function() {
-				fs.publish().then(function() {
-					console.log("Successfully saved wiki");
-				});
-			}).catch(function(err) {
-				alert("Saving error: " + err);
-			});
-		}
-		console.log("Got event from child wiki",event);
-	});
 }

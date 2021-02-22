@@ -3,11 +3,25 @@ title: $:/plugins/tiddlywiki/fission/templates/editor
 `<!doctype html>
 <head>
 <title>TiddlyWiki on Fission Editor</title>
+<link id="faviconLink" rel="shortcut icon" href="favicon.ico">
 <style>`
 {{$:/plugins/tiddlywiki/fission/templates/editor/styles||$:/core/templates/plain-text-tiddler}}
 `</style>
 </head>
-<body><iframe style='border: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%;' sandbox='allow-same-origin allow-downloads allow-popups allow-presentation allow-scripts'></iframe></body>`
-{{$:/plugins/tiddlywiki/fission/webnative.js||$:/core/templates/javascript-tiddler}}
-{{$:/plugins/tiddlywiki/fission/templates/editor/script||$:/core/templates/javascript-tiddler}}
-`</html>`
+<body>
+<div id="container">
+<div id="banner" hidden>
+This file is not recognised as a TiddlyWiki containing the TiddlyWiki on Fission saver, and so saving changes is not supported.
+</div>
+<iframe id="iframe" sandbox='allow-same-origin allow-downloads allow-popups allow-presentation allow-scripts allow-modals'>
+</iframe>
+</div>
+</body>
+<script>`
+{{$:/plugins/tiddlywiki/fission/webnative.js||$:/core/templates/plain-text-tiddler}}
+`var messaging = {};(function(exports) {`
+{{$:/core/modules/utils/messaging.js||$:/core/templates/plain-text-tiddler}}
+`})(messaging);`
+{{$:/plugins/tiddlywiki/fission/templates/editor/script||$:/core/templates/plain-text-tiddler}}
+`</script>
+</html>`

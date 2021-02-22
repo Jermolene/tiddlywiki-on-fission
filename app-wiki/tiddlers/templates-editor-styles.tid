@@ -1,4 +1,25 @@
 title: $:/plugins/tiddlywiki/fission/templates/editor/styles
 
 body {
+	margin: 0;
+}
+
+#container {
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+}
+
+#banner {
+	flex: 0 0 auto;
+	text-align: center;
+	padding: 1em;
+	background: repeating-linear-gradient(135deg,#ffc,#ffc 10px,#fff 10px,#fff 20px);
+	font-style: italic;
+	border-bottom: 3px solid #eea;
+}
+
+#iframe {
+	flex: 1 0 auto;
+	border: 0;
 }

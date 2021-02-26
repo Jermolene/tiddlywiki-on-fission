@@ -1,0 +1,12 @@
+title: $:/plugins/tiddlywiki/fission/Styles
+tags: $:/tags/Stylesheet
+
+\rules only filteredtranscludeinline transcludeinline macrodef macrocallinline macrocallblock
+
+.tc-fission-ui {
+	margin: 1em;
+}
+
+.tc-fission-branding {
+	text-align: center;
+}

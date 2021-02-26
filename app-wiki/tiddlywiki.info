@@ -1,8 +1,7 @@
 {
 	"description": "TiddlyWiki on Fission",
 	"plugins": [
-		"tiddlywiki/highlight",
-		"tiddlywiki/menubar"
+		"tiddlywiki/highlight"
 	],
 	"themes": [
 		"tiddlywiki/vanilla",

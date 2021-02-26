@@ -1,5 +1,5 @@
 tags: $:/tags/RawMarkupWikified/TopBody
-title: $:/SplashScreen
+title: $:/plugins/tiddlywiki/fission/SplashScreen
 type: text/vnd.tiddlywiki
 
 \import [[$:/core/ui/PageMacros]] [all[shadows+tiddlers]tag[$:/tags/Macro]!has[draft.of]]
@@ -108,7 +108,7 @@ Please wait while {{$:/SiteTitle}} is loading
 </div>
 
 <div class="tc-splash-text">
-<img src="data:image/jpeg;base64,{{$:/SpaceCat||$:/core/templates/plain-text-tiddler}}" width="300"/>
+<img src="data:image/jpeg;base64,{{$:/plugins/tiddlywiki/fission/spacecat||$:/core/templates/plain-text-tiddler}}" width="300"/>
 </div>
 
 </div>

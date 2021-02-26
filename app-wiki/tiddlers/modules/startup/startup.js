@@ -42,7 +42,7 @@ function Fission() {
 Fission.prototype.initialise = function(callback) {
 	var self = this;
 	$tw.rootWidget.addEventListener("tm-fission-authorise",function(event) {
-		if(self.fs && self.permissions) {
+		if(self.permissions) {
 		  self.webnative.redirectToLobby(self.permissions);
 		}
 		return false;
@@ -66,16 +66,24 @@ Fission.prototype.initialise = function(callback) {
 			win.close();
 		});
 	});
+	// Helper to set the username if it has changed
+	var setUserName = function(username) {
+		username = username || "";
+		if($tw.wiki.getTiddlerText("$:/status/UserName","") !== username) {
+			$tw.wiki.addTiddler({title: "$:/status/UserName", text: username});
+		}
+	};
+	// Initialise webnative
 	this.webnative.initialize(fissionInit).then(function(state) {
 		console.log("state",state)
+		self.permissions = state.permissions;
 		switch (state.scenario) {
 			case self.webnative.Scenario.AuthSucceeded:
 				console.log("webnative.Scenario.AuthSucceeded");
 			case self.webnative.Scenario.Continuation:
 				console.log("webnative.Scenario.Continuation");
 				self.fs = state.fs;
-				self.permissions = state.permissions;
-				$tw.wiki.addTiddler({title: "$:/status/UserName", text: state.username});
+				setUserName(state.username);
 				(async function() {
 					// Check the app directory exists
 					const appPath = self.fs.appPath();
@@ -90,7 +98,7 @@ Fission.prototype.initialise = function(callback) {
 			console.log("webnative.Scenario.NotAuthorised");
 		case self.webnative.Scenario.AuthCancelled:
 			console.log("webnative.Scenario.AuthCancelled");
-			$tw.wiki.addTiddler({title: "$:/status/UserName", text: "(none)"});
+			setUserName("");
 			callback();
 			break;
 		}

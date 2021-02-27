@@ -1,0 +1,54 @@
+title: $:/plugins/tiddlywiki/fission/list-directory
+
+\define create-new-wiki()
+<$action-sendmessage $message="tm-fission-open-tiddlywiki" $param={{{ [<editWikiNameState>get[text]else[index.html]!suffix[.html]addsuffix[.html]] [<editWikiNameState>get[text]else[index.html]suffix[.html]] +[addprefix[/]addprefix<path>] }}}/>
+<$action-log/>
+<$action-deletetiddler $tiddler=<<popupState>>/>
+\end
+
+<$set name="path" value=<<currentTiddler>>>
+<$set name="currentTiddler" value={{{ [tag[$:/tags/FissionFileListing]!is[draft]field:path<path>] }}}>
+<$set name="popupState" value={{{ [[$:/temp/fission/directory-popup/]addsuffix<path>] }}}>
+<$set name="editWikiNameState" value={{{ [[$:/temp/fission/new-wiki-filename/]addsuffix<path>] }}}>
+<div class="tc-fission-file-picker-heading">
+<$button class="tc-btn-invisible tc-fission-file-picker-folder-button" tooltip="Open this folder">
+<$action-sendmessage $message="tm-fission-list-directory" $param=<<path>>/>
+{{$:/core/images/folder}} ''<$text text=<<path>>/>''
+</$button>
+<$button class="tc-btn-invisible" popup=<<popupState>> animate="yes">
+{{$:/core/images/new-button}}
+</$button>
+</div>
+<$reveal state=<<popupState>> type="popup" position="below" animate="yes" tag="div">
+<div class="tc-block-dropdown-wrapper tc-popup-keep">
+<div class="tc-block-dropdown tc-edit-type-dropdown">
+<div class="tc-dropdown-item-plain">
+''Create new empty ~TiddlyWiki file in <$text text=<<path>>/> called:''<br>
+</div>
+<div class="tc-dropdown-item-plain">
+<$edit-text tiddler=<<editWikiNameState>> placeholder="index.html" tag="input" default="index.html"/>
+</div>
+<div class="tc-dropdown-item-plain">
+<$button actions=<<create-new-wiki>>>
+Create and open
+</$button>
+Will be creating: <$text text={{{ [<editWikiNameState>get[]else[index.html]!suffix[.html]addsuffix[.html]] [<editWikiNameState>get[]else[index.html]suffix[.html]] +[addprefix[/]addprefix<path>] }}}/>
+</div>
+</div>
+</div>
+</$reveal>
+<ol class="tc-fission-file-picker">
+<$list filter="[tag[$:/tags/FissionFileListing]!is[draft]field:parent<path>sort[name]]" variable="currentTiddler">
+<li>
+<$list filter="[<currentTiddler>field:is-file[no]]" variable="ignore" emptyMessage={{$:/plugins/tiddlywiki/fission/list-file}}>
+<$set name="currentTiddler" value={{!!path}}>
+<$transclude tiddler="$:/plugins/tiddlywiki/fission/list-directory"/>
+</$set>
+</$list>
+</li>
+</$list>
+</ol>
+</$set>
+</$set>
+</$set>
+</$set>

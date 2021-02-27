@@ -1,12 +1,69 @@
 title: HelloThere
 
-Username: <$text text={{$:/status/UserName}}/>
+<div class="tc-fission-panel">
+
+!! Welcome
+
+This tool lets you directly edit [[TiddlyWiki|https://tiddlywiki.com/]] files stored in [[Fission|https://fission.codes]]'s Webnative file system. You can choose to make them publicly accessible or to keep them entirely private. End-to-end encryption is used so even Fission can't read private data stored on their servers.
+
+<div class="tc-fission-warning">
+
+This is a very early proof of concept release, and is not yet in a state where you should trust it with important data. Please see the warnings below.
+
+</div>
+
+<$reveal stateTitle="$:/status/UserName" type="match" text="" default="">
+
+Before starting, you'll need to authorise with Fission by clicking this button. Then you'll be able to create a new account or log into an existing account:
 
 <$button message="tm-fission-authorise">
 Authorise with Fission
 </$button>
 
+</$reveal>
 
-<$button message="tm-fission-open-tiddlywiki" param="public/index.html">
-Open wiki at public/index.html
-</$button>
+<$reveal stateTitle="$:/status/UserName" type="nomatch" text="" default="">
+
+You are logged into Fission as: ''<$text text={{$:/status/UserName}}/>''
+
+Browse the Webnative filing system here:
+
+* Click on a folder to open it
+* Click on the "+" next to a folder to create a new empty TiddlyWiki in that folder
+* Click on a green `.html` file to open it for editing
+
+<div class="tc-fission-file-picker">
+
+#.tc-fission-file-picker-private {{private||$:/plugins/tiddlywiki/fission/list-directory}}
+#.tc-fission-file-picker-public {{public||$:/plugins/tiddlywiki/fission/list-directory}}
+
+</div>
+
+</$reveal>
+
+</div>
+
+<div class="tc-fission-panel">
+
+!! Warnings and notes
+
+* The Webnative file system is divided into two areas: "public" and "private". Files in the public area can be viewed by anyone on the internet who knows the unguessable direct link to the file. Files in the private area remain completely inaccessible to anyone not logged into Fission with the same credentials
+* ~TiddlyWiki on Fission relies on a new "postMessage" saver that is not yet merged into the prerelease (LINK), so you can't just drop in an existing ~TiddlyWiki file. Instead, create a new empty ~TiddlyWiki and drag and drop your existing file to import the contents
+* The file picker will let you choose any HTML file, whether or not it is a ~TiddlyWiki file. If you load an HTML file that isn't a ~TiddlyWiki file that includes the new "postMessage" saver then the file will be displayed with a banner explaining the problem. Note that the banner will be displayed for old ~TiddlyWiki files that do not include the "postMessage" saver
+* Files viewed via the editor have access to the editor environment via `window.parent.document`, and thus have the same access to Fission as the ~TiddlyWiki on Fission app itself
+* This application is itself a ~TiddlyWiki that includes a plugin for talking to Fission -- see the bottom of the page for a button to switch back to the usual ~TiddlyWiki user interface
+
+</div>
+
+<div class="tc-fission-panel">
+
+!! Get involved
+
+~TiddlyWiki on Fission is being developed on ~GitHub at https://github.com/Jermolene/TiddlyWiki-on-Fission
+
+Discussions about ~TiddlyWiki on Fission are also happening in other forums:
+
+* [[Fission's TiddlyWiki Forum|https://talk.fission.codes]]
+* [[TiddlyWiki Forum|https://groups.google.com/group/TiddlyWiki]]
+
+</div>

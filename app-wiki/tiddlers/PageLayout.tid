@@ -1,19 +1,14 @@
 title: $:/plugins/tiddlywiki/fission/PageLayout
 
+<div class="tc-fission-ui-wrapper">
 <div class="tc-fission-ui">
-
 <div class="tc-fission-branding">
-
 [img width=250 [$:/plugins/tiddlywiki/fission/spacecat]]
 <br>
 <h1>~TiddlyWiki on Fission</h1>
-
 </div>
-
 <$transclude tiddler="HelloThere" mode="block"/>
-
 <$button set="$:/layout" setTo="$:/core/ui/PageTemplate">
 Switch to ~TiddlyWiki user interface
 </$button>
-
 </div>

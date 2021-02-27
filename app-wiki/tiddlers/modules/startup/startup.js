@@ -47,6 +47,29 @@ Fission.prototype.initialise = function(callback) {
 		}
 		return false;
 	});
+	$tw.rootWidget.addEventListener("tm-fission-list-directory",function(event) {
+		if(self.fs && self.permissions) {
+			self.fs.ls(event.param).then(function(data) {
+				$tw.utils.each(Object.keys(data),function(name) {
+					var info = data[name];
+					$tw.wiki.addTiddler({
+						title: "$:/temp/fission/filesystem/" + event.param + "/" + name,
+						tags: "$:/tags/FissionFileListing",
+						parent: event.param,
+						name: name,
+						path: event.param + "/" + name,
+						created: info.mtime ? $tw.utils.stringifyDate(new Date(info.mtime)) : undefined,
+						size: info.size.toString(),
+						"is-file": info.isFile ? "yes" : "no"
+					})
+				});
+				console.log("List",data);
+			}).catch(function(err) {
+				alert("List directory error: " + err)
+			});
+		}
+		return false;
+	});
 	$tw.rootWidget.addEventListener("tm-fission-open-tiddlywiki",function(event) {
 		if(self.fs && self.permissions) {
 			// Open the wiki

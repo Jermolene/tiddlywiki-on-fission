@@ -4,9 +4,91 @@ tags: $:/tags/Stylesheet
 \rules only filteredtranscludeinline transcludeinline macrodef macrocallinline macrocallblock
 
 .tc-fission-ui {
-	margin: 1em;
+	margin: 1em 0.5em;
+}
+
+@media (min-width: 760px) {
+	.tc-fission-ui {
+		width: 660px;
+		margin: 1em auto;
+	}
 }
 
 .tc-fission-branding {
 	text-align: center;
+	margin-bottom: 4em;
+}
+
+.tc-fission-branding h1 {
+	font-weight: bold;
+}
+
+.tc-fission-panel {
+	margin-bottom: 2em;
+	padding: 1em 2em;
+	background-color: #ffffff;
+	border-radius: 12px;
+	<<box-shadow "1px 1px 5px rgba(0, 0, 0, 0.3)">>
+}
+
+.tc-fission-panel h2 {
+	font-weight: bold;
+}
+
+.tc-fission-warning {
+	font-weight: bold;
+	padding: 0 1em;
+	margin-left: -1em;
+	margin-right: -1em;
+	color: #f22;
+	border-radius: 4px;
+	border: 3px solid transparent;
+	background: #ffd;
+	background: linear-gradient(#ffd, #ffd) padding-box, repeating-linear-gradient(-45deg, red 0, red 25%, transparent 0, transparent 50%) 0 / .6em .6em;
+	animation: marching-ants 20s linear infinite;
+}
+ 
+@keyframes marching-ants { to { background-position: 100% 100% } }
+
+.tc-fission-file-picker ol {
+	list-style: none;
+	padding-left: 1em;
+}
+
+.tc-fission-file-picker > ol {
+	padding-left: 0;
+}
+
+.tc-fission-file-picker-heading {
+}
+
+.tc-fission-file-picker-folder-button,
+.tc-fission-file-picker-file-button,
+.tc-fission-file-picker-unknown-file {
+    padding: 4px 8px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.tc-fission-file-picker ol > li.tc-fission-file-picker-private .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                                                   {background: #c2d5ff}
+.tc-fission-file-picker ol > li.tc-fission-file-picker-private > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                                         {background: #afe0f9}
+.tc-fission-file-picker ol > li.tc-fission-file-picker-private > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                               {background: #99ebf8}
+.tc-fission-file-picker ol > li.tc-fission-file-picker-private > ol > li > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                     {background: #8feaf0}
+.tc-fission-file-picker ol > li.tc-fission-file-picker-private > ol > li > ol > li > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button           {background: #8fddd9}
+.tc-fission-file-picker ol > li.tc-fission-file-picker-private > ol > li > ol > li > ol > li > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button {background: #96c3ba}
+
+.tc-fission-file-picker ol > li.tc-fission-file-picker-public .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                                                    {background: #ff8a8f}
+.tc-fission-file-picker ol > li.tc-fission-file-picker-public > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                                          {background: #ff9082}
+.tc-fission-file-picker ol > li.tc-fission-file-picker-public > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                                {background: #ffa56d}
+.tc-fission-file-picker ol > li.tc-fission-file-picker-public > ol > li > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                      {background: #ffcd57}
+.tc-fission-file-picker ol > li.tc-fission-file-picker-public > ol > li > ol > li > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button            {background: #ffe948}
+.tc-fission-file-picker ol > li.tc-fission-file-picker-public > ol > li > ol > li > ol > li > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button  {background: #fff143}
+
+.tc-fission-file-picker-file-button {
+	background: #8aec6b;	
+}
+
+.tc-fission-file-picker-unknown-file {
+	display: inline-block;
+	background: #eeeeee;
 }

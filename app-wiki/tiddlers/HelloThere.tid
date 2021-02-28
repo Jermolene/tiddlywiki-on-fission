@@ -12,7 +12,7 @@ This is a very early proof of concept release, and is not yet in a state where y
 
 </div>
 
-<$reveal stateTitle="$:/status/UserName" type="match" text="" default="">
+<$reveal stateTitle="$:/state/UserName" type="match" text="" default="">
 
 Before starting, you'll need to authorise with Fission by clicking this button. Then you'll be able to create a new account or log into an existing account:
 
@@ -22,9 +22,9 @@ Authorise with Fission
 
 </$reveal>
 
-<$reveal stateTitle="$:/status/UserName" type="nomatch" text="" default="">
+<$reveal stateTitle="$:/state/UserName" type="nomatch" text="" default="">
 
-You are logged into Fission as: ''<$text text={{$:/status/UserName}}/>''
+You are logged into Fission as: ''<$text text={{$:/state/UserName}}/>''
 
 Browse the Webnative filing system here:
 
@@ -48,7 +48,6 @@ Browse the Webnative filing system here:
 !! Warnings and notes
 
 * The Webnative file system is divided into two areas: "public" and "private". Files in the public area can be viewed by anyone on the internet who knows the unguessable direct link to the file. Files in the private area remain completely inaccessible to anyone not logged into Fission with the same credentials
-* ~TiddlyWiki on Fission relies on a new "postMessage" saver that is not yet merged into the prerelease (LINK), so you can't just drop in an existing ~TiddlyWiki file. Instead, create a new empty ~TiddlyWiki and drag and drop your existing file to import the contents
 * The file picker will let you choose any HTML file, whether or not it is a ~TiddlyWiki file. If you load an HTML file that isn't a ~TiddlyWiki file that includes the new "postMessage" saver then the file will be displayed with a banner explaining the problem. Note that the banner will be displayed for old ~TiddlyWiki files that do not include the "postMessage" saver
 * Files viewed via the editor have access to the editor environment via `window.parent.document`, and thus have the same access to Fission as the ~TiddlyWiki on Fission app itself
 * This application is itself a ~TiddlyWiki that includes a plugin for talking to Fission -- see the bottom of the page for a button to switch back to the usual ~TiddlyWiki user interface

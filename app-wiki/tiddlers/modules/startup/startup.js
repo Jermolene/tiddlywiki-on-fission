@@ -92,8 +92,8 @@ Fission.prototype.initialise = function(callback) {
 	// Helper to set the username if it has changed
 	var setUserName = function(username) {
 		username = username || "";
-		if($tw.wiki.getTiddlerText("$:/status/UserName","") !== username) {
-			$tw.wiki.addTiddler({title: "$:/status/UserName", text: username});
+		if($tw.wiki.getTiddlerText("$:/state/UserName","") !== username) {
+			$tw.wiki.addTiddler({title: "$:/state/UserName", text: username});
 		}
 	};
 	// Initialise webnative

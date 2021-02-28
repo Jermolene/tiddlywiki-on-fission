@@ -4,7 +4,7 @@
   "description": "A TiddlyWiki App for Fission",
   "dependencies": {
     "http-server": "^0.12.3",
-    "tiddlywiki": "github:Jermolene/TiddlyWiki5#browser-messaging-saver"
+    "tiddlywiki": "github:Jermolene/TiddlyWiki5"
   },
   "devDependencies": {},
   "scripts": {

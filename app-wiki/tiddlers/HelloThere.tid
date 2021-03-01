@@ -48,7 +48,7 @@ Browse the Webnative filing system here:
 !! Warnings and notes
 
 * The Webnative file system is divided into two areas: "public" and "private". Files in the public area can be viewed by anyone on the internet who knows the unguessable direct link to the file. Files in the private area remain completely inaccessible to anyone not logged into Fission with the same credentials
-* The file picker will let you choose any HTML file, whether or not it is a ~TiddlyWiki file. If you load an HTML file that isn't a ~TiddlyWiki file that includes the new "postMessage" saver then the file will be displayed with a banner explaining the problem. Note that the banner will be displayed for old ~TiddlyWiki files that do not include the "postMessage" saver
+* The file picker will let you choose any HTML file, whether or not it is a ~TiddlyWiki file
 * Files viewed via the editor have access to the editor environment via `window.parent.document`, and thus have the same access to Fission as the ~TiddlyWiki on Fission app itself
 * This application is itself a ~TiddlyWiki that includes a plugin for talking to Fission -- see the bottom of the page for a button to switch back to the usual ~TiddlyWiki user interface
 

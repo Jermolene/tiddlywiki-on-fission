@@ -49,15 +49,17 @@ Fission.prototype.initialise = function(callback) {
 	});
 	$tw.rootWidget.addEventListener("tm-fission-list-directory",function(event) {
 		if(self.fs && self.permissions) {
-			self.fs.ls(event.param).then(function(data) {
+			const userFilepath = event.param, // The filepath seen by users (private is relative to app folder)
+				realFilepath = self.convertUserFilepath(event.param); // The read underlying absolute filepath
+			self.fs.ls(realFilepath).then(function(data) {
 				$tw.utils.each(Object.keys(data),function(name) {
 					var info = data[name];
 					$tw.wiki.addTiddler({
-						title: "$:/temp/fission/filesystem/" + event.param + "/" + name,
+						title: "$:/temp/fission/filesystem/" + userFilepath + "/" + name,
 						tags: "$:/tags/FissionFileListing",
-						parent: event.param,
+						parent: userFilepath,
 						name: name,
-						path: event.param + "/" + name,
+						path: userFilepath + "/" + name,
 						created: info.mtime ? $tw.utils.stringifyDate(new Date(info.mtime)) : undefined,
 						size: info.size.toString(),
 						"is-file": info.isFile ? "yes" : "no"
@@ -127,5 +129,16 @@ Fission.prototype.initialise = function(callback) {
 		}
 	});
 };
+
+/*
+Convert a user-facing path to a real absolute path by replacing `private/` with the app folder
+*/
+Fission.prototype.convertUserFilepath = function(userFilepath) {
+	if(this.fs && userFilepath.startsWith("private")) {
+		return this.fs.appPath() + userFilepath.slice("private".length);
+	} else {
+		return userFilepath;
+	}
+}
 
 })();

@@ -65,14 +65,16 @@ function initialiseWebnative(callback) {
 	});
 }
 
-async function loadWiki(filepath,initialisationHandler) {
+async function loadWiki(userFilepath,initialisationHandler) {
+	const realFilepath = convertUserFilepath(userFilepath);
+	console.log(`Loading wiki from userpath ${userFilepath} (absolute path ${realFilepath})`);
 	const iframe = document.getElementsByTagName("iframe")[0];
 	// Set up the message channel for talking to the iframe
 	iframe.addEventListener("load",function() {
 		// Subscribe to saving messages
 		enableSaving(iframe.contentDocument,function(text,callback) {
-			console.log("Saving to: " + filepath)
-			fs.write(filepath,text).then(function() {
+			console.log("Saving to: " + realFilepath)
+			fs.write(realFilepath,text).then(function() {
 				fs.publish().then(function() {
 					callback(null);
 				});
@@ -101,8 +103,8 @@ async function loadWiki(filepath,initialisationHandler) {
 		}
 	});
 	// Try to load the file content
-	if(await fs.exists(filepath)) {
-		iframe.srcdoc = await fs.read(filepath);
+	if(await fs.exists(realFilepath)) {
+		iframe.srcdoc = await fs.read(realFilepath);
 	} else {
 		// Grab an empty wiki
 		const response = await fetch("empty.html");
@@ -113,6 +115,18 @@ async function loadWiki(filepath,initialisationHandler) {
 		}
 	}
 }
+
+/*
+Convert a user-facing path to a real absolute path by replacing `private/` with the app folder
+*/
+function convertUserFilepath(userFilepath) {
+	if(fs && userFilepath.startsWith("private")) {
+		return fs.appPath() + userFilepath.slice("private".length);
+	} else {
+		return userFilepath;
+	}
+}
+
 
 // Helper to enable TiddlyFox-style saving for a window
 function enableSaving(doc,fnSaveFile) {

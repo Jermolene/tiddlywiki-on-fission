@@ -1,0 +1,8 @@
+{
+	"title": "$:/plugins/tiddlywiki/tiddlywiki-on-fission",
+	"description": "Fission app and utilities for TiddlyWiki",
+	"author": "JeremyRuston",
+	"core-version": ">=5.0.0",
+	"plugin-priority": 0,
+	"list": "readme"
+}

@@ -65,6 +65,11 @@ tags: $:/tags/Stylesheet
 .tc-fission-file-picker-folder-button,
 .tc-fission-file-picker-file-button,
 .tc-fission-file-picker-unknown-file {
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: <<colour foreground>>;
+	fill: <<colour foreground>>;
     padding: 4px 8px;
     border-radius: 6px;
     margin-bottom: 8px;

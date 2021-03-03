@@ -11,7 +11,7 @@ title: $:/plugins/tiddlywiki/fission/list-directory
 <$set name="popupState" value={{{ [[$:/temp/fission/directory-popup/]addsuffix<path>] }}}>
 <$set name="editWikiNameState" value={{{ [[$:/temp/fission/new-wiki-filename/]addsuffix<path>] }}}>
 <div class="tc-fission-file-picker-heading">
-<$button class="tc-btn-invisible tc-fission-file-picker-folder-button" tooltip="Open this folder">
+<$button class="tc-fission-file-picker-folder-button" tooltip="Open this folder">
 <$action-sendmessage $message="tm-fission-list-directory" $param=<<path>>/>
 {{$:/core/images/folder}} ''<$text text=<<path>>/>''
 </$button>

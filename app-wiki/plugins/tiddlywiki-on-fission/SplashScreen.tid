@@ -21,7 +21,6 @@ type: text/vnd.tiddlywiki
 
 .tc-splash-text img {
 	width: 150px;
-	<<box-shadow "2px 2px 10px rgba(0, 0, 0, 0.5)">>
 }
 
 html body.tc-body {

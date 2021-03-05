@@ -22,7 +22,7 @@ const fissionInit = {
 	permissions: {
 		app: {
 			name: 'tiddlywiki-on-fission',
-			creator: 'jermolene'
+			creator: 'tiddlywiki'
 		}
 	}
 };

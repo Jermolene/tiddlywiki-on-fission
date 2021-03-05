@@ -1,7 +1,7 @@
 title: $:/plugins/tiddlywiki/fission/list-directory
 
 \define create-new-wiki()
-<$action-sendmessage $message="tm-fission-open-tiddlywiki" $param={{{ [<editWikiNameState>get[text]else[index.html]!suffix[.html]addsuffix[.html]] [<editWikiNameState>get[text]else[index.html]suffix[.html]] +[addprefix[/]addprefix<path>] }}}/>
+<$action-sendmessage $message="tm-fission-open-tiddlywiki" $param={{{ [<editWikiNameState>get[text]!suffix[.html]addsuffix[.html]] [<editWikiNameState>get[text]suffix[.html]] ~[[index.html]] +[addprefix[/]addprefix<path>] }}}/>
 <$action-log/>
 <$action-deletetiddler $tiddler=<<popupState>>/>
 \end
@@ -23,16 +23,18 @@ title: $:/plugins/tiddlywiki/fission/list-directory
 <div class="tc-block-dropdown-wrapper tc-popup-keep">
 <div class="tc-block-dropdown tc-edit-type-dropdown">
 <div class="tc-dropdown-item-plain">
-''Create new empty ~TiddlyWiki file in <$text text=<<path>>/> called:''<br>
+''Create new empty ~TiddlyWiki file in "<$text text=<<path>>/>" called:''<br>
 </div>
 <div class="tc-dropdown-item-plain">
-<$edit-text tiddler=<<editWikiNameState>> placeholder="index.html" tag="input" default="index.html"/>
+<$edit-text tiddler=<<editWikiNameState>> placeholder="index.html" tag="input" default=""/>
 </div>
 <div class="tc-dropdown-item-plain">
 <$button actions=<<create-new-wiki>>>
 Create and open
 </$button>
-Will be creating: <$text text={{{ [<editWikiNameState>get[]else[index.html]!suffix[.html]addsuffix[.html]] [<editWikiNameState>get[]else[index.html]suffix[.html]] +[addprefix[/]addprefix<path>] }}}/>
+<div>
+Will be creating: <$text text={{{ [<editWikiNameState>get[text]!suffix[.html]addsuffix[.html]] [<editWikiNameState>get[text]suffix[.html]] ~[[index.html]] +[addprefix[/]addprefix<path>] }}}/>
+</div>
 </div>
 </div>
 </div>

@@ -1,4 +1,7 @@
 title: $:/plugins/tiddlywiki/fission/PageLayout
+tags: $:/tags/Layout
+name: ~TiddlyWiki-on-Fission
+description: ~TiddlyWiki on Fission Custom Page Layout
 
 <div class="tc-fission-ui-wrapper">
 <div class="tc-fission-ui">

@@ -1,0 +1,54 @@
+title: $:/plugins/tiddlywiki/fission/create-wiki-modal
+footer: <$button message="tm-close-tiddler">Cancel</$button>
+subtitle: Create a new ~TiddlyWiki file
+
+\define create-new-wiki()
+<$action-sendmessage $message="tm-fission-open-tiddlywiki" $param={{{ [<wikiNameTiddler>get[text]!suffix[.html]addsuffix[.html]] [<wikiNameTiddler>get[text]suffix[.html]] ~[[index.html]] +[addprefix[/]addprefix<path>] }}} edition={{{ [<editionTitleTiddler>get[text]else<defaultEditionTitle>get[file-path]] }}}/>
+<$action-log/>
+<$action-deletetiddler $tiddler=<<popupState>>/>
+\end
+
+<$set name="wikiNameTiddler" value={{{ [[$:/temp/fission/new-wiki-filename/]addsuffix<path>] }}}>
+
+<$set name="editionTitleTiddler" value={{{ [[$:/temp/fission/edition-name/]addsuffix<path>] }}}>
+
+<$set name="defaultEditionTitle" value={{{ [all[shadows+tiddlers]tag[$:/tags/FissionEditionInfo]sort[]] }}}>
+
+Create new empty ~TiddlyWiki file in ''<$text text=<<path>>/>'' called:
+
+<$edit-text tiddler=<<wikiNameTiddler>> placeholder="index.html" tag="input" default="" class="tc-fission-new-wiki-name-input"/>
+
+<$button class="tc-btn-big-green" actions=<<create-new-wiki>>>
+Create and open new wiki
+</$button>
+
+Use the template ''<$text text={{{ [<editionTitleTiddler>get[text]get[name]else[tiddlywiki.com]] }}}/>'':
+
+<div class="tc-fission-edition-chooser">
+<$list filter="[all[shadows+tiddlers]tag[$:/tags/FissionEditionInfo]sort[name]]">
+<div class={{{ [<editionTitleTiddler>get[text]else<defaultEditionTitle>match<currentTiddler>then[tc-fission-edition-selected]] tc-fission-edition +[join[ ]] }}}>
+<$radio tiddler=<<editionTitleTiddler>> field="text" value=<<currentTiddler>> default=<<defaultEditionTitle>>>
+<div class="tc-fission-edition-info">
+<div class="tc-fission-edition-name">
+<$text text={{!!name}}/>
+</div>
+<div class="tc-fission-edition-version">
+Based on ~TiddlyWiki version <$text text={{!!version}}/>
+</div>
+<div class="tc-fission-edition-description">
+{{!!text}}
+</div>
+<div class="tc-fission-edition-image">
+<img src={{{ [{!!thumbnail-path}addprefix[editions/]] }}} width="240px"/>
+</div>
+</div>
+</$radio>
+</div>
+</$list>
+</div>
+
+</$set>
+
+</$set>
+
+</$set>

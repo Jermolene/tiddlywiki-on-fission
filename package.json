@@ -4,12 +4,14 @@
   "description": "A TiddlyWiki App for Fission",
   "dependencies": {
     "http-server": "^0.12.3",
+    "node-fetch": "^2.6.1",
+    "puppeteer": "^8.0.0",
     "tiddlywiki": "github:Jermolene/TiddlyWiki5"
   },
   "devDependencies": {},
   "scripts": {
-    "start": "npx tiddlywiki app-wiki --verbose --build index && npx http-server app-wiki/output",
-    "build": "npx tiddlywiki app-wiki --verbose --build index"
+    "start": "npm run build && npx http-server app-wiki/output",
+    "build": "node ./bin/collect-editions.js && npx tiddlywiki app-wiki --verbose --build index"
   },
   "author": "Jeremy Ruston",
   "license": "MIT"

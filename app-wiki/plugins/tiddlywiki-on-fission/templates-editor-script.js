@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded",function(event) {
 			return;
 		}
 		if(fs) {
-			loadWiki(params.path,function(err) {
+			loadWiki(params.path,params.edition,function(err) {
 				if(err) {
 					document.getElementById("banner").hidden = false;
 					console.log("Load wiki status: " + status);
@@ -65,7 +65,8 @@ function initialiseWebnative(callback) {
 	});
 }
 
-async function loadWiki(userFilepath,initialisationHandler) {
+async function loadWiki(userFilepath,editionPath,initialisationHandler) {
+	editionPath = editionPath || "editions/tiddlywiki.com/index.html";
 	const realFilepath = convertUserFilepath(userFilepath);
 	console.log(`Loading wiki from userpath ${userFilepath} (absolute path ${realFilepath})`);
 	const iframe = document.getElementsByTagName("iframe")[0];
@@ -107,11 +108,11 @@ async function loadWiki(userFilepath,initialisationHandler) {
 		iframe.srcdoc = await fs.read(realFilepath);
 	} else {
 		// Grab an empty wiki
-		const response = await fetch("empty.html");
+		const response = await fetch("editions/" + editionPath);
 		if(response.ok && response.status === 200) {
 			iframe.srcdoc = await response.text();
 		} else {
-			iframe.srcdoc = "Cannot load empty.html";
+			iframe.srcdoc = `Cannot load ${editionPath}`;
 		}
 	}
 }
@@ -131,13 +132,13 @@ function convertUserFilepath(userFilepath) {
 // Helper to enable TiddlyFox-style saving for a window
 function enableSaving(doc,fnSaveFile) {
 	// Create the message box
-	var messageBox = doc.createElement("div");
+	let messageBox = doc.createElement("div");
 	messageBox.id = "tiddlyfox-message-box";
 	doc.body.appendChild(messageBox);
 	// Listen for save events
 	messageBox.addEventListener("tiddlyfox-save-file",function(event) {
 		// Get the details from the message
-		var message = event.target,
+		let message = event.target,
 			filepath = message.getAttribute("data-tiddlyfox-path"),
 			content = message.getAttribute("data-tiddlyfox-content");
 		// Save the file
@@ -148,7 +149,7 @@ function enableSaving(doc,fnSaveFile) {
 			// Remove the message element from the message box
 			message.parentNode.removeChild(message);
 			// Send a confirmation message
-			var event = doc.createEvent("Events");
+			let event = doc.createEvent("Events");
 			event.initEvent("tiddlyfox-have-saved-file",true,false);
 			event.savedFilePath = filepath;
 			message.dispatchEvent(event);
@@ -162,7 +163,7 @@ Pad a string to a given length with "0"s. Length defaults to 2
 */
 function pad(value,length) {
 	length = length || 2;
-	var s = value.toString();
+	let s = value.toString();
 	if(s.length < length) {
 		s = "000000000000000000000000000".substr(0,length - s.length) + s;
 	}
@@ -178,7 +179,7 @@ function pad(value,length) {
  */
 // Copied from peg.js, thanks to David Majda
 function escapeChar(ch) {
-	var charCode = ch.charCodeAt(0);
+	let charCode = ch.charCodeAt(0);
 	if(charCode <= 0xFF) {
 		return '\\x' + pad(charCode.toString(16).toUpperCase());
 	} else {

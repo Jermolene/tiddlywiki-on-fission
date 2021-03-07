@@ -76,7 +76,11 @@ Fission.prototype.initialise = function(callback) {
 		if(self.fs && self.permissions) {
 			// Open the wiki
 			var domLink = document.createElement("a");
-			domLink.setAttribute("href","/editor.html#path=" + event.param);
+			var params = [`path=${event.param}`];
+			if(event.paramObject.edition) {
+				params.push(`edition=${event.paramObject.edition}`);
+			}
+			domLink.setAttribute("href","/editor.html#" + params.join("&"));
 			domLink.setAttribute("target","_blank");
 			domLink.setAttribute("rel","noopener noreferrer");
 			document.body.appendChild(domLink);

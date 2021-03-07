@@ -3,6 +3,8 @@ tags: $:/tags/Stylesheet
 
 \rules only filteredtranscludeinline transcludeinline macrodef macrocallinline macrocallblock
 
+/* Main UI */
+
 .tc-fission-ui {
 	margin: 1em 0.5em;
 }
@@ -14,6 +16,8 @@ tags: $:/tags/Stylesheet
 	}
 }
 
+/* Branding */
+
 .tc-fission-branding {
 	text-align: center;
 	margin-bottom: 4em;
@@ -22,6 +26,8 @@ tags: $:/tags/Stylesheet
 .tc-fission-branding h1 {
 	font-weight: bold;
 }
+
+/* Panels */
 
 .tc-fission-panel {
 	margin-bottom: 2em;
@@ -34,6 +40,8 @@ tags: $:/tags/Stylesheet
 .tc-fission-panel h2 {
 	font-weight: bold;
 }
+
+/* Warning Animation */
 
 .tc-fission-warning {
 	font-weight: bold;
@@ -49,6 +57,8 @@ tags: $:/tags/Stylesheet
 }
  
 @keyframes marching-ants { to { background-position: 100% 100% } }
+
+/* File Picker */
 
 .tc-fission-file-picker ol {
 	list-style: none;
@@ -96,4 +106,47 @@ tags: $:/tags/Stylesheet
 .tc-fission-file-picker-unknown-file {
 	display: inline-block;
 	background: #eeeeee;
+}
+
+/* Create New Wiki Modal */
+
+.tc-fission-new-wiki-name-input {
+	font-size: 1.5em;
+	line-height: 1.1;
+	width: 100%;
+}
+
+.tc-fission-edition {
+	padding: 1em;
+}
+
+.tc-fission-edition > label > span {
+	display: block;
+}
+
+.tc-fission-edition-selected {
+	background: #c6bbff;
+}
+
+.tc-fission-edition-info {
+	padding-left: 3em;
+}
+
+.tc-fission-edition-name {
+	font-size: 2em;
+	line-height: 1.1;
+	font-weight: bold;
+}
+
+.tc-fission-edition-version {
+	font-style: italic;
+}
+
+.tc-fission-edition-description {
+	margin-top: 1em;
+	margin-bottom: 1em;
+}
+
+.tc-fission-edition-image img {
+	<<box-shadow "2px 2px 10px rgba(0, 0, 0, 0.5)">>
 }

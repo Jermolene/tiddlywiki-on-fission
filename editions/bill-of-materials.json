@@ -1,0 +1,12 @@
+[
+	{
+		"name": "tiddlywiki.com",
+		"description": "~TiddlyWiki 5 latest release",
+		"url": "https://tiddlywiki.com/empty.html"
+	},
+	{
+		"name": "tiddlywiki.com-prerelease",
+		"description": "~TiddlyWiki 5 prerelease of the next version",
+		"url": "https://tiddlywiki.com/prerelease/empty.html"
+	}
+]

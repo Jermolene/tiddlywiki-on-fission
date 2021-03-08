@@ -33,10 +33,10 @@ Use the template ''<$text text={{{ [<editionTitleTiddler>get[text]get[name]else[
 <$text text={{!!name}}/>
 </div>
 <div class="tc-fission-edition-version">
-Based on ~TiddlyWiki version <$text text={{!!version}}/>
+Size <$text text={{{ [<currentTiddler>get[size]divide[1048576]fixed[2]] }}}/>MB, based on ~TiddlyWiki version <$text text={{!!version}}/>
 </div>
 <div class="tc-fission-edition-description">
-{{!!text}}
+<$transclude field="text" mode="block"/>
 </div>
 <div class="tc-fission-edition-image">
 <img src={{{ [{!!thumbnail-path}addprefix[editions/]] }}} width="240px"/>

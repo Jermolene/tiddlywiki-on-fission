@@ -27,9 +27,15 @@ class App {
 	}
 
 	async main() {
-		const errors = [],
-			bomPath = this.args.byName["bill-of-materials"][0],
-			bom = JSON.parse(await readFileAsync(bomPath,"utf8"));
+		// Collect errors rather than failing on the first
+		const errors = [];
+		// Get arguments
+		const bomPath = this.args.byName["bill-of-materials"][0],
+			outputFilePath = this.args.byName["output-files"][0],
+			outputTiddlersPath = this.args.byName["output-tiddlers"][0];
+		// Retrieve and parse the bill of materials
+		const bom = JSON.parse(await readFileAsync(bomPath,"utf8"));
+		// Go through each entry
 		for(const bomEntry of bom) {
 			console.log(bomEntry)
 			// Read file
@@ -39,31 +45,25 @@ class App {
 				errors.push({bomEntry: bomEntry, error: contents.error});
 			} else {
 				// Extract information from the template
-				const wikiInfo = this.getWikiInfo(contents.text);
-				console.log(wikiInfo);
+				const wikiInfo = await this.getWikiInfo(contents.text);
+console.log(wikiInfo)
 				// Save the file to the output files location
-				const outputFileDir = path.resolve(this.args.byName["output-files"][0],`./${bomEntry.name}`);
+				const outputFileDir = path.resolve(outputFilePath,`./${bomEntry.name}`);
 				fs.mkdirSync(outputFileDir,{recursive: true});
 				await writeFileAsync(path.resolve(outputFileDir,"./index.html"),contents.text,"utf8");
 				// Save the screenshot
-				await writeFileAsync(path.resolve(outputFileDir,"./desktop-image.png"),await this.makeScreenshot(contents.text,{
-					width: 1280,
-					height: 1024,
-					deviceScaleFactor: 1,
-					isMobile: false,
-					hasTouch: false,
-					isLandscape: false
-				}));
+				await writeFileAsync(path.resolve(outputFileDir,"./desktop-image.png"),wikiInfo.image);
 				// Save the tiddler file
-				const outputTiddlerDir = this.args.byName["output-tiddlers"][0];
-				fs.mkdirSync(outputTiddlerDir,{recursive: true});
-				const outputTiddlerFilename = path.resolve(outputTiddlerDir,`./${bomEntry.name}.json`);
+				fs.mkdirSync(outputTiddlersPath,{recursive: true});
+				const outputTiddlerFilename = path.resolve(outputTiddlersPath,`./${bomEntry.name}.json`);
 				const fields = {
 					title: `$:/config/Fission/EditionInfo/${bomEntry.name}`,
 					tags: "$:/tags/FissionEditionInfo",
 					"thumbnail-path": `${bomEntry.name}/desktop-image.png`,
 					"file-path": `${bomEntry.name}/index.html`,
+					size: contents.text.length.toString(),
 					version: wikiInfo.version || "",
+					details: wikiInfo.plugins.map(plugin => `|${plugin.name || "(none)"} |${plugin.version || "(none)"} |${plugin["plugin-type"]} |~${plugin.title} |`).join("\n"),
 					name: bomEntry.name,
 					text: bomEntry.description
 				};
@@ -84,16 +84,8 @@ class App {
 		return {text: text};
 	}
 
-	getWikiInfo(text) {
-		// Get the version number
-		const matchVersion = /<meta name="tiddlywiki\-version" content="([0-9a-z\-\.]+)" \/>/.exec(text);
-		return {
-			version: matchVersion ? matchVersion[1] : "",
-			length: text.length
-		}
-	}
-
-	async makeScreenshot(text,options) {
+	async getWikiInfo(text) {
+		// Set up Puppeteer
 		const FAKE_URL = "https://example.com/index.html";
 		const browser = await puppeteer.launch();
 		const page = await browser.newPage();
@@ -105,13 +97,39 @@ class App {
 				return request.respond({status: 404, contentType: "text/plain", body: "Not found!"});
 			}
 		});
-		await page.setViewport(options);
-		await page.goto(FAKE_URL);
-		const image = await page.screenshot({
-			type: "png"
+		await page.setViewport({
+			width: 1280,
+			height: 1024,
+			deviceScaleFactor: 1,
+			isMobile: false,
+			hasTouch: false,
+			isLandscape: false
 		});
+		await page.goto(FAKE_URL,{waitUntil: "domcontentloaded"});
+		// Gather output
+		const output = {};
+		// Get the version number
+		output.version = await page.$eval(`meta[name="tiddlywiki-version"]`,el => el.getAttribute("content"));
+		// Get the favicon and return it as a URI
+		output.favicon = await page.$eval(`link[id="faviconLink"]`,el => el.href);
+		// Take screenshot and return it as image file data
+		output.image = await page.screenshot({type: "png"});
+		// Get information about the loaded plugins
+		output.plugins = await page.evaluate(() => {
+			return $tw.wiki.filterTiddlers("[has[plugin-type]sort[name]]").filter(title => title !== "$:/temp/info-plugin").map(title => {
+				const fields = $tw.wiki.getTiddler(title).fields;
+				return {
+					title: fields.title,
+					name: fields.name,
+					description: fields.description,
+					version: fields.version,
+					"plugin-type": fields["plugin-type"]
+				};
+			});
+		});
+		// Shut Puppeteer
 		await browser.close();
-		return image;
+		return output;
 	}
 }
 

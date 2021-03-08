@@ -46,7 +46,7 @@ class App {
 				fs.mkdirSync(outputFileDir,{recursive: true});
 				await writeFileAsync(path.resolve(outputFileDir,"./index.html"),contents.text,"utf8");
 				// Save the screenshot
-				await writeFileAsync(path.resolve(outputFileDir,"./desktop-image.png"),await this.makeScreenshot(bomEntry.url,{
+				await writeFileAsync(path.resolve(outputFileDir,"./desktop-image.png"),await this.makeScreenshot(contents.text,{
 					width: 1280,
 					height: 1024,
 					deviceScaleFactor: 1,
@@ -93,11 +93,20 @@ class App {
 		}
 	}
 
-	async makeScreenshot(url,options) {
+	async makeScreenshot(text,options) {
+		const FAKE_URL = "https://example.com/index.html";
 		const browser = await puppeteer.launch();
 		const page = await browser.newPage();
+		await page.setRequestInterception(true);
+		page.on("request", async request => {
+			if(request.method() === "GET" && request.url() === FAKE_URL) {
+				return request.respond({status: 200, contentType: "text/html", body: text});
+			} else {
+				return request.respond({status: 404, contentType: "text/plain", body: "Not found!"});
+			}
+		});
 		await page.setViewport(options);
-		await page.goto(url);
+		await page.goto(FAKE_URL);
 		const image = await page.screenshot({
 			type: "png"
 		});

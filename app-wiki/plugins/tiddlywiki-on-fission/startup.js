@@ -77,7 +77,7 @@ Fission.prototype.initialise = function(callback) {
 			// Open the wiki
 			var domLink = document.createElement("a");
 			var params = [`path=${event.param}`];
-			if(event.paramObject.edition) {
+			if(event.paramObject && event.paramObject.edition) {
 				params.push(`edition=${event.paramObject.edition}`);
 			}
 			domLink.setAttribute("href","/editor.html#" + params.join("&"));

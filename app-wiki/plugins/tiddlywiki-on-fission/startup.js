@@ -36,6 +36,7 @@ function Fission() {
 	this.fs = null;
 	this.permissions = null;
 	this.webnative = require("$:/plugins/tiddlywiki/fission/webnative.js");
+	this.webnative.setup.debug({ enabled: true });
 	this.windows = [];
 }
 

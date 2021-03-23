@@ -6,7 +6,7 @@
     "http-server": "^0.12.3",
     "node-fetch": "^2.6.1",
     "puppeteer": "^8.0.0",
-    "tiddlywiki": "github:Jermolene/TiddlyWiki5"
+    "tiddlywiki": "github:Jermolene/TiddlyWiki5#publishing-framework"
   },
   "devDependencies": {},
   "scripts": {

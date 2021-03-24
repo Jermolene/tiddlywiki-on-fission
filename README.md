@@ -15,7 +15,7 @@ We're using [Open Collective](https://opencollective.com/tiddlywiki-on-fission) 
 
 Thank you to all of our backers!
 
-![](https://opencollective.com/tiddlywiki-on-fission/tiers/backer.svg?avatarHeight=36&width=600)
+[![](https://opencollective.com/tiddlywiki-on-fission/tiers/backer.svg?avatarHeight=36&width=600)](https://opencollective.com/tiddlywiki-on-fission)
 
 Join the [Fission forum for further TiddlyWiki on Fission discussion »](https://talk.fission.codes/c/apps/tiddlywiki/57)
 

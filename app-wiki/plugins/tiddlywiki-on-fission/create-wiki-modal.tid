@@ -6,6 +6,7 @@ subtitle: Create a new ~TiddlyWiki file
 <$action-sendmessage $message="tm-fission-open-tiddlywiki" $param={{{ [<wikiNameTiddler>get[text]!suffix[.html]addsuffix[.html]] [<wikiNameTiddler>get[text]suffix[.html]] ~[[index.html]] +[addprefix[/]addprefix<path>] }}} edition={{{ [<editionTitleTiddler>get[text]else<defaultEditionTitle>get[file-path]] }}}/>
 <$action-log/>
 <$action-deletetiddler $tiddler=<<popupState>>/>
+<$action-sendmessage $message="tm-close-tiddler"/>
 \end
 
 <$set name="wikiNameTiddler" value={{{ [[$:/temp/fission/new-wiki-filename/]addsuffix<path>] }}}>

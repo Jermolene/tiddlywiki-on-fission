@@ -1,0 +1,23 @@
+title: GettingStarted
+
+!! Getting Started with Static Site Publishing on Fission
+
+Welcome to ~TiddlyWiki and the ~TiddlyWiki community
+
+!! Set up your TiddlyWiki
+
+The title of your wiki: <$edit-text tiddler="$:/SiteTitle" default="" tag="input"/>
+
+The subtitle of your wiki: <$edit-text tiddler="$:/SiteSubtitle" default="" tag="input"/>
+
+Select a colour palette: {{$:/core/ui/Buttons/palette}}
+
+See the [[control panel|$:/ControlPanel]] for more options.
+
+!! Add some content
+
+See https://tiddlywiki.com/ for help learning to use ~TiddlyWiki.
+
+!! Publish
+
+Click the publish button in the sidebar: {{$:/core/ui/Buttons/publish}}

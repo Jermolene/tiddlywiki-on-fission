@@ -1,0 +1,16 @@
+{
+	"description": "Static Publishing Edition for TiddlyWiki on Fission",
+	"plugins": [
+		"tiddlywiki/highlight"
+	],
+	"themes": [
+		"tiddlywiki/vanilla",
+		"tiddlywiki/snowwhite"
+	],
+	"languages": [
+	],
+	"build": {
+		"index": [
+			"--rendertiddler","$:/core/save/all","index.html","text/plain"]
+	}
+}

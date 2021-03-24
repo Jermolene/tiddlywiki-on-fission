@@ -1,0 +1,5 @@
+title: $:/_Warning/Boxes
+tags: $:/tags/PageTemplate
+
+<div class="tc-warning-box tc-warning-box-top"></div>
+<div class="tc-warning-box tc-warning-box-bottom"></div>

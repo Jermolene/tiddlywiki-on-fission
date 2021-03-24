@@ -1,0 +1,34 @@
+title: $:/_Warning/Styles
+tags: $:/tags/Stylesheet
+
+\rules only filteredtranscludeinline transcludeinline macrodef macrocallinline macrocallblock
+
+.tc-warning-box {
+	border: 5px solid transparent;
+	background: linear-gradient(#ffd, #ffd) padding-box, repeating-linear-gradient(-45deg, red 0, red 25%, transparent 0, transparent 50%) 0 / .6em .6em;
+	animation: marching-ants 20s linear infinite;
+}
+ 
+@keyframes marching-ants { to { background-position: 100% 100% } }
+
+.tc-warning-box-top {
+	position: fixed;
+	z-index: 10000;
+	top: 0;
+	left: 0;
+	right: 0;
+	width: 100%;
+	height: 10px;
+}
+
+
+.tc-warning-box-bottom {
+	position: fixed;
+	z-index: 10000;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	width: 100%;
+	height: 10px;
+}
+

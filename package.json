@@ -11,7 +11,7 @@
   "devDependencies": {},
   "scripts": {
     "start": "npm run build && npx http-server app-wiki/output",
-    "build": "node ./bin/collect-editions.js && npx tiddlywiki app-wiki --verbose --build index"
+    "build": "npx tiddlywiki static-publishing-wiki --verbose --build index && node ./bin/collect-editions.js && npx tiddlywiki app-wiki --verbose --build index"
   },
   "author": "Jeremy Ruston",
   "license": "MIT"

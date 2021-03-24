@@ -8,5 +8,10 @@
 		"name": "tiddlywiki.com-prerelease",
 		"description": "~TiddlyWiki 5 prerelease of the next version",
 		"url": "https://tiddlywiki.com/prerelease/empty.html"
+	},
+	{
+		"name": "static-publishing-edition",
+		"description": "An experimental build with TW5's under development publishing framework. Use with caution!",
+		"url": "file://./static-publishing-wiki/output/index.html"
 	}
 ]

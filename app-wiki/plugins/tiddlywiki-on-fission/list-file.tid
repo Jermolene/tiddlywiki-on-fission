@@ -3,7 +3,11 @@ title: $:/plugins/tiddlywiki/fission/list-file
 <div class="tc-fission-file-picker-heading">
 <$list filter="[{!!name}suffix[.html]]" emptyMessage="""<span class="tc-fission-file-picker-unknown-file"><$text text={{!!name}}/></span>""" variable="ignore">
 <$button class="tc-fission-file-picker-file-button" message="tm-fission-open-tiddlywiki" param={{!!path}} tooltip="Open this HTML file">
-{{$:/core/images/open-window}} ''<$text text={{!!name}}/>''
+{{$:/core/images/open-window}}
+''<$text text={{!!name}}/>''
 </$button>
+</$list>
+<$list filter="[<currentTiddler>has[public-path]]" variable="none">
+<a href={{!!public-path}} target="_blank" rel="noopener noreferrer">(read-only public link)</a>
 </$list>
 </div>

@@ -1,0 +1,6 @@
+title: $:/core/publishing-jobs/Static/Job
+tags: $:/tags/Publish/Jobs
+caption: Publish Static Site to Fission
+publisher: fission
+fission-output-path: public/
+baseurl: https://example.com

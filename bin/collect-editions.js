@@ -69,18 +69,26 @@ class App {
 				await writeFileAsync(outputTiddlerFilename,JSON.stringify(fields,null,4),"utf8");
 			}
 		}
+		// Output any errors
+		console.log("Errors:",errors)
 	}
 
 	async getFileContents(url) {
-		// Retrieve the file contents
-		let response, text;
-		try {
-			response = await fetch(url);
-			text = await response.text();
-		} catch(e) {
-			return {error: e.toString()};
+		if(url === "file://./static-publishing-wiki/output/index.html") {
+			// Hack!
+			const text = await readFileAsync("./static-publishing-wiki/output/index.html","utf8");
+			return {text: text};
+		} else {
+			// Retrieve the URL contents
+			let response, text;
+			try {
+				response = await fetch(url);
+				text = await response.text();
+			} catch(e) {
+				return {error: e.toString()};
+			}
+			return {text: text};
 		}
-		return {text: text};
 	}
 
 	async getWikiInfo(text) {

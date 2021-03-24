@@ -21,4 +21,7 @@ This file is not recognised as a TiddlyWiki containing the TiddlyWiki on Fission
 {{$:/plugins/tiddlywiki/fission/webnative.js||$:/core/templates/plain-text-tiddler}}
 {{$:/plugins/tiddlywiki/fission/templates/editor/script||$:/core/templates/plain-text-tiddler}}
 `</script>
+<script type="application/json" id="publisher-script">`
+{{$:/plugins/tiddlywiki/fission/fission-publisher.js||$:/core/templates/plain-text-tiddler}}
+`</script>
 </html>`

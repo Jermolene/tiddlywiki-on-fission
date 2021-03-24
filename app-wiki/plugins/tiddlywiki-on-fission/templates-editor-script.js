@@ -15,7 +15,10 @@ const fissionInit = {
 	}
 };
 
-var fs,permissions;
+window.webnativeDetails = {
+	fs: null,
+	permissions: null
+}
 
 document.addEventListener("DOMContentLoaded",function(event) {
 	initialiseWebnative(function() {
@@ -27,7 +30,7 @@ document.addEventListener("DOMContentLoaded",function(event) {
 			alert("Missing path");
 			return;
 		}
-		if(fs) {
+		if(webnativeDetails.fs) {
 			loadWiki(params.path,params.edition,function(err) {
 				if(err) {
 					document.getElementById("banner").hidden = false;
@@ -51,8 +54,8 @@ function initialiseWebnative(callback) {
 				console.log("webnative.Scenario.AuthSucceeded");
 			case window.webnative.Scenario.Continuation:
 				console.log("webnative.Scenario.Continuation");
-				fs = state.fs;
-				permissions = state.permissions;
+				webnativeDetails.fs = state.fs;
+				webnativeDetails.permissions = state.permissions;
 				console.log("Logged in as",state.username);
 				callback();
 			  break;
@@ -75,8 +78,8 @@ async function loadWiki(userFilepath,editionPath,initialisationHandler) {
 		// Subscribe to saving messages
 		enableSaving(iframe.contentDocument,function(text,callback) {
 			console.log("Saving to: " + realFilepath)
-			fs.write(realFilepath,text).then(function() {
-				fs.publish().then(function() {
+			webnativeDetails.fs.write(realFilepath,text).then(function() {
+				webnativeDetails.fs.publish().then(function() {
 					callback(null);
 				});
 			}).catch(function(err) {
@@ -102,10 +105,14 @@ async function loadWiki(userFilepath,editionPath,initialisationHandler) {
 			extractFavicon();
 			faviconObserver.observe(faviconLink,{attributes: true, childList: true, characterData: true});		
 		}
+		// Inject the Fission publisher module if the wiki has the publisher 
+		if(iframe.contentWindow.$tw.publisherHandler) {
+			iframe.contentWindow.$tw.modules.define("$:/plugins/tiddlywiki/fission/fission-publisher.js","publisher",document.getElementById("publisher-script").textContent);
+		}
 	});
 	// Try to load the file content
-	if(await fs.exists(realFilepath)) {
-		iframe.srcdoc = await fs.read(realFilepath);
+	if(await webnativeDetails.fs.exists(realFilepath)) {
+		iframe.srcdoc = await webnativeDetails.fs.read(realFilepath);
 	} else {
 		// Grab an empty wiki
 		const response = await fetch("editions/" + editionPath);
@@ -121,8 +128,8 @@ async function loadWiki(userFilepath,editionPath,initialisationHandler) {
 Convert a user-facing path to a real absolute path by replacing `private/` with the app folder
 */
 function convertUserFilepath(userFilepath) {
-	if(fs && userFilepath.startsWith("private")) {
-		return fs.appPath() + userFilepath.slice("private".length);
+	if(webnativeDetails.fs && userFilepath.startsWith("private")) {
+		return webnativeDetails.fs.appPath() + userFilepath.slice("private".length);
 	} else {
 		return userFilepath;
 	}

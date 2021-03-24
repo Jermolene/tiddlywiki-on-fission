@@ -35,6 +35,7 @@ exports.startup = function(callback) {
 function Fission() {
 	this.fs = null;
 	this.permissions = null;
+	this.username = null;
 	this.webnative = require("$:/plugins/tiddlywiki/fission/webnative.js");
 	this.webnative.setup.debug({ enabled: true });
 	this.windows = [];
@@ -50,17 +51,18 @@ Fission.prototype.initialise = function(callback) {
 	});
 	$tw.rootWidget.addEventListener("tm-fission-list-directory",function(event) {
 		if(self.fs && self.permissions) {
-			const userFilepath = event.param, // The filepath seen by users (private is relative to app folder)
-				realFilepath = self.convertUserFilepath(event.param); // The read underlying absolute filepath
-			self.fs.ls(realFilepath).then(function(data) {
+			const userFilepath = self.cleanPath(event.param),
+				systemFilepath = self.convertUserFilepathToSystemFilepath(userFilepath);
+			self.fs.ls(systemFilepath).then(function(data) {
 				$tw.utils.each(Object.keys(data),function(name) {
 					var info = data[name];
 					$tw.wiki.addTiddler({
 						title: "$:/temp/fission/filesystem/" + userFilepath + "/" + name,
 						tags: "$:/tags/FissionFileListing",
-						parent: userFilepath,
+						parent: userFilepath + "/",
 						name: name,
-						path: userFilepath + "/" + name,
+						path: userFilepath + "/" + name + (info.isFile ? "" : "/"),
+						"public-path": userFilepath.startsWith("public/") ? ("https://" + self.username + ".files.fission.name/p/" + userFilepath.slice("public/".length) + name) : undefined,
 						created: info.mtime ? $tw.utils.stringifyDate(new Date(info.mtime)) : undefined,
 						size: info.size.toString(),
 						"is-file": info.isFile ? "yes" : "no"
@@ -77,9 +79,11 @@ Fission.prototype.initialise = function(callback) {
 		if(self.fs && self.permissions) {
 			// Open the wiki
 			var domLink = document.createElement("a");
-			var params = [`path=${event.param}`];
+			const filepath = self.cleanPath(event.param);
+			var params = [`path=${filepath}`];
 			if(event.paramObject && event.paramObject.edition) {
-				params.push(`edition=${event.paramObject.edition}`);
+				const editionURL = event.paramObject.edition;
+				params.push(`edition=${editionURL}`);
 			}
 			domLink.setAttribute("href","/editor.html#" + params.join("&"));
 			domLink.setAttribute("target","_blank");
@@ -113,6 +117,7 @@ Fission.prototype.initialise = function(callback) {
 			case self.webnative.Scenario.Continuation:
 				console.log("webnative.Scenario.Continuation");
 				self.fs = state.fs;
+				self.username = state.username;
 				setUserName(state.username);
 				(async function() {
 					// Check the app directory exists
@@ -136,13 +141,21 @@ Fission.prototype.initialise = function(callback) {
 };
 
 /*
+Clean up a path by removing leading and trailing slashes, and merging multiple slashes
+*/
+Fission.prototype.cleanPath = function(filepath) {
+	return filepath.split("/").filter(part => part !== "").join("/");
+}
+
+/*
 Convert a user-facing path to a real absolute path by replacing `private/` with the app folder
 */
-Fission.prototype.convertUserFilepath = function(userFilepath) {
-	if(this.fs && userFilepath.startsWith("private")) {
-		return this.fs.appPath() + userFilepath.slice("private".length);
+Fission.prototype.convertUserFilepathToSystemFilepath = function(userFilepath) {
+	const parts = this.cleanPath(userFilepath).split("/");
+	if(this.fs && parts[0] === "private") {
+		return [this.fs.appPath()].concat(parts.slice(1)).join("/");
 	} else {
-		return userFilepath;
+		return parts.join("/");
 	}
 }
 

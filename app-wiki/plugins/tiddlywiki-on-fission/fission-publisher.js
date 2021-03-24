@@ -51,17 +51,17 @@ FissionPublisher.prototype.publishFile = function(item,callback) {
 		console.log(`Saved to ${path}`);
 		callback();
 	}).catch(function(err) {
-		console.log(`Error saving file ${path} to fission: ${err}`);
+		alert(`Error saving file ${path} to fission: ${err}`);
 		callback();
 	});
 };
 
 FissionPublisher.prototype.publishEnd = function(callback) {
 	this.webnativeDetails.fs.publish().then(function() {
-		console.log(`Published`);
+		alert(`Published`);
 		callback();
 	}).catch(function(err) {
-		console.log(`Error publishing to fission: ${err}`);
+		alert(`Error publishing to fission: ${err}`);
 		callback();
 	});
 };

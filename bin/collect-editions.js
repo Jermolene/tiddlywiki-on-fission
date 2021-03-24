@@ -46,7 +46,6 @@ class App {
 			} else {
 				// Extract information from the template
 				const wikiInfo = await this.getWikiInfo(contents.text);
-console.log(wikiInfo)
 				// Save the file to the output files location
 				const outputFileDir = path.resolve(outputFilePath,`./${bomEntry.name}`);
 				fs.mkdirSync(outputFileDir,{recursive: true});

@@ -62,7 +62,7 @@ Fission.prototype.initialise = function(callback) {
 						parent: userFilepath + "/",
 						name: name,
 						path: userFilepath + "/" + name + (info.isFile ? "" : "/"),
-						"public-path": userFilepath.startsWith("public/") ? ("https://" + self.username + ".files.fission.name/p/" + userFilepath.slice("public/".length) + name) : undefined,
+						"public-path": userFilepath.startsWith("public/") ? ("https://" + self.username + ".files.fission.name/p/" + userFilepath.slice("public/".length) + "/" + name) : undefined,
 						created: info.mtime ? $tw.utils.stringifyDate(new Date(info.mtime)) : undefined,
 						size: info.size.toString(),
 						"is-file": info.isFile ? "yes" : "no"

@@ -112,7 +112,7 @@ class App {
 			hasTouch: false,
 			isLandscape: false
 		});
-		await page.goto(FAKE_URL,{waitUntil: "domcontentloaded"});
+		await page.goto(FAKE_URL,{waitUntil: "networkidle2"});
 		// Gather output
 		const output = {};
 		// Get the version number

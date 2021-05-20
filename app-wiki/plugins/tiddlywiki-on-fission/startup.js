@@ -18,15 +18,6 @@ exports.after = ["startup"];
 exports.platforms = ["browser"];
 exports.synchronous = false;
 
-const fissionInit = {
-	permissions: {
-		app: {
-			name: 'tiddlywiki-on-fission',
-			creator: 'tiddlywiki'
-		}
-	}
-};
-
 exports.startup = function(callback) {
 	$tw.fission = new Fission();
 	$tw.fission.initialise(callback);
@@ -49,20 +40,28 @@ Fission.prototype.initialise = function(callback) {
 		}
 		return false;
 	});
+	$tw.rootWidget.addEventListener("tm-fission-leave",function(event) {
+		self.webnative.leave(function(err) {
+			console.log("webnative.leave() returned",err);
+			self.setUserName();
+		});
+		return false;
+	});
 	$tw.rootWidget.addEventListener("tm-fission-list-directory",function(event) {
 		if(self.fs && self.permissions) {
 			const userFilepath = self.cleanPath(event.param),
-				systemFilepath = self.convertUserFilepathToSystemFilepath(userFilepath);
+				systemFilepath = self.convertUserDirpathToSystemDirpath(userFilepath);
 			self.fs.ls(systemFilepath).then(function(data) {
 				$tw.utils.each(Object.keys(data),function(name) {
-					var info = data[name];
+					var info = data[name],
+						userFilepathString = userFilepath.join("/");
 					$tw.wiki.addTiddler({
-						title: "$:/temp/fission/filesystem/" + userFilepath + "/" + name,
+						title: "$:/temp/fission/filesystem/" + userFilepathString + "/" + name,
 						tags: "$:/tags/FissionFileListing",
-						parent: userFilepath + "/",
+						parent: userFilepathString,
 						name: name,
-						path: userFilepath + "/" + name + (info.isFile ? "" : "/"),
-						"public-path": userFilepath.split("/")[0] === "public" ? ("https://" + self.username + ".files.fission.name/p/" + userFilepath.split("/").slice(1).concat(name).join("/")) : undefined,
+						path: userFilepathString + "/" + name,
+						"public-path": userFilepath[0] === "public" ? ("https://" + self.username + ".files.fission.name/p/" + userFilepath.slice(1).concat(name).join("/")) : undefined,
 						created: info.mtime ? $tw.utils.stringifyDate(new Date(info.mtime)) : undefined,
 						size: info.size.toString(),
 						"is-file": info.isFile ? "yes" : "no"
@@ -79,7 +78,7 @@ Fission.prototype.initialise = function(callback) {
 		if(self.fs && self.permissions) {
 			// Open the wiki
 			var domLink = document.createElement("a");
-			const filepath = self.cleanPath(event.param);
+			const filepath = self.cleanPath(event.param).join("/");
 			var params = [`path=${filepath}`];
 			if(event.paramObject && event.paramObject.edition) {
 				const editionURL = event.paramObject.edition;
@@ -100,14 +99,18 @@ Fission.prototype.initialise = function(callback) {
 			win.close();
 		});
 	});
-	// Helper to set the username if it has changed
-	var setUserName = function(username) {
-		username = username || "";
-		if($tw.wiki.getTiddlerText("$:/state/UserName","") !== username) {
-			$tw.wiki.addTiddler({title: "$:/state/UserName", text: username});
+	// Initialise webnative
+	const fissionInit = {
+		permissions: {
+			app: {
+				name: 'tiddlywiki-on-fission',
+				creator: 'tiddlywiki'
+			},
+			fs: {
+				public: [ this.webnative.path.root() ]
+			}
 		}
 	};
-	// Initialise webnative
 	this.webnative.initialize(fissionInit).then(function(state) {
 		console.log("state",state)
 		self.permissions = state.permissions;
@@ -118,7 +121,7 @@ Fission.prototype.initialise = function(callback) {
 				console.log("webnative.Scenario.Continuation");
 				self.fs = state.fs;
 				self.username = state.username;
-				setUserName(state.username);
+				self.setUserName(state.username);
 				(async function() {
 					// Check the app directory exists
 					const appPath = self.fs.appPath();
@@ -133,30 +136,49 @@ Fission.prototype.initialise = function(callback) {
 			console.log("webnative.Scenario.NotAuthorised");
 		case self.webnative.Scenario.AuthCancelled:
 			console.log("webnative.Scenario.AuthCancelled");
-			setUserName("");
+			self.setUserName("");
 			callback();
 			break;
 		}
 	});
 };
 
+// Helper to set the username if it has changed
+Fission.prototype.setUserName = function(username) {
+	username = username || "";
+	if($tw.wiki.getTiddlerText("$:/state/UserName","") !== username) {
+		$tw.wiki.addTiddler({title: "$:/state/UserName", text: username});
+	}
+};
+
 /*
-Clean up a path by removing leading and trailing slashes, and merging multiple slashes
+Clean up a path by removing leading and trailing slashes and returning the parts as an array
 */
 Fission.prototype.cleanPath = function(filepath) {
-	return filepath.split("/").filter(part => part !== "").join("/");
+	return filepath.split("/").filter(part => part !== "");
 }
 
 /*
 Convert a user-facing path to a real absolute path by replacing `private/` with the app folder
 */
-Fission.prototype.convertUserFilepathToSystemFilepath = function(userFilepath) {
-	const parts = this.cleanPath(userFilepath).split("/");
-	if(this.fs && parts[0] === "private") {
-		return [this.fs.appPath()].concat(parts.slice(1)).join("/");
-	} else {
-		return parts.join("/");
+Fission.prototype.convertUserDirpathToSystemDirpath = function(userFilepathParts) {
+	let root;
+	switch(userFilepathParts[0]) {
+		case "private":
+			root = this.fs.appPath().directory;
+			break;
+		case "public":
+			root = [this.webnative.path.Branch.Public];
+			break;
+		case "pretty":
+			root = [this.webnative.path.Branch.Pretty];
+			break;
+		default:
+			userFilepathParts.unshift("private");
+			root = [this.webnative.path.Branch.Private];
+			break;
 	}
+	return this.webnative.path.directory.apply(null,root.concat(userFilepathParts.slice(1)));
 }
 
 })();

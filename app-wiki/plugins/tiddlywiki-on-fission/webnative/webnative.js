@@ -1,4 +1,4 @@
-// Saved from: https://unpkg.com/webnative@0.21.3/index.umd.js
+// Saved from: https://unpkg.com/webnative@0.24.1/dist/index.umd.js
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -3126,6 +3126,11 @@
         });
     }
 
+    var api = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        did: did
+    });
+
     var equal = function (aBuf, bBuf) {
         var a = new Uint8Array(aBuf);
         var b = new Uint8Array(bBuf);
@@ -3138,18 +3143,10 @@
         return true;
     };
 
-    function urlDecode(a) {
-        return atob(makeUrlUnsafe(a));
-    }
-    function urlEncode(b) {
-        return makeUrlSafe(btoa(b));
-    }
-    function makeUrlSafe(a) {
-        return a.replace(/\//g, "_").replace(/\+/g, "-").replace(/=+$/, "");
-    }
-    function makeUrlUnsafe(a) {
-        return a.replace(/_/g, "/").replace(/-/g, "+");
-    }
+    var arrbufs = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        equal: equal
+    });
 
     var byteLength_1 = byteLength;
     var toByteArray_1 = toByteArray;
@@ -5504,6 +5501,35 @@
     }
     });
 
+    function decode(base64) {
+        return buffer.Buffer.from(base64, 'base64').toString('binary');
+    }
+    function encode(str) {
+        return buffer.Buffer.from(str, 'binary').toString('base64');
+    }
+    function urlDecode(base64) {
+        return decode(makeUrlUnsafe(base64));
+    }
+    function urlEncode(str) {
+        return makeUrlSafe(encode(str));
+    }
+    function makeUrlSafe(a) {
+        return a.replace(/\//g, "_").replace(/\+/g, "-").replace(/=+$/, "");
+    }
+    function makeUrlUnsafe(a) {
+        return a.replace(/_/g, "/").replace(/-/g, "+");
+    }
+
+    var base64 = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        decode: decode,
+        encode: encode,
+        urlDecode: urlDecode,
+        urlEncode: urlEncode,
+        makeUrlSafe: makeUrlSafe,
+        makeUrlUnsafe: makeUrlUnsafe
+    });
+
     var toBuffer = function (blob) { return __awaiter(void 0, void 0, void 0, function () {
         return __generator(this, function (_a) {
             return [2 /*return*/, new Promise(function (resolve, reject) {
@@ -5524,61 +5550,2508 @@
         });
     }); };
 
-    var isDefined = function (val) {
-        return val !== undefined;
+    var blob = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        toBuffer: toBuffer
+    });
+
+    var global$1 = (typeof global !== "undefined" ? global :
+      typeof self !== "undefined" ? self :
+      typeof window !== "undefined" ? window : {});
+
+    // shim for using process in browser
+    // based off https://github.com/defunctzombie/node-process/blob/master/browser.js
+
+    function defaultSetTimout() {
+        throw new Error('setTimeout has not been defined');
+    }
+    function defaultClearTimeout () {
+        throw new Error('clearTimeout has not been defined');
+    }
+    var cachedSetTimeout = defaultSetTimout;
+    var cachedClearTimeout = defaultClearTimeout;
+    if (typeof global$1.setTimeout === 'function') {
+        cachedSetTimeout = setTimeout;
+    }
+    if (typeof global$1.clearTimeout === 'function') {
+        cachedClearTimeout = clearTimeout;
+    }
+
+    function runTimeout(fun) {
+        if (cachedSetTimeout === setTimeout) {
+            //normal enviroments in sane situations
+            return setTimeout(fun, 0);
+        }
+        // if setTimeout wasn't available but was latter defined
+        if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+            cachedSetTimeout = setTimeout;
+            return setTimeout(fun, 0);
+        }
+        try {
+            // when when somebody has screwed with setTimeout but no I.E. maddness
+            return cachedSetTimeout(fun, 0);
+        } catch(e){
+            try {
+                // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+                return cachedSetTimeout.call(null, fun, 0);
+            } catch(e){
+                // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+                return cachedSetTimeout.call(this, fun, 0);
+            }
+        }
+
+
+    }
+    function runClearTimeout(marker) {
+        if (cachedClearTimeout === clearTimeout) {
+            //normal enviroments in sane situations
+            return clearTimeout(marker);
+        }
+        // if clearTimeout wasn't available but was latter defined
+        if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+            cachedClearTimeout = clearTimeout;
+            return clearTimeout(marker);
+        }
+        try {
+            // when when somebody has screwed with setTimeout but no I.E. maddness
+            return cachedClearTimeout(marker);
+        } catch (e){
+            try {
+                // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+                return cachedClearTimeout.call(null, marker);
+            } catch (e){
+                // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+                // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+                return cachedClearTimeout.call(this, marker);
+            }
+        }
+
+
+
+    }
+    var queue = [];
+    var draining = false;
+    var currentQueue;
+    var queueIndex = -1;
+
+    function cleanUpNextTick() {
+        if (!draining || !currentQueue) {
+            return;
+        }
+        draining = false;
+        if (currentQueue.length) {
+            queue = currentQueue.concat(queue);
+        } else {
+            queueIndex = -1;
+        }
+        if (queue.length) {
+            drainQueue();
+        }
+    }
+
+    function drainQueue() {
+        if (draining) {
+            return;
+        }
+        var timeout = runTimeout(cleanUpNextTick);
+        draining = true;
+
+        var len = queue.length;
+        while(len) {
+            currentQueue = queue;
+            queue = [];
+            while (++queueIndex < len) {
+                if (currentQueue) {
+                    currentQueue[queueIndex].run();
+                }
+            }
+            queueIndex = -1;
+            len = queue.length;
+        }
+        currentQueue = null;
+        draining = false;
+        runClearTimeout(timeout);
+    }
+    function nextTick(fun) {
+        var args = new Array(arguments.length - 1);
+        if (arguments.length > 1) {
+            for (var i = 1; i < arguments.length; i++) {
+                args[i - 1] = arguments[i];
+            }
+        }
+        queue.push(new Item(fun, args));
+        if (queue.length === 1 && !draining) {
+            runTimeout(drainQueue);
+        }
+    }
+    // v8 likes predictible objects
+    function Item(fun, array) {
+        this.fun = fun;
+        this.array = array;
+    }
+    Item.prototype.run = function () {
+        this.fun.apply(null, this.array);
     };
-    var notNull = function (val) {
-        return val !== null;
+    var title = 'browser';
+    var platform = 'browser';
+    var browser = true;
+    var env = {};
+    var argv = [];
+    var version = ''; // empty string to avoid regexp issues
+    var versions = {};
+    var release = {};
+    var config = {};
+
+    function noop() {}
+
+    var on = noop;
+    var addListener = noop;
+    var once = noop;
+    var off = noop;
+    var removeListener = noop;
+    var removeAllListeners = noop;
+    var emit = noop;
+
+    function binding(name) {
+        throw new Error('process.binding is not supported');
+    }
+
+    function cwd () { return '/' }
+    function chdir (dir) {
+        throw new Error('process.chdir is not supported');
+    }function umask() { return 0; }
+
+    // from https://github.com/kumavis/browser-process-hrtime/blob/master/index.js
+    var performance = global$1.performance || {};
+    var performanceNow =
+      performance.now        ||
+      performance.mozNow     ||
+      performance.msNow      ||
+      performance.oNow       ||
+      performance.webkitNow  ||
+      function(){ return (new Date()).getTime() };
+
+    // generate timestamp or delta
+    // see http://nodejs.org/api/process.html#process_process_hrtime
+    function hrtime(previousTimestamp){
+      var clocktime = performanceNow.call(performance)*1e-3;
+      var seconds = Math.floor(clocktime);
+      var nanoseconds = Math.floor((clocktime%1)*1e9);
+      if (previousTimestamp) {
+        seconds = seconds - previousTimestamp[0];
+        nanoseconds = nanoseconds - previousTimestamp[1];
+        if (nanoseconds<0) {
+          seconds--;
+          nanoseconds += 1e9;
+        }
+      }
+      return [seconds,nanoseconds]
+    }
+
+    var startTime = new Date();
+    function uptime() {
+      var currentTime = new Date();
+      var dif = currentTime - startTime;
+      return dif / 1000;
+    }
+
+    var browser$1 = {
+      nextTick: nextTick,
+      title: title,
+      browser: browser,
+      env: env,
+      argv: argv,
+      version: version,
+      versions: versions,
+      on: on,
+      addListener: addListener,
+      once: once,
+      off: off,
+      removeListener: removeListener,
+      removeAllListeners: removeAllListeners,
+      emit: emit,
+      binding: binding,
+      cwd: cwd,
+      chdir: chdir,
+      umask: umask,
+      hrtime: hrtime,
+      platform: platform,
+      release: release,
+      config: config,
+      uptime: uptime
     };
-    var isJust = notNull;
-    var isValue = function (val) {
-        return isDefined(val) && notNull(val);
+
+    var empty = {};
+
+    var empty$1 = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        'default': empty
+    });
+
+    var require$$0 = /*@__PURE__*/getAugmentedNamespace(empty$1);
+
+    var nobleEd25519 = createCommonjsModule(function (module, exports) {
+    /*! noble-ed25519 - MIT License (c) Paul Miller (paulmillr.com) */
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.utils = exports.verify = exports.sign = exports.getPublicKey = exports.SignResult = exports.Signature = exports.Point = exports.ExtendedPoint = exports.CURVE = void 0;
+    const CURVE = {
+        a: -1n,
+        d: 37095705934669439343138083508754565189542113879843219016388785533085940283555n,
+        P: 2n ** 255n - 19n,
+        n: 2n ** 252n + 27742317777372353535851937790883648493n,
+        h: 8n,
+        Gx: 15112221349535400772501151409588531511454012693041857206046113283949847762202n,
+        Gy: 46316835694926478169428394003475163141307993866256225615783033603165251855960n,
     };
-    var isBool = function (val) {
-        return typeof val === 'boolean';
-    };
-    var isNum = function (val) {
-        return typeof val === 'number';
-    };
-    var isString = function (val) {
-        return typeof val === 'string';
-    };
-    var isObject = function (val) {
-        return val !== null && typeof val === 'object';
-    };
-    var isBlob = function (val) {
-        var _a;
-        if (typeof Blob === 'undefined')
+    exports.CURVE = CURVE;
+    const ENCODING_LENGTH = 32;
+    const DIV_8_MINUS_3 = (CURVE.P + 3n) / 8n;
+    const I = powMod(2n, (CURVE.P + 1n) / 4n, CURVE.P);
+    const SQRT_M1 = 19681161376707505956807079304988542015446066515923890162744021073123829784752n;
+    const INVSQRT_A_MINUS_D = 54469307008909316920995813868745141605393597292927456921205312896311721017578n;
+    const SQRT_AD_MINUS_ONE = 25063068953384623474111414158702152701244531502492656460079210482610430750235n;
+    class ExtendedPoint {
+        constructor(x, y, z, t) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.t = t;
+        }
+        static fromAffine(p) {
+            if (!(p instanceof Point)) {
+                throw new TypeError('ExtendedPoint#fromAffine: expected Point');
+            }
+            if (p.equals(Point.ZERO))
+                return ExtendedPoint.ZERO;
+            return new ExtendedPoint(p.x, p.y, 1n, mod(p.x * p.y));
+        }
+        static toAffineBatch(points) {
+            const toInv = invertBatch(points.map((p) => p.z));
+            return points.map((p, i) => p.toAffine(toInv[i]));
+        }
+        static normalizeZ(points) {
+            return this.toAffineBatch(points).map(this.fromAffine);
+        }
+        static fromRistrettoHash(hash) {
+            const r1 = bytesToNumberRst(hash.slice(0, ENCODING_LENGTH));
+            const R1 = this.elligatorRistrettoFlavor(r1);
+            const r2 = bytesToNumberRst(hash.slice(ENCODING_LENGTH, ENCODING_LENGTH * 2));
+            const R2 = this.elligatorRistrettoFlavor(r2);
+            return R1.add(R2);
+        }
+        static elligatorRistrettoFlavor(r0) {
+            const { d } = CURVE;
+            const oneMinusDSq = mod(1n - d ** 2n);
+            const dMinusOneSq = (d - 1n) ** 2n;
+            const r = SQRT_M1 * (r0 * r0);
+            const NS = mod((r + 1n) * oneMinusDSq);
+            let c = mod(-1n);
+            const D = mod((c - d * r) * mod(r + d));
+            let { isNotZeroSquare, value: S } = sqrtRatio(NS, D);
+            let sPrime = mod(S * r0);
+            sPrime = edIsNegative(sPrime) ? sPrime : mod(-sPrime);
+            S = isNotZeroSquare ? S : sPrime;
+            c = isNotZeroSquare ? c : r;
+            const NT = c * (r - 1n) * dMinusOneSq - D;
+            const sSquared = S * S;
+            const W0 = (S + S) * D;
+            const W1 = NT * SQRT_AD_MINUS_ONE;
+            const W2 = 1n - sSquared;
+            const W3 = 1n + sSquared;
+            return new ExtendedPoint(mod(W0 * W3), mod(W2 * W1), mod(W1 * W3), mod(W0 * W2));
+        }
+        static fromRistrettoBytes(bytes) {
+            const s = bytesToNumberRst(bytes);
+            const sEncodingIsCanonical = equalBytes(numberToBytesPadded(s, ENCODING_LENGTH), bytes);
+            const sIsNegative = edIsNegative(s);
+            if (!sEncodingIsCanonical || sIsNegative) {
+                throw new Error('Cannot convert bytes to Ristretto Point');
+            }
+            const s2 = s * s;
+            const u1 = 1n - s2;
+            const u2 = 1n + s2;
+            const squaredU2 = u2 * u2;
+            const v = u1 * u1 * -CURVE.d - squaredU2;
+            const { isNotZeroSquare, value: I } = invertSqrt(mod(v * squaredU2));
+            const Dx = I * u2;
+            const Dy = I * Dx * v;
+            let x = mod((s + s) * Dx);
+            if (edIsNegative(x))
+                x = mod(-x);
+            const y = mod(u1 * Dy);
+            const t = mod(x * y);
+            if (!isNotZeroSquare || edIsNegative(t) || y === 0n) {
+                throw new Error('Cannot convert bytes to Ristretto Point');
+            }
+            return new ExtendedPoint(x, y, 1n, t);
+        }
+        toRistrettoBytes() {
+            let { x, y, z, t } = this;
+            const u1 = (z + y) * (z - y);
+            const u2 = x * y;
+            const { value: invsqrt } = invertSqrt(mod(u2 ** 2n * u1));
+            const i1 = invsqrt * u1;
+            const i2 = invsqrt * u2;
+            const invz = i1 * i2 * t;
+            let invDeno = i2;
+            if (edIsNegative(t * invz)) {
+                const iX = mod(x * SQRT_M1);
+                const iY = mod(y * SQRT_M1);
+                x = iY;
+                y = iX;
+                invDeno = mod(i1 * INVSQRT_A_MINUS_D);
+            }
+            if (edIsNegative(x * invz))
+                y = mod(-y);
+            let s = mod((z - y) * invDeno);
+            if (edIsNegative(s))
+                s = mod(-s);
+            return numberToBytesPadded(s, ENCODING_LENGTH);
+        }
+        equals(other) {
+            const a = this;
+            const b = other;
+            const [T1, T2, Z1, Z2] = [a.t, b.t, a.z, b.z];
+            return mod(T1 * Z2) === mod(T2 * Z1);
+        }
+        negate() {
+            return new ExtendedPoint(mod(-this.x), this.y, this.z, mod(-this.t));
+        }
+        double() {
+            const X1 = this.x;
+            const Y1 = this.y;
+            const Z1 = this.z;
+            const { a } = CURVE;
+            const A = mod(X1 ** 2n);
+            const B = mod(Y1 ** 2n);
+            const C = mod(2n * Z1 ** 2n);
+            const D = mod(a * A);
+            const E = mod((X1 + Y1) ** 2n - A - B);
+            const G = mod(D + B);
+            const F = mod(G - C);
+            const H = mod(D - B);
+            const X3 = mod(E * F);
+            const Y3 = mod(G * H);
+            const T3 = mod(E * H);
+            const Z3 = mod(F * G);
+            return new ExtendedPoint(X3, Y3, Z3, T3);
+        }
+        add(other) {
+            const X1 = this.x;
+            const Y1 = this.y;
+            const Z1 = this.z;
+            const T1 = this.t;
+            const X2 = other.x;
+            const Y2 = other.y;
+            const Z2 = other.z;
+            const T2 = other.t;
+            const A = mod((Y1 - X1) * (Y2 + X2));
+            const B = mod((Y1 + X1) * (Y2 - X2));
+            const F = mod(B - A);
+            if (F === 0n) {
+                return this.double();
+            }
+            const C = mod(Z1 * 2n * T2);
+            const D = mod(T1 * 2n * Z2);
+            const E = mod(D + C);
+            const G = mod(B + A);
+            const H = mod(D - C);
+            const X3 = mod(E * F);
+            const Y3 = mod(G * H);
+            const T3 = mod(E * H);
+            const Z3 = mod(F * G);
+            return new ExtendedPoint(X3, Y3, Z3, T3);
+        }
+        subtract(other) {
+            return this.add(other.negate());
+        }
+        multiplyUnsafe(scalar) {
+            if (typeof scalar !== 'number' && typeof scalar !== 'bigint') {
+                throw new TypeError('Point#multiply: expected number or bigint');
+            }
+            let n = mod(BigInt(scalar), CURVE.n);
+            if (n <= 0) {
+                throw new Error('Point#multiply: invalid scalar, expected positive integer');
+            }
+            let p = ExtendedPoint.ZERO;
+            let d = this;
+            while (n > 0n) {
+                if (n & 1n)
+                    p = p.add(d);
+                d = d.double();
+                n >>= 1n;
+            }
+            return p;
+        }
+        precomputeWindow(W) {
+            const windows = 256 / W + 1;
+            let points = [];
+            let p = this;
+            let base = p;
+            for (let window = 0; window < windows; window++) {
+                base = p;
+                points.push(base);
+                for (let i = 1; i < 2 ** (W - 1); i++) {
+                    base = base.add(p);
+                    points.push(base);
+                }
+                p = base.double();
+            }
+            return points;
+        }
+        wNAF(n, affinePoint) {
+            if (!affinePoint && this.equals(ExtendedPoint.BASE))
+                affinePoint = Point.BASE;
+            const W = (affinePoint && affinePoint._WINDOW_SIZE) || 1;
+            if (256 % W) {
+                throw new Error('Point#wNAF: Invalid precomputation window, must be power of 2');
+            }
+            let precomputes = affinePoint && pointPrecomputes.get(affinePoint);
+            if (!precomputes) {
+                precomputes = this.precomputeWindow(W);
+                if (affinePoint && W !== 1) {
+                    precomputes = ExtendedPoint.normalizeZ(precomputes);
+                    pointPrecomputes.set(affinePoint, precomputes);
+                }
+            }
+            let p = ExtendedPoint.ZERO;
+            let f = ExtendedPoint.ZERO;
+            const windows = 256 / W + 1;
+            const windowSize = 2 ** (W - 1);
+            const mask = BigInt(2 ** W - 1);
+            const maxNumber = 2 ** W;
+            const shiftBy = BigInt(W);
+            for (let window = 0; window < windows; window++) {
+                const offset = window * windowSize;
+                let wbits = Number(n & mask);
+                n >>= shiftBy;
+                if (wbits > windowSize) {
+                    wbits -= maxNumber;
+                    n += 1n;
+                }
+                if (wbits === 0) {
+                    f = f.add(window % 2 ? precomputes[offset].negate() : precomputes[offset]);
+                }
+                else {
+                    const cached = precomputes[offset + Math.abs(wbits) - 1];
+                    p = p.add(wbits < 0 ? cached.negate() : cached);
+                }
+            }
+            return [p, f];
+        }
+        multiply(scalar, affinePoint) {
+            if (typeof scalar !== 'number' && typeof scalar !== 'bigint') {
+                throw new TypeError('Point#multiply: expected number or bigint');
+            }
+            const n = mod(BigInt(scalar), CURVE.n);
+            if (n <= 0) {
+                throw new Error('Point#multiply: invalid scalar, expected positive integer');
+            }
+            return ExtendedPoint.normalizeZ(this.wNAF(n, affinePoint))[0];
+        }
+        toAffine(invZ = invert(this.z)) {
+            const x = mod(this.x * invZ);
+            const y = mod(this.y * invZ);
+            return new Point(x, y);
+        }
+    }
+    exports.ExtendedPoint = ExtendedPoint;
+    ExtendedPoint.BASE = new ExtendedPoint(CURVE.Gx, CURVE.Gy, 1n, mod(CURVE.Gx * CURVE.Gy));
+    ExtendedPoint.ZERO = new ExtendedPoint(0n, 1n, 1n, 0n);
+    const pointPrecomputes = new WeakMap();
+    class Point {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+        }
+        _setWindowSize(windowSize) {
+            this._WINDOW_SIZE = windowSize;
+            pointPrecomputes.delete(this);
+        }
+        static fromHex(hash) {
+            const { d, P } = CURVE;
+            const bytes = hash instanceof Uint8Array ? hash : hexToBytes(hash);
+            const len = bytes.length - 1;
+            const normedLast = bytes[len] & ~0x80;
+            const isLastByteOdd = (bytes[len] & 0x80) !== 0;
+            const normed = Uint8Array.from(Array.from(bytes.slice(0, len)).concat(normedLast));
+            const y = bytesToNumberLE(normed);
+            if (y >= P) {
+                throw new Error('Point#fromHex expects hex <= Fp');
+            }
+            const sqrY = y * y;
+            const sqrX = mod((sqrY - 1n) * invert(d * sqrY + 1n));
+            let x = powMod(sqrX, DIV_8_MINUS_3);
+            if (mod(x * x - sqrX) !== 0n) {
+                x = mod(x * I);
+            }
+            const isXOdd = (x & 1n) === 1n;
+            if (isLastByteOdd !== isXOdd) {
+                x = mod(-x);
+            }
+            return new Point(x, y);
+        }
+        toRawBytes() {
+            const hex = numberToHex(this.y);
+            const u8 = new Uint8Array(ENCODING_LENGTH);
+            for (let i = hex.length - 2, j = 0; j < ENCODING_LENGTH && i >= 0; i -= 2, j++) {
+                u8[j] = parseInt(hex[i] + hex[i + 1], 16);
+            }
+            const mask = this.x & 1n ? 0x80 : 0;
+            u8[ENCODING_LENGTH - 1] |= mask;
+            return u8;
+        }
+        toHex() {
+            return bytesToHex(this.toRawBytes());
+        }
+        toX25519() {
+            return mod((1n + this.y) * invert(1n - this.y));
+        }
+        equals(other) {
+            return this.x === other.x && this.y === other.y;
+        }
+        negate() {
+            return new Point(mod(-this.x), this.y);
+        }
+        add(other) {
+            return ExtendedPoint.fromAffine(this).add(ExtendedPoint.fromAffine(other)).toAffine();
+        }
+        subtract(other) {
+            return this.add(other.negate());
+        }
+        multiply(scalar) {
+            return ExtendedPoint.fromAffine(this).multiply(scalar, this).toAffine();
+        }
+    }
+    exports.Point = Point;
+    Point.BASE = new Point(CURVE.Gx, CURVE.Gy);
+    Point.ZERO = new Point(0n, 1n);
+    class Signature {
+        constructor(r, s) {
+            this.r = r;
+            this.s = s;
+        }
+        static fromHex(hex) {
+            hex = ensureBytes(hex);
+            const r = Point.fromHex(hex.slice(0, 32));
+            const s = bytesToNumberLE(hex.slice(32));
+            if (s >= CURVE.n) {
+                throw new Error('Signature#fromHex expects s <= CURVE.n');
+            }
+            return new Signature(r, s);
+        }
+        toRawBytes() {
+            const numberBytes = hexToBytes(numberToHex(this.s)).reverse();
+            const sBytes = new Uint8Array(ENCODING_LENGTH);
+            sBytes.set(numberBytes);
+            const res = new Uint8Array(ENCODING_LENGTH * 2);
+            res.set(this.r.toRawBytes());
+            res.set(sBytes, 32);
+            return res;
+        }
+        toHex() {
+            return bytesToHex(this.toRawBytes());
+        }
+    }
+    exports.Signature = Signature;
+    exports.SignResult = Signature;
+    function concatBytes(...arrays) {
+        if (arrays.length === 1)
+            return arrays[0];
+        const length = arrays.reduce((a, arr) => a + arr.length, 0);
+        const result = new Uint8Array(length);
+        for (let i = 0, pad = 0; i < arrays.length; i++) {
+            const arr = arrays[i];
+            result.set(arr, pad);
+            pad += arr.length;
+        }
+        return result;
+    }
+    function bytesToHex(uint8a) {
+        let hex = '';
+        for (let i = 0; i < uint8a.length; i++) {
+            hex += uint8a[i].toString(16).padStart(2, '0');
+        }
+        return hex;
+    }
+    function pad64(num) {
+        return num.toString(16).padStart(ENCODING_LENGTH * 2, '0');
+    }
+    function hexToBytes(hex) {
+        hex = hex.length & 1 ? `0${hex}` : hex;
+        const array = new Uint8Array(hex.length / 2);
+        for (let i = 0; i < array.length; i++) {
+            let j = i * 2;
+            array[i] = Number.parseInt(hex.slice(j, j + 2), 16);
+        }
+        return array;
+    }
+    function numberToHex(num) {
+        const hex = num.toString(16);
+        return hex.length & 1 ? `0${hex}` : hex;
+    }
+    function numberToBytesPadded(num, length = ENCODING_LENGTH) {
+        const hex = numberToHex(num).padStart(length * 2, '0');
+        return hexToBytes(hex).reverse();
+    }
+    function edIsNegative(num) {
+        const hex = numberToHex(mod(num));
+        const byte = Number.parseInt(hex.slice(hex.length - 2, hex.length), 16);
+        return Boolean(byte & 1);
+    }
+    function bytesToNumberLE(uint8a) {
+        let value = 0n;
+        for (let i = 0; i < uint8a.length; i++) {
+            value += BigInt(uint8a[i]) << (8n * BigInt(i));
+        }
+        return value;
+    }
+    function load8(input, padding = 0) {
+        return (BigInt(input[0 + padding]) |
+            (BigInt(input[1 + padding]) << 8n) |
+            (BigInt(input[2 + padding]) << 16n) |
+            (BigInt(input[3 + padding]) << 24n) |
+            (BigInt(input[4 + padding]) << 32n) |
+            (BigInt(input[5 + padding]) << 40n) |
+            (BigInt(input[6 + padding]) << 48n) |
+            (BigInt(input[7 + padding]) << 56n));
+    }
+    const low51bitMask = (1n << 51n) - 1n;
+    function bytesToNumberRst(bytes) {
+        const octet1 = load8(bytes, 0) & low51bitMask;
+        const octet2 = (load8(bytes, 6) >> 3n) & low51bitMask;
+        const octet3 = (load8(bytes, 12) >> 6n) & low51bitMask;
+        const octet4 = (load8(bytes, 19) >> 1n) & low51bitMask;
+        const octet5 = (load8(bytes, 24) >> 12n) & low51bitMask;
+        return mod(octet1 + (octet2 << 51n) + (octet3 << 102n) + (octet4 << 153n) + (octet5 << 204n));
+    }
+    function mod(a, b = CURVE.P) {
+        const res = a % b;
+        return res >= 0n ? res : b + res;
+    }
+    function powMod(a, power, m = CURVE.P) {
+        let res = 1n;
+        while (power > 0n) {
+            if (power & 1n) {
+                res = mod(res * a, m);
+            }
+            power >>= 1n;
+            a = mod(a * a, m);
+        }
+        return res;
+    }
+    function egcd(a, b) {
+        let [x, y, u, v] = [0n, 1n, 1n, 0n];
+        while (a !== 0n) {
+            let q = b / a;
+            let r = b % a;
+            let m = x - u * q;
+            let n = y - v * q;
+            [b, a] = [a, r];
+            [x, y] = [u, v];
+            [u, v] = [m, n];
+        }
+        let gcd = b;
+        return [gcd, x, y];
+    }
+    function invert(number, modulo = CURVE.P) {
+        if (number === 0n || modulo <= 0n) {
+            throw new Error('invert: expected positive integers');
+        }
+        let [gcd, x] = egcd(mod(number, modulo), modulo);
+        if (gcd !== 1n) {
+            throw new Error('invert: does not exist');
+        }
+        return mod(x, modulo);
+    }
+    function invertBatch(nums, n = CURVE.P) {
+        const len = nums.length;
+        const scratch = new Array(len);
+        let acc = 1n;
+        for (let i = 0; i < len; i++) {
+            if (nums[i] === 0n)
+                continue;
+            scratch[i] = acc;
+            acc = mod(acc * nums[i], n);
+        }
+        acc = invert(acc, n);
+        for (let i = len - 1; i >= 0; i--) {
+            if (nums[i] === 0n)
+                continue;
+            let tmp = mod(acc * nums[i], n);
+            nums[i] = mod(acc * scratch[i], n);
+            acc = tmp;
+        }
+        return nums;
+    }
+    function invertSqrt(number) {
+        return sqrtRatio(1n, number);
+    }
+    function powMod2(t, power) {
+        const { P } = CURVE;
+        let res = t;
+        while (power-- > 0n) {
+            res *= res;
+            res %= P;
+        }
+        return res;
+    }
+    function pow_2_252_3(t) {
+        t = mod(t);
+        const { P } = CURVE;
+        const t0 = (t * t) % P;
+        const t1 = t0 ** 4n % P;
+        const t2 = (t * t1) % P;
+        const t3 = (t0 * t2) % P;
+        const t4 = t3 ** 2n % P;
+        const t5 = (t2 * t4) % P;
+        const t6 = powMod2(t5, 5n);
+        const t7 = (t6 * t5) % P;
+        const t8 = powMod2(t7, 10n);
+        const t9 = (t8 * t7) % P;
+        const t10 = powMod2(t9, 20n);
+        const t11 = (t10 * t9) % P;
+        const t12 = powMod2(t11, 10n);
+        const t13 = (t12 * t7) % P;
+        const t14 = powMod2(t13, 50n);
+        const t15 = (t14 * t13) % P;
+        const t16 = powMod2(t15, 100n);
+        const t17 = (t16 * t15) % P;
+        const t18 = powMod2(t17, 50n);
+        const t19 = (t18 * t13) % P;
+        const t20 = (t19 * t19) % P;
+        const t21 = (t20 * t20 * t) % P;
+        return t21;
+    }
+    function sqrtRatio(t, v) {
+        const v3 = mod(v * v * v);
+        const v7 = mod(v3 * v3 * v);
+        let r = mod(pow_2_252_3(t * v7) * t * v3);
+        const check = mod(r * r * v);
+        const i = SQRT_M1;
+        const correctSignSqrt = check === t;
+        const flippedSignSqrt = check === mod(-t);
+        const flippedSignSqrtI = check === mod(mod(-t) * i);
+        const rPrime = mod(SQRT_M1 * r);
+        r = flippedSignSqrt || flippedSignSqrtI ? rPrime : r;
+        if (edIsNegative(r))
+            r = mod(-r);
+        const isNotZeroSquare = correctSignSqrt || flippedSignSqrt;
+        return { isNotZeroSquare, value: mod(r) };
+    }
+    async function sha512ToNumberLE(...args) {
+        const messageArray = concatBytes(...args);
+        const hash = await exports.utils.sha512(messageArray);
+        const value = bytesToNumberLE(hash);
+        return mod(value, CURVE.n);
+    }
+    function keyPrefix(privateBytes) {
+        return privateBytes.slice(ENCODING_LENGTH);
+    }
+    function encodePrivate(privateBytes) {
+        const last = ENCODING_LENGTH - 1;
+        const head = privateBytes.slice(0, ENCODING_LENGTH);
+        head[0] &= 248;
+        head[last] &= 127;
+        head[last] |= 64;
+        return bytesToNumberLE(head);
+    }
+    function ensureBytes(hash) {
+        return hash instanceof Uint8Array ? hash : hexToBytes(hash);
+    }
+    function equalBytes(b1, b2) {
+        if (b1.length !== b2.length) {
             return false;
-        return val instanceof Blob || (isObject(val) && ((_a = val === null || val === void 0 ? void 0 : val.constructor) === null || _a === void 0 ? void 0 : _a.name) === 'Blob');
+        }
+        for (let i = 0; i < b1.length; i++) {
+            if (b1[i] !== b2[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+    function ensurePrivInputBytes(privateKey) {
+        if (privateKey instanceof Uint8Array)
+            return privateKey;
+        if (typeof privateKey === 'string')
+            return hexToBytes(privateKey.padStart(ENCODING_LENGTH * 2, '0'));
+        return hexToBytes(pad64(BigInt(privateKey)));
+    }
+    async function getPublicKey(privateKey) {
+        const privBytes = await exports.utils.sha512(ensurePrivInputBytes(privateKey));
+        const publicKey = Point.BASE.multiply(encodePrivate(privBytes));
+        return typeof privateKey === 'string' ? publicKey.toHex() : publicKey.toRawBytes();
+    }
+    exports.getPublicKey = getPublicKey;
+    async function sign(hash, privateKey) {
+        const privBytes = await exports.utils.sha512(ensurePrivInputBytes(privateKey));
+        const p = encodePrivate(privBytes);
+        const P = Point.BASE.multiply(p);
+        const msg = ensureBytes(hash);
+        const r = await sha512ToNumberLE(keyPrefix(privBytes), msg);
+        const R = Point.BASE.multiply(r);
+        const h = await sha512ToNumberLE(R.toRawBytes(), P.toRawBytes(), msg);
+        const S = mod(r + h * p, CURVE.n);
+        const sig = new Signature(R, S);
+        return typeof hash === 'string' ? sig.toHex() : sig.toRawBytes();
+    }
+    exports.sign = sign;
+    async function verify(signature, hash, publicKey) {
+        hash = ensureBytes(hash);
+        if (!(publicKey instanceof Point))
+            publicKey = Point.fromHex(publicKey);
+        if (!(signature instanceof Signature))
+            signature = Signature.fromHex(signature);
+        const h = await sha512ToNumberLE(signature.r.toRawBytes(), publicKey.toRawBytes(), hash);
+        const Ph = ExtendedPoint.fromAffine(publicKey).multiplyUnsafe(h);
+        const Gs = ExtendedPoint.BASE.multiply(signature.s);
+        const RPh = ExtendedPoint.fromAffine(signature.r).add(Ph);
+        return Gs.equals(RPh);
+    }
+    exports.verify = verify;
+    Point.BASE._setWindowSize(8);
+    exports.utils = {
+        TORSION_SUBGROUP: [
+            '0100000000000000000000000000000000000000000000000000000000000000',
+            'c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac037a',
+            '0000000000000000000000000000000000000000000000000000000000000080',
+            '26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc05',
+            'ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f',
+            '26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc85',
+            '0000000000000000000000000000000000000000000000000000000000000000',
+            'c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac03fa',
+        ],
+        randomPrivateKey: (bytesLength = 32) => {
+            if (typeof window == 'object' && 'crypto' in window) {
+                return window.crypto.getRandomValues(new Uint8Array(bytesLength));
+            }
+            else if (typeof browser$1 === 'object' && 'node' in browser$1.versions) {
+                const { randomBytes } = require$$0;
+                return new Uint8Array(randomBytes(bytesLength).buffer);
+            }
+            else {
+                throw new Error("The environment doesn't have randomBytes function");
+            }
+        },
+        sha512: async (message) => {
+            if (typeof window == 'object' && 'crypto' in window) {
+                const buffer = await window.crypto.subtle.digest('SHA-512', message.buffer);
+                return new Uint8Array(buffer);
+            }
+            else if (typeof browser$1 === 'object' && 'node' in browser$1.versions) {
+                const { createHash } = require$$0;
+                const hash = createHash('sha512');
+                hash.update(message);
+                return Uint8Array.from(hash.digest());
+            }
+            else {
+                throw new Error("The environment doesn't have sha512 function");
+            }
+        },
+        precompute(windowSize = 8, point = Point.BASE) {
+            const cached = point.equals(Point.BASE) ? point : new Point(point.x, point.y);
+            cached._setWindowSize(windowSize);
+            cached.multiply(1n);
+            return cached;
+        },
+    };
+    });
+
+    var types = createCommonjsModule(function (module, exports) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    (function (CryptoSystem) {
+        CryptoSystem["ECC"] = "ecc";
+        CryptoSystem["RSA"] = "rsa";
+    })(exports.CryptoSystem || (exports.CryptoSystem = {}));
+    (function (EccCurve) {
+        EccCurve["P_256"] = "P-256";
+        EccCurve["P_384"] = "P-384";
+        EccCurve["P_521"] = "P-521";
+    })(exports.EccCurve || (exports.EccCurve = {}));
+    (function (RsaSize) {
+        RsaSize[RsaSize["B1024"] = 1024] = "B1024";
+        RsaSize[RsaSize["B2048"] = 2048] = "B2048";
+        RsaSize[RsaSize["B4096"] = 4096] = "B4096";
+    })(exports.RsaSize || (exports.RsaSize = {}));
+    (function (SymmAlg) {
+        SymmAlg["AES_CTR"] = "AES-CTR";
+        SymmAlg["AES_CBC"] = "AES-CBC";
+    })(exports.SymmAlg || (exports.SymmAlg = {}));
+    (function (SymmKeyLength) {
+        SymmKeyLength[SymmKeyLength["B128"] = 128] = "B128";
+        SymmKeyLength[SymmKeyLength["B192"] = 192] = "B192";
+        SymmKeyLength[SymmKeyLength["B256"] = 256] = "B256";
+    })(exports.SymmKeyLength || (exports.SymmKeyLength = {}));
+    (function (HashAlg) {
+        HashAlg["SHA_1"] = "SHA-1";
+        HashAlg["SHA_256"] = "SHA-256";
+        HashAlg["SHA_384"] = "SHA-384";
+        HashAlg["SHA_512"] = "SHA-512";
+    })(exports.HashAlg || (exports.HashAlg = {}));
+    (function (CharSize) {
+        CharSize[CharSize["B8"] = 8] = "B8";
+        CharSize[CharSize["B16"] = 16] = "B16";
+    })(exports.CharSize || (exports.CharSize = {}));
+    (function (KeyUse) {
+        KeyUse["Read"] = "read";
+        KeyUse["Write"] = "write";
+    })(exports.KeyUse || (exports.KeyUse = {}));
+
+    });
+
+    var constants = createCommonjsModule(function (module, exports) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+
+    exports.ECC_READ_ALG = 'ECDH';
+    exports.ECC_WRITE_ALG = 'ECDSA';
+    exports.RSA_READ_ALG = 'RSA-OAEP';
+    exports.RSA_WRITE_ALG = 'RSASSA-PKCS1-v1_5';
+    exports.SALT_LENGTH = 128;
+    exports.DEFAULT_CRYPTOSYSTEM = 'ecc';
+    exports.DEFAULT_ECC_CURVE = types.EccCurve.P_256;
+    exports.DEFAULT_RSA_SIZE = types.RsaSize.B2048;
+    exports.DEFAULT_SYMM_ALG = types.SymmAlg.AES_CTR;
+    exports.DEFAULT_SYMM_LEN = types.SymmKeyLength.B256;
+    exports.DEFAULT_CTR_LEN = 64;
+    exports.DEFAULT_HASH_ALG = types.HashAlg.SHA_256;
+    exports.DEFAULT_CHAR_SIZE = types.CharSize.B16;
+    exports.DEFAULT_STORE_NAME = 'keystore';
+    exports.DEFAULT_READ_KEY_NAME = 'read-key';
+    exports.DEFAULT_WRITE_KEY_NAME = 'write-key';
+    exports.default = {
+        ECC_READ_ALG: exports.ECC_READ_ALG,
+        ECC_WRITE_ALG: exports.ECC_WRITE_ALG,
+        RSA_READ_ALG: exports.RSA_READ_ALG,
+        RSA_WRITE_ALG: exports.RSA_WRITE_ALG,
+        SALT_LENGTH: exports.SALT_LENGTH,
+        DEFAULT_CRYPTOSYSTEM: exports.DEFAULT_CRYPTOSYSTEM,
+        DEFAULT_ECC_CURVE: exports.DEFAULT_ECC_CURVE,
+        DEFAULT_RSA_SIZE: exports.DEFAULT_RSA_SIZE,
+        DEFAULT_SYMM_ALG: exports.DEFAULT_SYMM_ALG,
+        DEFAULT_CTR_LEN: exports.DEFAULT_CTR_LEN,
+        DEFAULT_HASH_ALG: exports.DEFAULT_HASH_ALG,
+        DEFAULT_CHAR_SIZE: exports.DEFAULT_CHAR_SIZE,
+        DEFAULT_STORE_NAME: exports.DEFAULT_STORE_NAME,
+        DEFAULT_READ_KEY_NAME: exports.DEFAULT_READ_KEY_NAME,
+        DEFAULT_WRITE_KEY_NAME: exports.DEFAULT_WRITE_KEY_NAME,
     };
 
-    var removeKeyFromObj = function (obj, key) {
-        var _a = obj, _b = key; _a[_b]; var rest = __rest(_a, [typeof _b === "symbol" ? _b : _b + ""]); // eslint-disable-line
-        return rest;
-    };
-    var mapObj = function (obj, fn) {
-        var newObj = {};
-        Object.entries(obj).forEach(function (_a) {
-            var key = _a[0], value = _a[1];
-            newObj[key] = fn(value, key);
+    });
+
+    var utils = createCommonjsModule(function (module, exports) {
+    var __awaiter = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
+        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+        return new (P || (P = Promise))(function (resolve, reject) {
+            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+            step((generator = generator.apply(thisArg, _arguments || [])).next());
         });
-        return newObj;
     };
+    var __generator = (commonjsGlobal && commonjsGlobal.__generator) || function (thisArg, body) {
+        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+        function verb(n) { return function (v) { return step([n, v]); }; }
+        function step(op) {
+            if (f) throw new TypeError("Generator is already executing.");
+            while (_) try {
+                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+                if (y = 0, t) op = [op[0] & 2, t.value];
+                switch (op[0]) {
+                    case 0: case 1: t = op; break;
+                    case 4: _.label++; return { value: op[1], done: false };
+                    case 5: _.label++; y = op[1]; op = [0]; continue;
+                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                    default:
+                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                        if (t[2]) _.ops.pop();
+                        _.trys.pop(); continue;
+                }
+                op = body.call(thisArg, _);
+            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+        }
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
 
-    var READ_KEY_FROM_LOBBY_NAME = "filesystem-lobby";
-    var UCANS_STORAGE_KEY = "webnative.auth_ucans";
-    var USERNAME_STORAGE_KEY = "webnative.auth_username";
-    /**
-     * Retrieve the authenticated username.
-     */
-    function authenticatedUsername() {
+    function arrBufToStr(buf, charSize) {
+        var arr = charSize === 8 ? new Uint8Array(buf) : new Uint16Array(buf);
+        return Array.from(arr)
+            .map(function (b) { return String.fromCharCode(b); })
+            .join('');
+    }
+    exports.arrBufToStr = arrBufToStr;
+    function arrBufToBase64(buf) {
+        var str = arrBufToStr(buf, 8);
+        return buffer.Buffer.from(str, 'binary').toString('base64');
+    }
+    exports.arrBufToBase64 = arrBufToBase64;
+    function strToArrBuf(str, charSize) {
+        var view = charSize === 8 ? new Uint8Array(str.length) : new Uint16Array(str.length);
+        for (var i = 0, strLen = str.length; i < strLen; i++) {
+            view[i] = str.charCodeAt(i);
+        }
+        return view.buffer;
+    }
+    exports.strToArrBuf = strToArrBuf;
+    function base64ToArrBuf(base64) {
+        var str = buffer.Buffer.from(base64, 'base64').toString('binary');
+        return strToArrBuf(str, 8);
+    }
+    exports.base64ToArrBuf = base64ToArrBuf;
+    function publicExponent() {
+        return new Uint8Array([0x01, 0x00, 0x01]);
+    }
+    exports.publicExponent = publicExponent;
+    function randomBuf(length) {
+        var arr = new Uint8Array(length);
+        globalThis.crypto.getRandomValues(arr);
+        return arr.buffer;
+    }
+    exports.randomBuf = randomBuf;
+    function joinBufs(fst, snd) {
+        var view1 = new Uint8Array(fst);
+        var view2 = new Uint8Array(snd);
+        var joined = new Uint8Array(view1.length + view2.length);
+        joined.set(view1);
+        joined.set(view2, view1.length);
+        return joined.buffer;
+    }
+    exports.joinBufs = joinBufs;
+    exports.normalizeUtf8ToBuf = function (msg) {
+        return exports.normalizeToBuf(msg, function (str) { return strToArrBuf(str, types.CharSize.B8); });
+    };
+    exports.normalizeUtf16ToBuf = function (msg) {
+        return exports.normalizeToBuf(msg, function (str) { return strToArrBuf(str, types.CharSize.B16); });
+    };
+    exports.normalizeBase64ToBuf = function (msg) {
+        return exports.normalizeToBuf(msg, base64ToArrBuf);
+    };
+    exports.normalizeUnicodeToBuf = function (msg, charSize) {
+        switch (charSize) {
+            case 8: return exports.normalizeUtf8ToBuf(msg);
+            default: return exports.normalizeUtf16ToBuf(msg);
+        }
+    };
+    exports.normalizeToBuf = function (msg, strConv) {
+        if (typeof msg === 'string') {
+            return strConv(msg);
+        }
+        else if (typeof msg === 'object' && msg.byteLength !== undefined) {
+            // this is the best runtime check I could find for ArrayBuffer/Uint8Array
+            var temp = new Uint8Array(msg);
+            return temp.buffer;
+        }
+        else {
+            throw new Error("Improper value. Must be a string, ArrayBuffer, Uint8Array");
+        }
+    };
+    /* istanbul ignore next */
+    function structuralClone(obj) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                return [2 /*return*/, localforage.getItem(USERNAME_STORAGE_KEY).then(function (u) { return u ? u : null; })];
+                return [2 /*return*/, new Promise(function (resolve) {
+                        var _a = new MessageChannel(), port1 = _a.port1, port2 = _a.port2;
+                        port2.onmessage = function (ev) { return resolve(ev.data); };
+                        port1.postMessage(obj);
+                    })];
             });
         });
     }
+    exports.structuralClone = structuralClone;
+    exports.default = {
+        arrBufToStr: arrBufToStr,
+        arrBufToBase64: arrBufToBase64,
+        strToArrBuf: strToArrBuf,
+        base64ToArrBuf: base64ToArrBuf,
+        publicExponent: publicExponent,
+        randomBuf: randomBuf,
+        joinBufs: joinBufs,
+        normalizeUtf8ToBuf: exports.normalizeUtf8ToBuf,
+        normalizeUtf16ToBuf: exports.normalizeUtf16ToBuf,
+        normalizeBase64ToBuf: exports.normalizeBase64ToBuf,
+        normalizeToBuf: exports.normalizeToBuf,
+        structuralClone: structuralClone
+    };
+    //# sourceMappingURL=utils.js.map
+    });
+
+    var utils$1 = /*@__PURE__*/getDefaultExportFromCjs(utils);
+
+    var errors = createCommonjsModule(function (module, exports) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+
+    exports.KeyDoesNotExist = new Error("Key does not exist. Make sure you properly instantiated the keystore.");
+    exports.NotKeyPair = new Error("Retrieved a symmetric key when an asymmetric keypair was expected. Please use a different key name.");
+    exports.NotKey = new Error("Retrieved an asymmetric keypair when an symmetric key was expected. Please use a different key name.");
+    exports.ECCNotEnabled = new Error("ECC is not enabled for this browser. Please use RSA instead.");
+    exports.UnsupportedCrypto = new Error("Cryptosystem not supported. Please use ECC or RSA");
+    exports.InvalidKeyUse = new Error("Invalid key use. Please use 'read' or 'write");
+    function checkIsKeyPair(keypair) {
+        if (!keypair || keypair === null) {
+            throw exports.KeyDoesNotExist;
+        }
+        else if (keypair.privateKey === undefined) {
+            throw exports.NotKeyPair;
+        }
+        return keypair;
+    }
+    exports.checkIsKeyPair = checkIsKeyPair;
+    function checkIsKey(key) {
+        if (!key || key === null) {
+            throw exports.KeyDoesNotExist;
+        }
+        else if (key.privateKey !== undefined || key.algorithm === undefined) {
+            throw exports.NotKey;
+        }
+        return key;
+    }
+    exports.checkIsKey = checkIsKey;
+    function checkValidCryptoSystem(type) {
+        checkValid(type, [types.CryptoSystem.ECC, types.CryptoSystem.RSA], exports.UnsupportedCrypto);
+    }
+    exports.checkValidCryptoSystem = checkValidCryptoSystem;
+    function checkValidKeyUse(use) {
+        checkValid(use, [types.KeyUse.Read, types.KeyUse.Write], exports.InvalidKeyUse);
+    }
+    exports.checkValidKeyUse = checkValidKeyUse;
+    function checkValid(toCheck, opts, error) {
+        var match = opts.some(function (opt) { return opt === toCheck; });
+        if (!match) {
+            throw error;
+        }
+    }
+    exports.default = {
+        KeyDoesNotExist: exports.KeyDoesNotExist,
+        NotKeyPair: exports.NotKeyPair,
+        NotKey: exports.NotKey,
+        ECCNotEnabled: exports.ECCNotEnabled,
+        UnsupportedCrypto: exports.UnsupportedCrypto,
+        InvalidKeyUse: exports.InvalidKeyUse,
+        checkIsKeyPair: checkIsKeyPair,
+        checkIsKey: checkIsKey,
+        checkValidCryptoSystem: checkValidCryptoSystem,
+        checkValidKeyUse: checkValidKeyUse,
+    };
+
+    });
+
+    var __awaiter$1 = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
+        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+        return new (P || (P = Promise))(function (resolve, reject) {
+            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+            step((generator = generator.apply(thisArg, _arguments || [])).next());
+        });
+    };
+    var __generator$1 = (commonjsGlobal && commonjsGlobal.__generator) || function (thisArg, body) {
+        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+        function verb(n) { return function (v) { return step([n, v]); }; }
+        function step(op) {
+            if (f) throw new TypeError("Generator is already executing.");
+            while (_) try {
+                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+                if (y = 0, t) op = [op[0] & 2, t.value];
+                switch (op[0]) {
+                    case 0: case 1: t = op; break;
+                    case 4: _.label++; return { value: op[1], done: false };
+                    case 5: _.label++; y = op[1]; op = [0]; continue;
+                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                    default:
+                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                        if (t[2]) _.ops.pop();
+                        _.trys.pop(); continue;
+                }
+                op = body.call(thisArg, _);
+            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+        }
+    };
+
+
+
+
+
+    function makeKeypair(size, hashAlg, use) {
+        return __awaiter$1(this, void 0, void 0, function () {
+            var alg, uses;
+            return __generator$1(this, function (_a) {
+                errors.checkValidKeyUse(use);
+                alg = use === types.KeyUse.Read ? constants.RSA_READ_ALG : constants.RSA_WRITE_ALG;
+                uses = use === types.KeyUse.Read ? ['encrypt', 'decrypt'] : ['sign', 'verify'];
+                return [2 /*return*/, globalThis.crypto.subtle.generateKey({
+                        name: alg,
+                        modulusLength: size,
+                        publicExponent: utils.default.publicExponent(),
+                        hash: { name: hashAlg }
+                    }, false, uses)];
+            });
+        });
+    }
+    var makeKeypair_1 = makeKeypair;
+    function stripKeyHeader(base64Key) {
+        return base64Key
+            .replace('-----BEGIN PUBLIC KEY-----\n', '')
+            .replace('\n-----END PUBLIC KEY-----', '');
+    }
+    function importPublicKey(base64Key, hashAlg, use) {
+        return __awaiter$1(this, void 0, void 0, function () {
+            var alg, uses, buf;
+            return __generator$1(this, function (_a) {
+                errors.checkValidKeyUse(use);
+                alg = use === types.KeyUse.Read ? constants.RSA_READ_ALG : constants.RSA_WRITE_ALG;
+                uses = use === types.KeyUse.Read ? ['encrypt'] : ['verify'];
+                buf = utils.default.base64ToArrBuf(stripKeyHeader(base64Key));
+                return [2 /*return*/, globalThis.crypto.subtle.importKey('spki', buf, { name: alg, hash: { name: hashAlg } }, true, uses)];
+            });
+        });
+    }
+    var importPublicKey_1 = importPublicKey;
+    var _default = {
+        makeKeypair: makeKeypair,
+        importPublicKey: importPublicKey
+    };
+    //# sourceMappingURL=keys.js.map
+
+    var keys = /*#__PURE__*/Object.defineProperty({
+    	makeKeypair: makeKeypair_1,
+    	importPublicKey: importPublicKey_1,
+    	default: _default
+    }, '__esModule', {value: true});
+
+    var __awaiter$2 = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
+        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+        return new (P || (P = Promise))(function (resolve, reject) {
+            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+            step((generator = generator.apply(thisArg, _arguments || [])).next());
+        });
+    };
+    var __generator$2 = (commonjsGlobal && commonjsGlobal.__generator) || function (thisArg, body) {
+        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+        function verb(n) { return function (v) { return step([n, v]); }; }
+        function step(op) {
+            if (f) throw new TypeError("Generator is already executing.");
+            while (_) try {
+                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+                if (y = 0, t) op = [op[0] & 2, t.value];
+                switch (op[0]) {
+                    case 0: case 1: t = op; break;
+                    case 4: _.label++; return { value: op[1], done: false };
+                    case 5: _.label++; y = op[1]; op = [0]; continue;
+                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                    default:
+                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                        if (t[2]) _.ops.pop();
+                        _.trys.pop(); continue;
+                }
+                op = body.call(thisArg, _);
+            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+        }
+    };
+
+
+
+
+
+    function sign(msg, privateKey, charSize) {
+        if (charSize === void 0) { charSize = constants.DEFAULT_CHAR_SIZE; }
+        return __awaiter$2(this, void 0, void 0, function () {
+            return __generator$2(this, function (_a) {
+                return [2 /*return*/, globalThis.crypto.subtle.sign({ name: constants.RSA_WRITE_ALG, saltLength: constants.SALT_LENGTH }, privateKey, utils.normalizeUnicodeToBuf(msg, charSize))];
+            });
+        });
+    }
+    var sign_1 = sign;
+    function verify(msg, sig, publicKey, charSize, hashAlg) {
+        if (charSize === void 0) { charSize = constants.DEFAULT_CHAR_SIZE; }
+        if (hashAlg === void 0) { hashAlg = constants.DEFAULT_HASH_ALG; }
+        return __awaiter$2(this, void 0, void 0, function () {
+            var _a, _b, _c, _d;
+            return __generator$2(this, function (_e) {
+                switch (_e.label) {
+                    case 0:
+                        _b = (_a = globalThis.crypto.subtle).verify;
+                        _c = [{ name: constants.RSA_WRITE_ALG, saltLength: constants.SALT_LENGTH }];
+                        if (!(typeof publicKey === "string")) return [3 /*break*/, 2];
+                        return [4 /*yield*/, keys.default.importPublicKey(publicKey, hashAlg, types.KeyUse.Write)];
+                    case 1:
+                        _d = _e.sent();
+                        return [3 /*break*/, 3];
+                    case 2:
+                        _d = publicKey;
+                        _e.label = 3;
+                    case 3: return [2 /*return*/, _b.apply(_a, _c.concat([_d, utils.normalizeBase64ToBuf(sig),
+                            utils.normalizeUnicodeToBuf(msg, charSize)]))];
+                }
+            });
+        });
+    }
+    var verify_1 = verify;
+    function encrypt(msg, publicKey, charSize, hashAlg) {
+        if (charSize === void 0) { charSize = constants.DEFAULT_CHAR_SIZE; }
+        if (hashAlg === void 0) { hashAlg = constants.DEFAULT_HASH_ALG; }
+        return __awaiter$2(this, void 0, void 0, function () {
+            var _a, _b, _c, _d;
+            return __generator$2(this, function (_e) {
+                switch (_e.label) {
+                    case 0:
+                        _b = (_a = globalThis.crypto.subtle).encrypt;
+                        _c = [{ name: constants.RSA_READ_ALG }];
+                        if (!(typeof publicKey === "string")) return [3 /*break*/, 2];
+                        return [4 /*yield*/, keys.default.importPublicKey(publicKey, hashAlg, types.KeyUse.Read)];
+                    case 1:
+                        _d = _e.sent();
+                        return [3 /*break*/, 3];
+                    case 2:
+                        _d = publicKey;
+                        _e.label = 3;
+                    case 3: return [2 /*return*/, _b.apply(_a, _c.concat([_d, utils.normalizeUnicodeToBuf(msg, charSize)]))];
+                }
+            });
+        });
+    }
+    var encrypt_1 = encrypt;
+    function decrypt(msg, privateKey) {
+        return __awaiter$2(this, void 0, void 0, function () {
+            var normalized;
+            return __generator$2(this, function (_a) {
+                normalized = utils.normalizeBase64ToBuf(msg);
+                return [2 /*return*/, globalThis.crypto.subtle.decrypt({ name: constants.RSA_READ_ALG }, privateKey, normalized)];
+            });
+        });
+    }
+    var decrypt_1 = decrypt;
+    function getPublicKey(keypair) {
+        return __awaiter$2(this, void 0, void 0, function () {
+            var spki;
+            return __generator$2(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, globalThis.crypto.subtle.exportKey('spki', keypair.publicKey)];
+                    case 1:
+                        spki = _a.sent();
+                        return [2 /*return*/, utils.default.arrBufToBase64(spki)];
+                }
+            });
+        });
+    }
+    var getPublicKey_1 = getPublicKey;
+    var _default$1 = {
+        sign: sign,
+        verify: verify,
+        encrypt: encrypt,
+        decrypt: decrypt,
+        getPublicKey: getPublicKey,
+    };
+    //# sourceMappingURL=operations.js.map
+
+    var operations = /*#__PURE__*/Object.defineProperty({
+    	sign: sign_1,
+    	verify: verify_1,
+    	encrypt: encrypt_1,
+    	decrypt: decrypt_1,
+    	getPublicKey: getPublicKey_1,
+    	default: _default$1
+    }, '__esModule', {value: true});
+
+    var __awaiter$3 = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
+        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+        return new (P || (P = Promise))(function (resolve, reject) {
+            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+            step((generator = generator.apply(thisArg, _arguments || [])).next());
+        });
+    };
+    var __generator$3 = (commonjsGlobal && commonjsGlobal.__generator) || function (thisArg, body) {
+        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+        function verb(n) { return function (v) { return step([n, v]); }; }
+        function step(op) {
+            if (f) throw new TypeError("Generator is already executing.");
+            while (_) try {
+                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+                if (y = 0, t) op = [op[0] & 2, t.value];
+                switch (op[0]) {
+                    case 0: case 1: t = op; break;
+                    case 4: _.label++; return { value: op[1], done: false };
+                    case 5: _.label++; y = op[1]; op = [0]; continue;
+                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                    default:
+                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                        if (t[2]) _.ops.pop();
+                        _.trys.pop(); continue;
+                }
+                op = body.call(thisArg, _);
+            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+        }
+    };
+
+
+
+    /* istanbul ignore next */
+    function createStore(name) {
+        return localforage.default.createInstance({ name: name });
+    }
+    var createStore_1 = createStore;
+    function createIfDoesNotExist(id, makeFn, store) {
+        if (store === void 0) { store = localforage.default; }
+        return __awaiter$3(this, void 0, void 0, function () {
+            var key;
+            return __generator$3(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, exists(id, store)];
+                    case 1:
+                        if (_a.sent()) {
+                            return [2 /*return*/];
+                        }
+                        return [4 /*yield*/, makeFn()];
+                    case 2:
+                        key = _a.sent();
+                        return [4 /*yield*/, put(id, key, store)];
+                    case 3:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    }
+    var createIfDoesNotExist_1 = createIfDoesNotExist;
+    /* istanbul ignore next */
+    function put(id, key, store) {
+        if (store === void 0) { store = localforage.default; }
+        return __awaiter$3(this, void 0, void 0, function () {
+            return __generator$3(this, function (_a) {
+                return [2 /*return*/, store.setItem(id, key)];
+            });
+        });
+    }
+    var put_1 = put;
+    /* istanbul ignore next */
+    function getKeypair(id, store) {
+        if (store === void 0) { store = localforage.default; }
+        return __awaiter$3(this, void 0, void 0, function () {
+            return __generator$3(this, function (_a) {
+                return [2 /*return*/, get(id, errors.checkIsKeyPair, store)];
+            });
+        });
+    }
+    var getKeypair_1 = getKeypair;
+    /* istanbul ignore next */
+    function getKey(id, store) {
+        if (store === void 0) { store = localforage.default; }
+        return __awaiter$3(this, void 0, void 0, function () {
+            return __generator$3(this, function (_a) {
+                return [2 /*return*/, get(id, errors.checkIsKey, store)];
+            });
+        });
+    }
+    var getKey_1 = getKey;
+    /* istanbul ignore next */
+    function get(id, checkFn, store) {
+        if (store === void 0) { store = localforage.default; }
+        return __awaiter$3(this, void 0, void 0, function () {
+            var item;
+            return __generator$3(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, store.getItem(id)];
+                    case 1:
+                        item = _a.sent();
+                        return [2 /*return*/, item === null ? null : checkFn(item)];
+                }
+            });
+        });
+    }
+    var get_1 = get;
+    /* istanbul ignore next */
+    function exists(id, store) {
+        if (store === void 0) { store = localforage.default; }
+        return __awaiter$3(this, void 0, void 0, function () {
+            var key;
+            return __generator$3(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, store.getItem(id)];
+                    case 1:
+                        key = _a.sent();
+                        return [2 /*return*/, key !== null];
+                }
+            });
+        });
+    }
+    var exists_1 = exists;
+    /* istanbul ignore next */
+    function rm(id, store) {
+        if (store === void 0) { store = localforage.default; }
+        return __awaiter$3(this, void 0, void 0, function () {
+            return __generator$3(this, function (_a) {
+                return [2 /*return*/, store.removeItem(id)];
+            });
+        });
+    }
+    var rm_1 = rm;
+    function dropStore(store) {
+        return __awaiter$3(this, void 0, void 0, function () {
+            return __generator$3(this, function (_a) {
+                return [2 /*return*/, store.dropInstance()];
+            });
+        });
+    }
+    var dropStore_1 = dropStore;
+    /* istanbul ignore next */
+    function clear(store) {
+        return __awaiter$3(this, void 0, void 0, function () {
+            return __generator$3(this, function (_a) {
+                if (store) {
+                    return [2 /*return*/, dropStore(store)];
+                }
+                else {
+                    return [2 /*return*/, localforage.default.clear()];
+                }
+            });
+        });
+    }
+    var clear_1 = clear;
+    var _default$2 = {
+        createStore: createStore,
+        createIfDoesNotExist: createIfDoesNotExist,
+        put: put,
+        getKeypair: getKeypair,
+        getKey: getKey,
+        exists: exists,
+        rm: rm,
+        dropStore: dropStore,
+        clear: clear
+    };
+
+
+    var idb = /*#__PURE__*/Object.defineProperty({
+    	createStore: createStore_1,
+    	createIfDoesNotExist: createIfDoesNotExist_1,
+    	put: put_1,
+    	getKeypair: getKeypair_1,
+    	getKey: getKey_1,
+    	get: get_1,
+    	exists: exists_1,
+    	rm: rm_1,
+    	dropStore: dropStore_1,
+    	clear: clear_1,
+    	default: _default$2
+    }, '__esModule', {value: true});
+
+    var __awaiter$4 = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
+        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+        return new (P || (P = Promise))(function (resolve, reject) {
+            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+            step((generator = generator.apply(thisArg, _arguments || [])).next());
+        });
+    };
+    var __generator$4 = (commonjsGlobal && commonjsGlobal.__generator) || function (thisArg, body) {
+        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+        function verb(n) { return function (v) { return step([n, v]); }; }
+        function step(op) {
+            if (f) throw new TypeError("Generator is already executing.");
+            while (_) try {
+                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+                if (y = 0, t) op = [op[0] & 2, t.value];
+                switch (op[0]) {
+                    case 0: case 1: t = op; break;
+                    case 4: _.label++; return { value: op[1], done: false };
+                    case 5: _.label++; y = op[1]; op = [0]; continue;
+                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                    default:
+                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                        if (t[2]) _.ops.pop();
+                        _.trys.pop(); continue;
+                }
+                op = body.call(thisArg, _);
+            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+        }
+    };
+
+
+
+
+
+    function makeKeypair$1(curve, use) {
+        return __awaiter$4(this, void 0, void 0, function () {
+            var alg, uses;
+            return __generator$4(this, function (_a) {
+                errors.checkValidKeyUse(use);
+                alg = use === types.KeyUse.Read ? constants.ECC_READ_ALG : constants.ECC_WRITE_ALG;
+                uses = use === types.KeyUse.Read ? ['deriveKey', 'deriveBits'] : ['sign', 'verify'];
+                return [2 /*return*/, globalThis.crypto.subtle.generateKey({ name: alg, namedCurve: curve }, false, uses)];
+            });
+        });
+    }
+    var makeKeypair_1$1 = makeKeypair$1;
+    function importPublicKey$1(base64Key, curve, use) {
+        return __awaiter$4(this, void 0, void 0, function () {
+            var alg, uses, buf;
+            return __generator$4(this, function (_a) {
+                errors.checkValidKeyUse(use);
+                alg = use === types.KeyUse.Read ? constants.ECC_READ_ALG : constants.ECC_WRITE_ALG;
+                uses = use === types.KeyUse.Read ? [] : ['verify'];
+                buf = utils.default.base64ToArrBuf(base64Key);
+                return [2 /*return*/, globalThis.crypto.subtle.importKey('raw', buf, { name: alg, namedCurve: curve }, true, uses)];
+            });
+        });
+    }
+    var importPublicKey_1$1 = importPublicKey$1;
+    var _default$3 = {
+        makeKeypair: makeKeypair$1,
+        importPublicKey: importPublicKey$1
+    };
+    //# sourceMappingURL=keys.js.map
+
+    var keys$1 = /*#__PURE__*/Object.defineProperty({
+    	makeKeypair: makeKeypair_1$1,
+    	importPublicKey: importPublicKey_1$1,
+    	default: _default$3
+    }, '__esModule', {value: true});
+
+    var config$1 = createCommonjsModule(function (module, exports) {
+    var __assign = (commonjsGlobal && commonjsGlobal.__assign) || function () {
+        __assign = Object.assign || function(t) {
+            for (var s, i = 1, n = arguments.length; i < n; i++) {
+                s = arguments[i];
+                for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                    t[p] = s[p];
+            }
+            return t;
+        };
+        return __assign.apply(this, arguments);
+    };
+    var __awaiter = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
+        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+        return new (P || (P = Promise))(function (resolve, reject) {
+            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+            step((generator = generator.apply(thisArg, _arguments || [])).next());
+        });
+    };
+    var __generator = (commonjsGlobal && commonjsGlobal.__generator) || function (thisArg, body) {
+        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+        function verb(n) { return function (v) { return step([n, v]); }; }
+        function step(op) {
+            if (f) throw new TypeError("Generator is already executing.");
+            while (_) try {
+                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+                if (y = 0, t) op = [op[0] & 2, t.value];
+                switch (op[0]) {
+                    case 0: case 1: t = op; break;
+                    case 4: _.label++; return { value: op[1], done: false };
+                    case 5: _.label++; y = op[1]; op = [0]; continue;
+                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                    default:
+                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                        if (t[2]) _.ops.pop();
+                        _.trys.pop(); continue;
+                }
+                op = body.call(thisArg, _);
+            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+        }
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+
+
+
+
+    exports.defaultConfig = {
+        type: constants.DEFAULT_CRYPTOSYSTEM,
+        curve: constants.DEFAULT_ECC_CURVE,
+        rsaSize: constants.DEFAULT_RSA_SIZE,
+        symmAlg: constants.DEFAULT_SYMM_ALG,
+        symmLen: constants.DEFAULT_SYMM_LEN,
+        hashAlg: constants.DEFAULT_HASH_ALG,
+        charSize: constants.DEFAULT_CHAR_SIZE,
+        storeName: constants.DEFAULT_STORE_NAME,
+        readKeyName: constants.DEFAULT_READ_KEY_NAME,
+        writeKeyName: constants.DEFAULT_WRITE_KEY_NAME
+    };
+    function normalize(maybeCfg, eccEnabled) {
+        if (eccEnabled === void 0) { eccEnabled = true; }
+        var cfg;
+        if (!maybeCfg) {
+            cfg = exports.defaultConfig;
+        }
+        else {
+            cfg = __assign(__assign({}, exports.defaultConfig), maybeCfg);
+        }
+        if (!(maybeCfg === null || maybeCfg === void 0 ? void 0 : maybeCfg.type)) {
+            cfg.type = eccEnabled ? types.CryptoSystem.ECC : types.CryptoSystem.RSA;
+        }
+        return cfg;
+    }
+    exports.normalize = normalize;
+    // Attempt a structural clone of an ECC Key (required to store in IndexedDB)
+    // If it throws an error, use RSA, otherwise use ECC
+    function eccEnabled() {
+        return __awaiter(this, void 0, void 0, function () {
+            var keypair;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, keys$1.default.makeKeypair(constants.DEFAULT_ECC_CURVE, types.KeyUse.Read)];
+                    case 1:
+                        keypair = _a.sent();
+                        _a.label = 2;
+                    case 2:
+                        _a.trys.push([2, 4, , 5]);
+                        return [4 /*yield*/, utils.default.structuralClone(keypair)];
+                    case 3:
+                        _a.sent();
+                        return [3 /*break*/, 5];
+                    case 4:
+                        _a.sent();
+                        return [2 /*return*/, false];
+                    case 5: return [2 /*return*/, true];
+                }
+            });
+        });
+    }
+    exports.eccEnabled = eccEnabled;
+    function merge(cfg, overwrites) {
+        if (overwrites === void 0) { overwrites = {}; }
+        return __assign(__assign({}, cfg), overwrites);
+    }
+    exports.merge = merge;
+    function symmKeyOpts(cfg) {
+        return { alg: cfg.symmAlg, length: cfg.symmLen };
+    }
+    exports.symmKeyOpts = symmKeyOpts;
+    exports.default = {
+        defaultConfig: exports.defaultConfig,
+        normalize: normalize,
+        eccEnabled: eccEnabled,
+        merge: merge,
+        symmKeyOpts: symmKeyOpts
+    };
+
+    });
+
+    var __awaiter$5 = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
+        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+        return new (P || (P = Promise))(function (resolve, reject) {
+            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+            step((generator = generator.apply(thisArg, _arguments || [])).next());
+        });
+    };
+    var __generator$5 = (commonjsGlobal && commonjsGlobal.__generator) || function (thisArg, body) {
+        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+        function verb(n) { return function (v) { return step([n, v]); }; }
+        function step(op) {
+            if (f) throw new TypeError("Generator is already executing.");
+            while (_) try {
+                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+                if (y = 0, t) op = [op[0] & 2, t.value];
+                switch (op[0]) {
+                    case 0: case 1: t = op; break;
+                    case 4: _.label++; return { value: op[1], done: false };
+                    case 5: _.label++; y = op[1]; op = [0]; continue;
+                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                    default:
+                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                        if (t[2]) _.ops.pop();
+                        _.trys.pop(); continue;
+                }
+                op = body.call(thisArg, _);
+            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+        }
+    };
+
+
+
+    function makeKey(opts) {
+        return __awaiter$5(this, void 0, void 0, function () {
+            return __generator$5(this, function (_a) {
+                return [2 /*return*/, globalThis.crypto.subtle.generateKey({
+                        name: (opts === null || opts === void 0 ? void 0 : opts.alg) || constants.DEFAULT_SYMM_ALG,
+                        length: (opts === null || opts === void 0 ? void 0 : opts.length) || constants.DEFAULT_SYMM_LEN,
+                    }, true, ['encrypt', 'decrypt'])];
+            });
+        });
+    }
+    var makeKey_1 = makeKey;
+    function importKey(base64key, opts) {
+        return __awaiter$5(this, void 0, void 0, function () {
+            var buf;
+            return __generator$5(this, function (_a) {
+                buf = utils.default.base64ToArrBuf(base64key);
+                return [2 /*return*/, globalThis.crypto.subtle.importKey('raw', buf, {
+                        name: (opts === null || opts === void 0 ? void 0 : opts.alg) || constants.DEFAULT_SYMM_ALG,
+                        length: (opts === null || opts === void 0 ? void 0 : opts.length) || constants.DEFAULT_SYMM_LEN,
+                    }, true, ['encrypt', 'decrypt'])];
+            });
+        });
+    }
+    var importKey_1 = importKey;
+    var _default$4 = {
+        makeKey: makeKey,
+        importKey: importKey,
+    };
+    //# sourceMappingURL=keys.js.map
+
+    var keys$2 = /*#__PURE__*/Object.defineProperty({
+    	makeKey: makeKey_1,
+    	importKey: importKey_1,
+    	default: _default$4
+    }, '__esModule', {value: true});
+
+    var __awaiter$6 = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
+        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+        return new (P || (P = Promise))(function (resolve, reject) {
+            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+            step((generator = generator.apply(thisArg, _arguments || [])).next());
+        });
+    };
+    var __generator$6 = (commonjsGlobal && commonjsGlobal.__generator) || function (thisArg, body) {
+        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+        function verb(n) { return function (v) { return step([n, v]); }; }
+        function step(op) {
+            if (f) throw new TypeError("Generator is already executing.");
+            while (_) try {
+                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+                if (y = 0, t) op = [op[0] & 2, t.value];
+                switch (op[0]) {
+                    case 0: case 1: t = op; break;
+                    case 4: _.label++; return { value: op[1], done: false };
+                    case 5: _.label++; y = op[1]; op = [0]; continue;
+                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                    default:
+                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                        if (t[2]) _.ops.pop();
+                        _.trys.pop(); continue;
+                }
+                op = body.call(thisArg, _);
+            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+        }
+    };
+
+
+
+
+
+    function encryptBytes(msg, key, opts) {
+        return __awaiter$6(this, void 0, void 0, function () {
+            var data, importedKey, _a, alg, iv, cipherBuf;
+            return __generator$6(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        data = utils.default.normalizeUtf16ToBuf(msg);
+                        if (!(typeof key === 'string')) return [3 /*break*/, 2];
+                        return [4 /*yield*/, keys$2.default.importKey(key, opts)];
+                    case 1:
+                        _a = _b.sent();
+                        return [3 /*break*/, 3];
+                    case 2:
+                        _a = key;
+                        _b.label = 3;
+                    case 3:
+                        importedKey = _a;
+                        alg = (opts === null || opts === void 0 ? void 0 : opts.alg) || constants.DEFAULT_SYMM_ALG;
+                        iv = (opts === null || opts === void 0 ? void 0 : opts.iv) || utils.default.randomBuf(16);
+                        return [4 /*yield*/, globalThis.crypto.subtle.encrypt({
+                                name: alg,
+                                // AES-CTR uses a counter, AES-GCM/AES-CBC use an initialization vector
+                                iv: alg === types.SymmAlg.AES_CTR ? undefined : iv,
+                                counter: alg === types.SymmAlg.AES_CTR ? new Uint8Array(iv) : undefined,
+                                length: alg === types.SymmAlg.AES_CTR ? constants.DEFAULT_CTR_LEN : undefined,
+                            }, importedKey, data)];
+                    case 4:
+                        cipherBuf = _b.sent();
+                        return [2 /*return*/, utils.default.joinBufs(iv, cipherBuf)];
+                }
+            });
+        });
+    }
+    var encryptBytes_1 = encryptBytes;
+    function decryptBytes(msg, key, opts) {
+        return __awaiter$6(this, void 0, void 0, function () {
+            var cipherText, importedKey, _a, alg, iv, cipherBytes, msgBuff;
+            return __generator$6(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        cipherText = utils.default.normalizeBase64ToBuf(msg);
+                        if (!(typeof key === 'string')) return [3 /*break*/, 2];
+                        return [4 /*yield*/, keys$2.default.importKey(key, opts)];
+                    case 1:
+                        _a = _b.sent();
+                        return [3 /*break*/, 3];
+                    case 2:
+                        _a = key;
+                        _b.label = 3;
+                    case 3:
+                        importedKey = _a;
+                        alg = (opts === null || opts === void 0 ? void 0 : opts.alg) || constants.DEFAULT_SYMM_ALG;
+                        iv = cipherText.slice(0, 16);
+                        cipherBytes = cipherText.slice(16);
+                        return [4 /*yield*/, globalThis.crypto.subtle.decrypt({ name: alg,
+                                // AES-CTR uses a counter, AES-GCM/AES-CBC use an initialization vector
+                                iv: alg === types.SymmAlg.AES_CTR ? undefined : iv,
+                                counter: alg === types.SymmAlg.AES_CTR ? new Uint8Array(iv) : undefined,
+                                length: alg === types.SymmAlg.AES_CTR ? constants.DEFAULT_CTR_LEN : undefined,
+                            }, importedKey, cipherBytes)];
+                    case 4:
+                        msgBuff = _b.sent();
+                        return [2 /*return*/, msgBuff];
+                }
+            });
+        });
+    }
+    var decryptBytes_1 = decryptBytes;
+    function encrypt$1(msg, key, opts) {
+        return __awaiter$6(this, void 0, void 0, function () {
+            var cipherText;
+            return __generator$6(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, encryptBytes(msg, key, opts)];
+                    case 1:
+                        cipherText = _a.sent();
+                        return [2 /*return*/, utils.default.arrBufToBase64(cipherText)];
+                }
+            });
+        });
+    }
+    var encrypt_1$1 = encrypt$1;
+    function decrypt$1(msg, key, opts) {
+        return __awaiter$6(this, void 0, void 0, function () {
+            var msgBytes;
+            return __generator$6(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, decryptBytes(msg, key, opts)];
+                    case 1:
+                        msgBytes = _a.sent();
+                        return [2 /*return*/, utils.default.arrBufToStr(msgBytes, 16)];
+                }
+            });
+        });
+    }
+    var decrypt_1$1 = decrypt$1;
+    function exportKey(key) {
+        return __awaiter$6(this, void 0, void 0, function () {
+            var raw;
+            return __generator$6(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, globalThis.crypto.subtle.exportKey('raw', key)];
+                    case 1:
+                        raw = _a.sent();
+                        return [2 /*return*/, utils.default.arrBufToBase64(raw)];
+                }
+            });
+        });
+    }
+    var exportKey_1 = exportKey;
+    var _default$5 = {
+        encryptBytes: encryptBytes,
+        decryptBytes: decryptBytes,
+        encrypt: encrypt$1,
+        decrypt: decrypt$1,
+        exportKey: exportKey
+    };
+    //# sourceMappingURL=operations.js.map
+
+    var operations$1 = /*#__PURE__*/Object.defineProperty({
+    	encryptBytes: encryptBytes_1,
+    	decryptBytes: decryptBytes_1,
+    	encrypt: encrypt_1$1,
+    	decrypt: decrypt_1$1,
+    	exportKey: exportKey_1,
+    	default: _default$5
+    }, '__esModule', {value: true});
+
+    var aes = createCommonjsModule(function (module, exports) {
+    var __assign = (commonjsGlobal && commonjsGlobal.__assign) || function () {
+        __assign = Object.assign || function(t) {
+            for (var s, i = 1, n = arguments.length; i < n; i++) {
+                s = arguments[i];
+                for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                    t[p] = s[p];
+            }
+            return t;
+        };
+        return __assign.apply(this, arguments);
+    };
+    function __export(m) {
+        for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+    }
+    Object.defineProperty(exports, "__esModule", { value: true });
+
+
+    __export(keys$2);
+    __export(operations$1);
+    exports.default = __assign(__assign({}, keys$2.default), operations$1.default);
+
+    });
+
+    var aes$1 = /*@__PURE__*/getDefaultExportFromCjs(aes);
+
+    var __awaiter$7 = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
+        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+        return new (P || (P = Promise))(function (resolve, reject) {
+            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+            step((generator = generator.apply(thisArg, _arguments || [])).next());
+        });
+    };
+    var __generator$7 = (commonjsGlobal && commonjsGlobal.__generator) || function (thisArg, body) {
+        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+        function verb(n) { return function (v) { return step([n, v]); }; }
+        function step(op) {
+            if (f) throw new TypeError("Generator is already executing.");
+            while (_) try {
+                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+                if (y = 0, t) op = [op[0] & 2, t.value];
+                switch (op[0]) {
+                    case 0: case 1: t = op; break;
+                    case 4: _.label++; return { value: op[1], done: false };
+                    case 5: _.label++; y = op[1]; op = [0]; continue;
+                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                    default:
+                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                        if (t[2]) _.ops.pop();
+                        _.trys.pop(); continue;
+                }
+                op = body.call(thisArg, _);
+            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+        }
+    };
+
+
+
+
+
+
+    var KeyStoreBase = /** @class */ (function () {
+        function KeyStoreBase(cfg, store) {
+            this.cfg = cfg;
+            this.store = store;
+        }
+        KeyStoreBase.prototype.writeKey = function () {
+            return __awaiter$7(this, void 0, void 0, function () {
+                var maybeKey;
+                return __generator$7(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, idb.default.getKeypair(this.cfg.writeKeyName, this.store)];
+                        case 1:
+                            maybeKey = _a.sent();
+                            return [2 /*return*/, errors.checkIsKeyPair(maybeKey)];
+                    }
+                });
+            });
+        };
+        KeyStoreBase.prototype.readKey = function () {
+            return __awaiter$7(this, void 0, void 0, function () {
+                var maybeKey;
+                return __generator$7(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, idb.default.getKeypair(this.cfg.readKeyName, this.store)];
+                        case 1:
+                            maybeKey = _a.sent();
+                            return [2 /*return*/, errors.checkIsKeyPair(maybeKey)];
+                    }
+                });
+            });
+        };
+        KeyStoreBase.prototype.getSymmKey = function (keyName, cfg) {
+            return __awaiter$7(this, void 0, void 0, function () {
+                var mergedCfg, maybeKey, key;
+                return __generator$7(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            mergedCfg = config$1.default.merge(this.cfg, cfg);
+                            return [4 /*yield*/, idb.default.getKey(keyName, this.store)];
+                        case 1:
+                            maybeKey = _a.sent();
+                            if (maybeKey !== null) {
+                                return [2 /*return*/, maybeKey];
+                            }
+                            return [4 /*yield*/, aes.default.makeKey(config$1.default.symmKeyOpts(mergedCfg))];
+                        case 2:
+                            key = _a.sent();
+                            return [4 /*yield*/, idb.default.put(keyName, key, this.store)];
+                        case 3:
+                            _a.sent();
+                            return [2 /*return*/, key];
+                    }
+                });
+            });
+        };
+        KeyStoreBase.prototype.keyExists = function (keyName) {
+            return __awaiter$7(this, void 0, void 0, function () {
+                var key;
+                return __generator$7(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, idb.default.getKey(keyName, this.store)];
+                        case 1:
+                            key = _a.sent();
+                            return [2 /*return*/, key !== null];
+                    }
+                });
+            });
+        };
+        KeyStoreBase.prototype.deleteKey = function (keyName) {
+            return __awaiter$7(this, void 0, void 0, function () {
+                return __generator$7(this, function (_a) {
+                    return [2 /*return*/, idb.default.rm(keyName, this.store)];
+                });
+            });
+        };
+        KeyStoreBase.prototype.destroy = function () {
+            return __awaiter$7(this, void 0, void 0, function () {
+                return __generator$7(this, function (_a) {
+                    return [2 /*return*/, idb.default.dropStore(this.store)];
+                });
+            });
+        };
+        KeyStoreBase.prototype.importSymmKey = function (keyStr, keyName, cfg) {
+            return __awaiter$7(this, void 0, void 0, function () {
+                var mergedCfg, key;
+                return __generator$7(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            mergedCfg = config$1.default.merge(this.cfg, cfg);
+                            return [4 /*yield*/, aes.default.importKey(keyStr, config$1.default.symmKeyOpts(mergedCfg))];
+                        case 1:
+                            key = _a.sent();
+                            return [4 /*yield*/, idb.default.put(keyName, key, this.store)];
+                        case 2:
+                            _a.sent();
+                            return [2 /*return*/];
+                    }
+                });
+            });
+        };
+        KeyStoreBase.prototype.exportSymmKey = function (keyName, cfg) {
+            return __awaiter$7(this, void 0, void 0, function () {
+                var key;
+                return __generator$7(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.getSymmKey(keyName, cfg)];
+                        case 1:
+                            key = _a.sent();
+                            return [2 /*return*/, aes.default.exportKey(key)];
+                    }
+                });
+            });
+        };
+        KeyStoreBase.prototype.encryptWithSymmKey = function (msg, keyName, cfg) {
+            return __awaiter$7(this, void 0, void 0, function () {
+                var mergedCfg, key, cipherText;
+                return __generator$7(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            mergedCfg = config$1.default.merge(this.cfg, cfg);
+                            return [4 /*yield*/, this.getSymmKey(keyName, cfg)];
+                        case 1:
+                            key = _a.sent();
+                            return [4 /*yield*/, aes.default.encryptBytes(utils.default.strToArrBuf(msg, mergedCfg.charSize), key, config$1.default.symmKeyOpts(mergedCfg))];
+                        case 2:
+                            cipherText = _a.sent();
+                            return [2 /*return*/, utils.default.arrBufToBase64(cipherText)];
+                    }
+                });
+            });
+        };
+        KeyStoreBase.prototype.decryptWithSymmKey = function (cipherText, keyName, cfg) {
+            return __awaiter$7(this, void 0, void 0, function () {
+                var mergedCfg, key, msgBytes;
+                return __generator$7(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            mergedCfg = config$1.default.merge(this.cfg, cfg);
+                            return [4 /*yield*/, this.getSymmKey(keyName, cfg)];
+                        case 1:
+                            key = _a.sent();
+                            return [4 /*yield*/, aes.default.decryptBytes(utils.default.base64ToArrBuf(cipherText), key, config$1.default.symmKeyOpts(mergedCfg))];
+                        case 2:
+                            msgBytes = _a.sent();
+                            return [2 /*return*/, utils.default.arrBufToStr(msgBytes, mergedCfg.charSize)];
+                    }
+                });
+            });
+        };
+        return KeyStoreBase;
+    }());
+    var _default$6 = KeyStoreBase;
+
+
+    var base = /*#__PURE__*/Object.defineProperty({
+    	default: _default$6
+    }, '__esModule', {value: true});
+
+    var __extends$1 = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
+        var extendStatics = function (d, b) {
+            extendStatics = Object.setPrototypeOf ||
+                ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+                function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+            return extendStatics(d, b);
+        };
+        return function (d, b) {
+            extendStatics(d, b);
+            function __() { this.constructor = d; }
+            d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+        };
+    })();
+    var __assign$1 = (commonjsGlobal && commonjsGlobal.__assign) || function () {
+        __assign$1 = Object.assign || function(t) {
+            for (var s, i = 1, n = arguments.length; i < n; i++) {
+                s = arguments[i];
+                for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                    t[p] = s[p];
+            }
+            return t;
+        };
+        return __assign$1.apply(this, arguments);
+    };
+    var __awaiter$8 = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
+        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+        return new (P || (P = Promise))(function (resolve, reject) {
+            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+            step((generator = generator.apply(thisArg, _arguments || [])).next());
+        });
+    };
+    var __generator$8 = (commonjsGlobal && commonjsGlobal.__generator) || function (thisArg, body) {
+        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+        function verb(n) { return function (v) { return step([n, v]); }; }
+        function step(op) {
+            if (f) throw new TypeError("Generator is already executing.");
+            while (_) try {
+                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+                if (y = 0, t) op = [op[0] & 2, t.value];
+                switch (op[0]) {
+                    case 0: case 1: t = op; break;
+                    case 4: _.label++; return { value: op[1], done: false };
+                    case 5: _.label++; y = op[1]; op = [0]; continue;
+                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                    default:
+                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                        if (t[2]) _.ops.pop();
+                        _.trys.pop(); continue;
+                }
+                op = body.call(thisArg, _);
+            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+        }
+    };
+
+
+
+
+
+
+
+
+    var RSAKeyStore = /** @class */ (function (_super) {
+        __extends$1(RSAKeyStore, _super);
+        function RSAKeyStore() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        RSAKeyStore.init = function (maybeCfg) {
+            return __awaiter$8(this, void 0, void 0, function () {
+                var cfg, rsaSize, hashAlg, storeName, readKeyName, writeKeyName, store;
+                return __generator$8(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            cfg = config$1.default.normalize(__assign$1(__assign$1({}, (maybeCfg || {})), { type: types.CryptoSystem.RSA }));
+                            rsaSize = cfg.rsaSize, hashAlg = cfg.hashAlg, storeName = cfg.storeName, readKeyName = cfg.readKeyName, writeKeyName = cfg.writeKeyName;
+                            store = idb.default.createStore(storeName);
+                            return [4 /*yield*/, idb.default.createIfDoesNotExist(readKeyName, function () { return (keys.default.makeKeypair(rsaSize, hashAlg, types.KeyUse.Read)); }, store)];
+                        case 1:
+                            _a.sent();
+                            return [4 /*yield*/, idb.default.createIfDoesNotExist(writeKeyName, function () { return (keys.default.makeKeypair(rsaSize, hashAlg, types.KeyUse.Write)); }, store)];
+                        case 2:
+                            _a.sent();
+                            return [2 /*return*/, new RSAKeyStore(cfg, store)];
+                    }
+                });
+            });
+        };
+        RSAKeyStore.prototype.sign = function (msg, cfg) {
+            return __awaiter$8(this, void 0, void 0, function () {
+                var mergedCfg, writeKey, _a, _b;
+                return __generator$8(this, function (_c) {
+                    switch (_c.label) {
+                        case 0:
+                            mergedCfg = config$1.default.merge(this.cfg, cfg);
+                            return [4 /*yield*/, this.writeKey()];
+                        case 1:
+                            writeKey = _c.sent();
+                            _b = (_a = utils.default).arrBufToBase64;
+                            return [4 /*yield*/, operations.default.sign(msg, writeKey.privateKey, mergedCfg.charSize)];
+                        case 2: return [2 /*return*/, _b.apply(_a, [_c.sent()])];
+                    }
+                });
+            });
+        };
+        RSAKeyStore.prototype.verify = function (msg, sig, publicKey, cfg) {
+            return __awaiter$8(this, void 0, void 0, function () {
+                var mergedCfg;
+                return __generator$8(this, function (_a) {
+                    mergedCfg = config$1.default.merge(this.cfg, cfg);
+                    return [2 /*return*/, operations.default.verify(msg, sig, publicKey, mergedCfg.charSize, mergedCfg.hashAlg)];
+                });
+            });
+        };
+        RSAKeyStore.prototype.encrypt = function (msg, publicKey, cfg) {
+            return __awaiter$8(this, void 0, void 0, function () {
+                var mergedCfg, _a, _b;
+                return __generator$8(this, function (_c) {
+                    switch (_c.label) {
+                        case 0:
+                            mergedCfg = config$1.default.merge(this.cfg, cfg);
+                            _b = (_a = utils.default).arrBufToBase64;
+                            return [4 /*yield*/, operations.default.encrypt(msg, publicKey, mergedCfg.charSize, mergedCfg.hashAlg)];
+                        case 1: return [2 /*return*/, _b.apply(_a, [_c.sent()])];
+                    }
+                });
+            });
+        };
+        RSAKeyStore.prototype.decrypt = function (cipherText, publicKey, // unused param so that keystore interfaces match
+        cfg) {
+            return __awaiter$8(this, void 0, void 0, function () {
+                var readKey, mergedCfg, _a, _b;
+                return __generator$8(this, function (_c) {
+                    switch (_c.label) {
+                        case 0: return [4 /*yield*/, this.readKey()];
+                        case 1:
+                            readKey = _c.sent();
+                            mergedCfg = config$1.default.merge(this.cfg, cfg);
+                            _b = (_a = utils.default).arrBufToStr;
+                            return [4 /*yield*/, operations.default.decrypt(cipherText, readKey.privateKey)];
+                        case 2: return [2 /*return*/, _b.apply(_a, [_c.sent(),
+                                mergedCfg.charSize])];
+                    }
+                });
+            });
+        };
+        RSAKeyStore.prototype.publicReadKey = function () {
+            return __awaiter$8(this, void 0, void 0, function () {
+                var readKey;
+                return __generator$8(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.readKey()];
+                        case 1:
+                            readKey = _a.sent();
+                            return [2 /*return*/, operations.default.getPublicKey(readKey)];
+                    }
+                });
+            });
+        };
+        RSAKeyStore.prototype.publicWriteKey = function () {
+            return __awaiter$8(this, void 0, void 0, function () {
+                var writeKey;
+                return __generator$8(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.writeKey()];
+                        case 1:
+                            writeKey = _a.sent();
+                            return [2 /*return*/, operations.default.getPublicKey(writeKey)];
+                    }
+                });
+            });
+        };
+        return RSAKeyStore;
+    }(base.default));
+    var RSAKeyStore_1 = RSAKeyStore;
+    var _default$7 = RSAKeyStore;
+
+
+    var keystore = /*#__PURE__*/Object.defineProperty({
+    	RSAKeyStore: RSAKeyStore_1,
+    	default: _default$7
+    }, '__esModule', {value: true});
+
+    var rsa = createCommonjsModule(function (module, exports) {
+    var __assign = (commonjsGlobal && commonjsGlobal.__assign) || function () {
+        __assign = Object.assign || function(t) {
+            for (var s, i = 1, n = arguments.length; i < n; i++) {
+                s = arguments[i];
+                for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                    t[p] = s[p];
+            }
+            return t;
+        };
+        return __assign.apply(this, arguments);
+    };
+    function __export(m) {
+        for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+    }
+    Object.defineProperty(exports, "__esModule", { value: true });
+
+
+
+    __export(keys);
+    __export(operations);
+    __export(keystore);
+    exports.default = __assign(__assign(__assign({}, keys.default), operations.default), keystore.default);
+
+    });
+
+    var rsaOperations = /*@__PURE__*/getDefaultExportFromCjs(rsa);
+
+    // Took this one-liner from: https://www.npmjs.com/package/browser-or-node
+    var isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined';
+    var assertBrowser = function (method) {
+        if (!isBrowser) {
+            throw new Error("Must be in browser to use method. Provide a node-compatible implementation for " + method);
+        }
+    };
 
     var index_umd = createCommonjsModule(function (module, exports) {
     (function (global, factory) {
@@ -8717,6 +11190,2356 @@
             'default': IDB
         });
 
+        var byteLength_1 = byteLength;
+        var toByteArray_1 = toByteArray;
+        var fromByteArray_1 = fromByteArray;
+
+        var lookup = [];
+        var revLookup = [];
+        var Arr = typeof Uint8Array !== 'undefined' ? Uint8Array : Array;
+
+        var code = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+        for (var i = 0, len = code.length; i < len; ++i) {
+          lookup[i] = code[i];
+          revLookup[code.charCodeAt(i)] = i;
+        }
+
+        // Support decoding URL-safe base64 strings, as Node.js does.
+        // See: https://en.wikipedia.org/wiki/Base64#URL_applications
+        revLookup['-'.charCodeAt(0)] = 62;
+        revLookup['_'.charCodeAt(0)] = 63;
+
+        function getLens (b64) {
+          var len = b64.length;
+
+          if (len % 4 > 0) {
+            throw new Error('Invalid string. Length must be a multiple of 4')
+          }
+
+          // Trim off extra bytes after placeholder bytes are found
+          // See: https://github.com/beatgammit/base64-js/issues/42
+          var validLen = b64.indexOf('=');
+          if (validLen === -1) validLen = len;
+
+          var placeHoldersLen = validLen === len
+            ? 0
+            : 4 - (validLen % 4);
+
+          return [validLen, placeHoldersLen]
+        }
+
+        // base64 is 4/3 + up to two characters of the original data
+        function byteLength (b64) {
+          var lens = getLens(b64);
+          var validLen = lens[0];
+          var placeHoldersLen = lens[1];
+          return ((validLen + placeHoldersLen) * 3 / 4) - placeHoldersLen
+        }
+
+        function _byteLength (b64, validLen, placeHoldersLen) {
+          return ((validLen + placeHoldersLen) * 3 / 4) - placeHoldersLen
+        }
+
+        function toByteArray (b64) {
+          var tmp;
+          var lens = getLens(b64);
+          var validLen = lens[0];
+          var placeHoldersLen = lens[1];
+
+          var arr = new Arr(_byteLength(b64, validLen, placeHoldersLen));
+
+          var curByte = 0;
+
+          // if there are placeholders, only get up to the last complete 4 chars
+          var len = placeHoldersLen > 0
+            ? validLen - 4
+            : validLen;
+
+          var i;
+          for (i = 0; i < len; i += 4) {
+            tmp =
+              (revLookup[b64.charCodeAt(i)] << 18) |
+              (revLookup[b64.charCodeAt(i + 1)] << 12) |
+              (revLookup[b64.charCodeAt(i + 2)] << 6) |
+              revLookup[b64.charCodeAt(i + 3)];
+            arr[curByte++] = (tmp >> 16) & 0xFF;
+            arr[curByte++] = (tmp >> 8) & 0xFF;
+            arr[curByte++] = tmp & 0xFF;
+          }
+
+          if (placeHoldersLen === 2) {
+            tmp =
+              (revLookup[b64.charCodeAt(i)] << 2) |
+              (revLookup[b64.charCodeAt(i + 1)] >> 4);
+            arr[curByte++] = tmp & 0xFF;
+          }
+
+          if (placeHoldersLen === 1) {
+            tmp =
+              (revLookup[b64.charCodeAt(i)] << 10) |
+              (revLookup[b64.charCodeAt(i + 1)] << 4) |
+              (revLookup[b64.charCodeAt(i + 2)] >> 2);
+            arr[curByte++] = (tmp >> 8) & 0xFF;
+            arr[curByte++] = tmp & 0xFF;
+          }
+
+          return arr
+        }
+
+        function tripletToBase64 (num) {
+          return lookup[num >> 18 & 0x3F] +
+            lookup[num >> 12 & 0x3F] +
+            lookup[num >> 6 & 0x3F] +
+            lookup[num & 0x3F]
+        }
+
+        function encodeChunk (uint8, start, end) {
+          var tmp;
+          var output = [];
+          for (var i = start; i < end; i += 3) {
+            tmp =
+              ((uint8[i] << 16) & 0xFF0000) +
+              ((uint8[i + 1] << 8) & 0xFF00) +
+              (uint8[i + 2] & 0xFF);
+            output.push(tripletToBase64(tmp));
+          }
+          return output.join('')
+        }
+
+        function fromByteArray (uint8) {
+          var tmp;
+          var len = uint8.length;
+          var extraBytes = len % 3; // if we have 1 byte left, pad 2 bytes
+          var parts = [];
+          var maxChunkLength = 16383; // must be multiple of 3
+
+          // go through the array every three bytes, we'll deal with trailing stuff later
+          for (var i = 0, len2 = len - extraBytes; i < len2; i += maxChunkLength) {
+            parts.push(encodeChunk(uint8, i, (i + maxChunkLength) > len2 ? len2 : (i + maxChunkLength)));
+          }
+
+          // pad the end with zeros, but make sure to not forget the extra bytes
+          if (extraBytes === 1) {
+            tmp = uint8[len - 1];
+            parts.push(
+              lookup[tmp >> 2] +
+              lookup[(tmp << 4) & 0x3F] +
+              '=='
+            );
+          } else if (extraBytes === 2) {
+            tmp = (uint8[len - 2] << 8) + uint8[len - 1];
+            parts.push(
+              lookup[tmp >> 10] +
+              lookup[(tmp >> 4) & 0x3F] +
+              lookup[(tmp << 2) & 0x3F] +
+              '='
+            );
+          }
+
+          return parts.join('')
+        }
+
+        var base64Js = {
+        	byteLength: byteLength_1,
+        	toByteArray: toByteArray_1,
+        	fromByteArray: fromByteArray_1
+        };
+
+        /*! ieee754. BSD-3-Clause License. Feross Aboukhadijeh <https://feross.org/opensource> */
+        var read = function (buffer, offset, isLE, mLen, nBytes) {
+          var e, m;
+          var eLen = (nBytes * 8) - mLen - 1;
+          var eMax = (1 << eLen) - 1;
+          var eBias = eMax >> 1;
+          var nBits = -7;
+          var i = isLE ? (nBytes - 1) : 0;
+          var d = isLE ? -1 : 1;
+          var s = buffer[offset + i];
+
+          i += d;
+
+          e = s & ((1 << (-nBits)) - 1);
+          s >>= (-nBits);
+          nBits += eLen;
+          for (; nBits > 0; e = (e * 256) + buffer[offset + i], i += d, nBits -= 8) {}
+
+          m = e & ((1 << (-nBits)) - 1);
+          e >>= (-nBits);
+          nBits += mLen;
+          for (; nBits > 0; m = (m * 256) + buffer[offset + i], i += d, nBits -= 8) {}
+
+          if (e === 0) {
+            e = 1 - eBias;
+          } else if (e === eMax) {
+            return m ? NaN : ((s ? -1 : 1) * Infinity)
+          } else {
+            m = m + Math.pow(2, mLen);
+            e = e - eBias;
+          }
+          return (s ? -1 : 1) * m * Math.pow(2, e - mLen)
+        };
+
+        var write = function (buffer, value, offset, isLE, mLen, nBytes) {
+          var e, m, c;
+          var eLen = (nBytes * 8) - mLen - 1;
+          var eMax = (1 << eLen) - 1;
+          var eBias = eMax >> 1;
+          var rt = (mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0);
+          var i = isLE ? 0 : (nBytes - 1);
+          var d = isLE ? 1 : -1;
+          var s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0;
+
+          value = Math.abs(value);
+
+          if (isNaN(value) || value === Infinity) {
+            m = isNaN(value) ? 1 : 0;
+            e = eMax;
+          } else {
+            e = Math.floor(Math.log(value) / Math.LN2);
+            if (value * (c = Math.pow(2, -e)) < 1) {
+              e--;
+              c *= 2;
+            }
+            if (e + eBias >= 1) {
+              value += rt / c;
+            } else {
+              value += rt * Math.pow(2, 1 - eBias);
+            }
+            if (value * c >= 2) {
+              e++;
+              c /= 2;
+            }
+
+            if (e + eBias >= eMax) {
+              m = 0;
+              e = eMax;
+            } else if (e + eBias >= 1) {
+              m = ((value * c) - 1) * Math.pow(2, mLen);
+              e = e + eBias;
+            } else {
+              m = value * Math.pow(2, eBias - 1) * Math.pow(2, mLen);
+              e = 0;
+            }
+          }
+
+          for (; mLen >= 8; buffer[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8) {}
+
+          e = (e << mLen) | m;
+          eLen += mLen;
+          for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8) {}
+
+          buffer[offset + i - d] |= s * 128;
+        };
+
+        var ieee754 = {
+        	read: read,
+        	write: write
+        };
+
+        var buffer = createCommonjsModule(function (module, exports) {
+
+
+
+        const customInspectSymbol =
+          (typeof Symbol === 'function' && typeof Symbol['for'] === 'function') // eslint-disable-line dot-notation
+            ? Symbol['for']('nodejs.util.inspect.custom') // eslint-disable-line dot-notation
+            : null;
+
+        exports.Buffer = Buffer;
+        exports.SlowBuffer = SlowBuffer;
+        exports.INSPECT_MAX_BYTES = 50;
+
+        const K_MAX_LENGTH = 0x7fffffff;
+        exports.kMaxLength = K_MAX_LENGTH;
+
+        /**
+         * If `Buffer.TYPED_ARRAY_SUPPORT`:
+         *   === true    Use Uint8Array implementation (fastest)
+         *   === false   Print warning and recommend using `buffer` v4.x which has an Object
+         *               implementation (most compatible, even IE6)
+         *
+         * Browsers that support typed arrays are IE 10+, Firefox 4+, Chrome 7+, Safari 5.1+,
+         * Opera 11.6+, iOS 4.2+.
+         *
+         * We report that the browser does not support typed arrays if the are not subclassable
+         * using __proto__. Firefox 4-29 lacks support for adding new properties to `Uint8Array`
+         * (See: https://bugzilla.mozilla.org/show_bug.cgi?id=695438). IE 10 lacks support
+         * for __proto__ and has a buggy typed array implementation.
+         */
+        Buffer.TYPED_ARRAY_SUPPORT = typedArraySupport();
+
+        if (!Buffer.TYPED_ARRAY_SUPPORT && typeof console !== 'undefined' &&
+            typeof console.error === 'function') {
+          console.error(
+            'This browser lacks typed array (Uint8Array) support which is required by ' +
+            '`buffer` v5.x. Use `buffer` v4.x if you require old browser support.'
+          );
+        }
+
+        function typedArraySupport () {
+          // Can typed array instances can be augmented?
+          try {
+            const arr = new Uint8Array(1);
+            const proto = { foo: function () { return 42 } };
+            Object.setPrototypeOf(proto, Uint8Array.prototype);
+            Object.setPrototypeOf(arr, proto);
+            return arr.foo() === 42
+          } catch (e) {
+            return false
+          }
+        }
+
+        Object.defineProperty(Buffer.prototype, 'parent', {
+          enumerable: true,
+          get: function () {
+            if (!Buffer.isBuffer(this)) return undefined
+            return this.buffer
+          }
+        });
+
+        Object.defineProperty(Buffer.prototype, 'offset', {
+          enumerable: true,
+          get: function () {
+            if (!Buffer.isBuffer(this)) return undefined
+            return this.byteOffset
+          }
+        });
+
+        function createBuffer (length) {
+          if (length > K_MAX_LENGTH) {
+            throw new RangeError('The value "' + length + '" is invalid for option "size"')
+          }
+          // Return an augmented `Uint8Array` instance
+          const buf = new Uint8Array(length);
+          Object.setPrototypeOf(buf, Buffer.prototype);
+          return buf
+        }
+
+        /**
+         * The Buffer constructor returns instances of `Uint8Array` that have their
+         * prototype changed to `Buffer.prototype`. Furthermore, `Buffer` is a subclass of
+         * `Uint8Array`, so the returned instances will have all the node `Buffer` methods
+         * and the `Uint8Array` methods. Square bracket notation works as expected -- it
+         * returns a single octet.
+         *
+         * The `Uint8Array` prototype remains unmodified.
+         */
+
+        function Buffer (arg, encodingOrOffset, length) {
+          // Common case.
+          if (typeof arg === 'number') {
+            if (typeof encodingOrOffset === 'string') {
+              throw new TypeError(
+                'The "string" argument must be of type string. Received type number'
+              )
+            }
+            return allocUnsafe(arg)
+          }
+          return from(arg, encodingOrOffset, length)
+        }
+
+        Buffer.poolSize = 8192; // not used by this implementation
+
+        function from (value, encodingOrOffset, length) {
+          if (typeof value === 'string') {
+            return fromString(value, encodingOrOffset)
+          }
+
+          if (ArrayBuffer.isView(value)) {
+            return fromArrayView(value)
+          }
+
+          if (value == null) {
+            throw new TypeError(
+              'The first argument must be one of type string, Buffer, ArrayBuffer, Array, ' +
+              'or Array-like Object. Received type ' + (typeof value)
+            )
+          }
+
+          if (isInstance(value, ArrayBuffer) ||
+              (value && isInstance(value.buffer, ArrayBuffer))) {
+            return fromArrayBuffer(value, encodingOrOffset, length)
+          }
+
+          if (typeof SharedArrayBuffer !== 'undefined' &&
+              (isInstance(value, SharedArrayBuffer) ||
+              (value && isInstance(value.buffer, SharedArrayBuffer)))) {
+            return fromArrayBuffer(value, encodingOrOffset, length)
+          }
+
+          if (typeof value === 'number') {
+            throw new TypeError(
+              'The "value" argument must not be of type number. Received type number'
+            )
+          }
+
+          const valueOf = value.valueOf && value.valueOf();
+          if (valueOf != null && valueOf !== value) {
+            return Buffer.from(valueOf, encodingOrOffset, length)
+          }
+
+          const b = fromObject(value);
+          if (b) return b
+
+          if (typeof Symbol !== 'undefined' && Symbol.toPrimitive != null &&
+              typeof value[Symbol.toPrimitive] === 'function') {
+            return Buffer.from(value[Symbol.toPrimitive]('string'), encodingOrOffset, length)
+          }
+
+          throw new TypeError(
+            'The first argument must be one of type string, Buffer, ArrayBuffer, Array, ' +
+            'or Array-like Object. Received type ' + (typeof value)
+          )
+        }
+
+        /**
+         * Functionally equivalent to Buffer(arg, encoding) but throws a TypeError
+         * if value is a number.
+         * Buffer.from(str[, encoding])
+         * Buffer.from(array)
+         * Buffer.from(buffer)
+         * Buffer.from(arrayBuffer[, byteOffset[, length]])
+         **/
+        Buffer.from = function (value, encodingOrOffset, length) {
+          return from(value, encodingOrOffset, length)
+        };
+
+        // Note: Change prototype *after* Buffer.from is defined to workaround Chrome bug:
+        // https://github.com/feross/buffer/pull/148
+        Object.setPrototypeOf(Buffer.prototype, Uint8Array.prototype);
+        Object.setPrototypeOf(Buffer, Uint8Array);
+
+        function assertSize (size) {
+          if (typeof size !== 'number') {
+            throw new TypeError('"size" argument must be of type number')
+          } else if (size < 0) {
+            throw new RangeError('The value "' + size + '" is invalid for option "size"')
+          }
+        }
+
+        function alloc (size, fill, encoding) {
+          assertSize(size);
+          if (size <= 0) {
+            return createBuffer(size)
+          }
+          if (fill !== undefined) {
+            // Only pay attention to encoding if it's a string. This
+            // prevents accidentally sending in a number that would
+            // be interpreted as a start offset.
+            return typeof encoding === 'string'
+              ? createBuffer(size).fill(fill, encoding)
+              : createBuffer(size).fill(fill)
+          }
+          return createBuffer(size)
+        }
+
+        /**
+         * Creates a new filled Buffer instance.
+         * alloc(size[, fill[, encoding]])
+         **/
+        Buffer.alloc = function (size, fill, encoding) {
+          return alloc(size, fill, encoding)
+        };
+
+        function allocUnsafe (size) {
+          assertSize(size);
+          return createBuffer(size < 0 ? 0 : checked(size) | 0)
+        }
+
+        /**
+         * Equivalent to Buffer(num), by default creates a non-zero-filled Buffer instance.
+         * */
+        Buffer.allocUnsafe = function (size) {
+          return allocUnsafe(size)
+        };
+        /**
+         * Equivalent to SlowBuffer(num), by default creates a non-zero-filled Buffer instance.
+         */
+        Buffer.allocUnsafeSlow = function (size) {
+          return allocUnsafe(size)
+        };
+
+        function fromString (string, encoding) {
+          if (typeof encoding !== 'string' || encoding === '') {
+            encoding = 'utf8';
+          }
+
+          if (!Buffer.isEncoding(encoding)) {
+            throw new TypeError('Unknown encoding: ' + encoding)
+          }
+
+          const length = byteLength(string, encoding) | 0;
+          let buf = createBuffer(length);
+
+          const actual = buf.write(string, encoding);
+
+          if (actual !== length) {
+            // Writing a hex string, for example, that contains invalid characters will
+            // cause everything after the first invalid character to be ignored. (e.g.
+            // 'abxxcd' will be treated as 'ab')
+            buf = buf.slice(0, actual);
+          }
+
+          return buf
+        }
+
+        function fromArrayLike (array) {
+          const length = array.length < 0 ? 0 : checked(array.length) | 0;
+          const buf = createBuffer(length);
+          for (let i = 0; i < length; i += 1) {
+            buf[i] = array[i] & 255;
+          }
+          return buf
+        }
+
+        function fromArrayView (arrayView) {
+          if (isInstance(arrayView, Uint8Array)) {
+            const copy = new Uint8Array(arrayView);
+            return fromArrayBuffer(copy.buffer, copy.byteOffset, copy.byteLength)
+          }
+          return fromArrayLike(arrayView)
+        }
+
+        function fromArrayBuffer (array, byteOffset, length) {
+          if (byteOffset < 0 || array.byteLength < byteOffset) {
+            throw new RangeError('"offset" is outside of buffer bounds')
+          }
+
+          if (array.byteLength < byteOffset + (length || 0)) {
+            throw new RangeError('"length" is outside of buffer bounds')
+          }
+
+          let buf;
+          if (byteOffset === undefined && length === undefined) {
+            buf = new Uint8Array(array);
+          } else if (length === undefined) {
+            buf = new Uint8Array(array, byteOffset);
+          } else {
+            buf = new Uint8Array(array, byteOffset, length);
+          }
+
+          // Return an augmented `Uint8Array` instance
+          Object.setPrototypeOf(buf, Buffer.prototype);
+
+          return buf
+        }
+
+        function fromObject (obj) {
+          if (Buffer.isBuffer(obj)) {
+            const len = checked(obj.length) | 0;
+            const buf = createBuffer(len);
+
+            if (buf.length === 0) {
+              return buf
+            }
+
+            obj.copy(buf, 0, 0, len);
+            return buf
+          }
+
+          if (obj.length !== undefined) {
+            if (typeof obj.length !== 'number' || numberIsNaN(obj.length)) {
+              return createBuffer(0)
+            }
+            return fromArrayLike(obj)
+          }
+
+          if (obj.type === 'Buffer' && Array.isArray(obj.data)) {
+            return fromArrayLike(obj.data)
+          }
+        }
+
+        function checked (length) {
+          // Note: cannot use `length < K_MAX_LENGTH` here because that fails when
+          // length is NaN (which is otherwise coerced to zero.)
+          if (length >= K_MAX_LENGTH) {
+            throw new RangeError('Attempt to allocate Buffer larger than maximum ' +
+                                 'size: 0x' + K_MAX_LENGTH.toString(16) + ' bytes')
+          }
+          return length | 0
+        }
+
+        function SlowBuffer (length) {
+          if (+length != length) { // eslint-disable-line eqeqeq
+            length = 0;
+          }
+          return Buffer.alloc(+length)
+        }
+
+        Buffer.isBuffer = function isBuffer (b) {
+          return b != null && b._isBuffer === true &&
+            b !== Buffer.prototype // so Buffer.isBuffer(Buffer.prototype) will be false
+        };
+
+        Buffer.compare = function compare (a, b) {
+          if (isInstance(a, Uint8Array)) a = Buffer.from(a, a.offset, a.byteLength);
+          if (isInstance(b, Uint8Array)) b = Buffer.from(b, b.offset, b.byteLength);
+          if (!Buffer.isBuffer(a) || !Buffer.isBuffer(b)) {
+            throw new TypeError(
+              'The "buf1", "buf2" arguments must be one of type Buffer or Uint8Array'
+            )
+          }
+
+          if (a === b) return 0
+
+          let x = a.length;
+          let y = b.length;
+
+          for (let i = 0, len = Math.min(x, y); i < len; ++i) {
+            if (a[i] !== b[i]) {
+              x = a[i];
+              y = b[i];
+              break
+            }
+          }
+
+          if (x < y) return -1
+          if (y < x) return 1
+          return 0
+        };
+
+        Buffer.isEncoding = function isEncoding (encoding) {
+          switch (String(encoding).toLowerCase()) {
+            case 'hex':
+            case 'utf8':
+            case 'utf-8':
+            case 'ascii':
+            case 'latin1':
+            case 'binary':
+            case 'base64':
+            case 'ucs2':
+            case 'ucs-2':
+            case 'utf16le':
+            case 'utf-16le':
+              return true
+            default:
+              return false
+          }
+        };
+
+        Buffer.concat = function concat (list, length) {
+          if (!Array.isArray(list)) {
+            throw new TypeError('"list" argument must be an Array of Buffers')
+          }
+
+          if (list.length === 0) {
+            return Buffer.alloc(0)
+          }
+
+          let i;
+          if (length === undefined) {
+            length = 0;
+            for (i = 0; i < list.length; ++i) {
+              length += list[i].length;
+            }
+          }
+
+          const buffer = Buffer.allocUnsafe(length);
+          let pos = 0;
+          for (i = 0; i < list.length; ++i) {
+            let buf = list[i];
+            if (isInstance(buf, Uint8Array)) {
+              if (pos + buf.length > buffer.length) {
+                if (!Buffer.isBuffer(buf)) buf = Buffer.from(buf);
+                buf.copy(buffer, pos);
+              } else {
+                Uint8Array.prototype.set.call(
+                  buffer,
+                  buf,
+                  pos
+                );
+              }
+            } else if (!Buffer.isBuffer(buf)) {
+              throw new TypeError('"list" argument must be an Array of Buffers')
+            } else {
+              buf.copy(buffer, pos);
+            }
+            pos += buf.length;
+          }
+          return buffer
+        };
+
+        function byteLength (string, encoding) {
+          if (Buffer.isBuffer(string)) {
+            return string.length
+          }
+          if (ArrayBuffer.isView(string) || isInstance(string, ArrayBuffer)) {
+            return string.byteLength
+          }
+          if (typeof string !== 'string') {
+            throw new TypeError(
+              'The "string" argument must be one of type string, Buffer, or ArrayBuffer. ' +
+              'Received type ' + typeof string
+            )
+          }
+
+          const len = string.length;
+          const mustMatch = (arguments.length > 2 && arguments[2] === true);
+          if (!mustMatch && len === 0) return 0
+
+          // Use a for loop to avoid recursion
+          let loweredCase = false;
+          for (;;) {
+            switch (encoding) {
+              case 'ascii':
+              case 'latin1':
+              case 'binary':
+                return len
+              case 'utf8':
+              case 'utf-8':
+                return utf8ToBytes(string).length
+              case 'ucs2':
+              case 'ucs-2':
+              case 'utf16le':
+              case 'utf-16le':
+                return len * 2
+              case 'hex':
+                return len >>> 1
+              case 'base64':
+                return base64ToBytes(string).length
+              default:
+                if (loweredCase) {
+                  return mustMatch ? -1 : utf8ToBytes(string).length // assume utf8
+                }
+                encoding = ('' + encoding).toLowerCase();
+                loweredCase = true;
+            }
+          }
+        }
+        Buffer.byteLength = byteLength;
+
+        function slowToString (encoding, start, end) {
+          let loweredCase = false;
+
+          // No need to verify that "this.length <= MAX_UINT32" since it's a read-only
+          // property of a typed array.
+
+          // This behaves neither like String nor Uint8Array in that we set start/end
+          // to their upper/lower bounds if the value passed is out of range.
+          // undefined is handled specially as per ECMA-262 6th Edition,
+          // Section 13.3.3.7 Runtime Semantics: KeyedBindingInitialization.
+          if (start === undefined || start < 0) {
+            start = 0;
+          }
+          // Return early if start > this.length. Done here to prevent potential uint32
+          // coercion fail below.
+          if (start > this.length) {
+            return ''
+          }
+
+          if (end === undefined || end > this.length) {
+            end = this.length;
+          }
+
+          if (end <= 0) {
+            return ''
+          }
+
+          // Force coercion to uint32. This will also coerce falsey/NaN values to 0.
+          end >>>= 0;
+          start >>>= 0;
+
+          if (end <= start) {
+            return ''
+          }
+
+          if (!encoding) encoding = 'utf8';
+
+          while (true) {
+            switch (encoding) {
+              case 'hex':
+                return hexSlice(this, start, end)
+
+              case 'utf8':
+              case 'utf-8':
+                return utf8Slice(this, start, end)
+
+              case 'ascii':
+                return asciiSlice(this, start, end)
+
+              case 'latin1':
+              case 'binary':
+                return latin1Slice(this, start, end)
+
+              case 'base64':
+                return base64Slice(this, start, end)
+
+              case 'ucs2':
+              case 'ucs-2':
+              case 'utf16le':
+              case 'utf-16le':
+                return utf16leSlice(this, start, end)
+
+              default:
+                if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding)
+                encoding = (encoding + '').toLowerCase();
+                loweredCase = true;
+            }
+          }
+        }
+
+        // This property is used by `Buffer.isBuffer` (and the `is-buffer` npm package)
+        // to detect a Buffer instance. It's not possible to use `instanceof Buffer`
+        // reliably in a browserify context because there could be multiple different
+        // copies of the 'buffer' package in use. This method works even for Buffer
+        // instances that were created from another copy of the `buffer` package.
+        // See: https://github.com/feross/buffer/issues/154
+        Buffer.prototype._isBuffer = true;
+
+        function swap (b, n, m) {
+          const i = b[n];
+          b[n] = b[m];
+          b[m] = i;
+        }
+
+        Buffer.prototype.swap16 = function swap16 () {
+          const len = this.length;
+          if (len % 2 !== 0) {
+            throw new RangeError('Buffer size must be a multiple of 16-bits')
+          }
+          for (let i = 0; i < len; i += 2) {
+            swap(this, i, i + 1);
+          }
+          return this
+        };
+
+        Buffer.prototype.swap32 = function swap32 () {
+          const len = this.length;
+          if (len % 4 !== 0) {
+            throw new RangeError('Buffer size must be a multiple of 32-bits')
+          }
+          for (let i = 0; i < len; i += 4) {
+            swap(this, i, i + 3);
+            swap(this, i + 1, i + 2);
+          }
+          return this
+        };
+
+        Buffer.prototype.swap64 = function swap64 () {
+          const len = this.length;
+          if (len % 8 !== 0) {
+            throw new RangeError('Buffer size must be a multiple of 64-bits')
+          }
+          for (let i = 0; i < len; i += 8) {
+            swap(this, i, i + 7);
+            swap(this, i + 1, i + 6);
+            swap(this, i + 2, i + 5);
+            swap(this, i + 3, i + 4);
+          }
+          return this
+        };
+
+        Buffer.prototype.toString = function toString () {
+          const length = this.length;
+          if (length === 0) return ''
+          if (arguments.length === 0) return utf8Slice(this, 0, length)
+          return slowToString.apply(this, arguments)
+        };
+
+        Buffer.prototype.toLocaleString = Buffer.prototype.toString;
+
+        Buffer.prototype.equals = function equals (b) {
+          if (!Buffer.isBuffer(b)) throw new TypeError('Argument must be a Buffer')
+          if (this === b) return true
+          return Buffer.compare(this, b) === 0
+        };
+
+        Buffer.prototype.inspect = function inspect () {
+          let str = '';
+          const max = exports.INSPECT_MAX_BYTES;
+          str = this.toString('hex', 0, max).replace(/(.{2})/g, '$1 ').trim();
+          if (this.length > max) str += ' ... ';
+          return '<Buffer ' + str + '>'
+        };
+        if (customInspectSymbol) {
+          Buffer.prototype[customInspectSymbol] = Buffer.prototype.inspect;
+        }
+
+        Buffer.prototype.compare = function compare (target, start, end, thisStart, thisEnd) {
+          if (isInstance(target, Uint8Array)) {
+            target = Buffer.from(target, target.offset, target.byteLength);
+          }
+          if (!Buffer.isBuffer(target)) {
+            throw new TypeError(
+              'The "target" argument must be one of type Buffer or Uint8Array. ' +
+              'Received type ' + (typeof target)
+            )
+          }
+
+          if (start === undefined) {
+            start = 0;
+          }
+          if (end === undefined) {
+            end = target ? target.length : 0;
+          }
+          if (thisStart === undefined) {
+            thisStart = 0;
+          }
+          if (thisEnd === undefined) {
+            thisEnd = this.length;
+          }
+
+          if (start < 0 || end > target.length || thisStart < 0 || thisEnd > this.length) {
+            throw new RangeError('out of range index')
+          }
+
+          if (thisStart >= thisEnd && start >= end) {
+            return 0
+          }
+          if (thisStart >= thisEnd) {
+            return -1
+          }
+          if (start >= end) {
+            return 1
+          }
+
+          start >>>= 0;
+          end >>>= 0;
+          thisStart >>>= 0;
+          thisEnd >>>= 0;
+
+          if (this === target) return 0
+
+          let x = thisEnd - thisStart;
+          let y = end - start;
+          const len = Math.min(x, y);
+
+          const thisCopy = this.slice(thisStart, thisEnd);
+          const targetCopy = target.slice(start, end);
+
+          for (let i = 0; i < len; ++i) {
+            if (thisCopy[i] !== targetCopy[i]) {
+              x = thisCopy[i];
+              y = targetCopy[i];
+              break
+            }
+          }
+
+          if (x < y) return -1
+          if (y < x) return 1
+          return 0
+        };
+
+        // Finds either the first index of `val` in `buffer` at offset >= `byteOffset`,
+        // OR the last index of `val` in `buffer` at offset <= `byteOffset`.
+        //
+        // Arguments:
+        // - buffer - a Buffer to search
+        // - val - a string, Buffer, or number
+        // - byteOffset - an index into `buffer`; will be clamped to an int32
+        // - encoding - an optional encoding, relevant is val is a string
+        // - dir - true for indexOf, false for lastIndexOf
+        function bidirectionalIndexOf (buffer, val, byteOffset, encoding, dir) {
+          // Empty buffer means no match
+          if (buffer.length === 0) return -1
+
+          // Normalize byteOffset
+          if (typeof byteOffset === 'string') {
+            encoding = byteOffset;
+            byteOffset = 0;
+          } else if (byteOffset > 0x7fffffff) {
+            byteOffset = 0x7fffffff;
+          } else if (byteOffset < -0x80000000) {
+            byteOffset = -0x80000000;
+          }
+          byteOffset = +byteOffset; // Coerce to Number.
+          if (numberIsNaN(byteOffset)) {
+            // byteOffset: it it's undefined, null, NaN, "foo", etc, search whole buffer
+            byteOffset = dir ? 0 : (buffer.length - 1);
+          }
+
+          // Normalize byteOffset: negative offsets start from the end of the buffer
+          if (byteOffset < 0) byteOffset = buffer.length + byteOffset;
+          if (byteOffset >= buffer.length) {
+            if (dir) return -1
+            else byteOffset = buffer.length - 1;
+          } else if (byteOffset < 0) {
+            if (dir) byteOffset = 0;
+            else return -1
+          }
+
+          // Normalize val
+          if (typeof val === 'string') {
+            val = Buffer.from(val, encoding);
+          }
+
+          // Finally, search either indexOf (if dir is true) or lastIndexOf
+          if (Buffer.isBuffer(val)) {
+            // Special case: looking for empty string/buffer always fails
+            if (val.length === 0) {
+              return -1
+            }
+            return arrayIndexOf(buffer, val, byteOffset, encoding, dir)
+          } else if (typeof val === 'number') {
+            val = val & 0xFF; // Search for a byte value [0-255]
+            if (typeof Uint8Array.prototype.indexOf === 'function') {
+              if (dir) {
+                return Uint8Array.prototype.indexOf.call(buffer, val, byteOffset)
+              } else {
+                return Uint8Array.prototype.lastIndexOf.call(buffer, val, byteOffset)
+              }
+            }
+            return arrayIndexOf(buffer, [val], byteOffset, encoding, dir)
+          }
+
+          throw new TypeError('val must be string, number or Buffer')
+        }
+
+        function arrayIndexOf (arr, val, byteOffset, encoding, dir) {
+          let indexSize = 1;
+          let arrLength = arr.length;
+          let valLength = val.length;
+
+          if (encoding !== undefined) {
+            encoding = String(encoding).toLowerCase();
+            if (encoding === 'ucs2' || encoding === 'ucs-2' ||
+                encoding === 'utf16le' || encoding === 'utf-16le') {
+              if (arr.length < 2 || val.length < 2) {
+                return -1
+              }
+              indexSize = 2;
+              arrLength /= 2;
+              valLength /= 2;
+              byteOffset /= 2;
+            }
+          }
+
+          function read (buf, i) {
+            if (indexSize === 1) {
+              return buf[i]
+            } else {
+              return buf.readUInt16BE(i * indexSize)
+            }
+          }
+
+          let i;
+          if (dir) {
+            let foundIndex = -1;
+            for (i = byteOffset; i < arrLength; i++) {
+              if (read(arr, i) === read(val, foundIndex === -1 ? 0 : i - foundIndex)) {
+                if (foundIndex === -1) foundIndex = i;
+                if (i - foundIndex + 1 === valLength) return foundIndex * indexSize
+              } else {
+                if (foundIndex !== -1) i -= i - foundIndex;
+                foundIndex = -1;
+              }
+            }
+          } else {
+            if (byteOffset + valLength > arrLength) byteOffset = arrLength - valLength;
+            for (i = byteOffset; i >= 0; i--) {
+              let found = true;
+              for (let j = 0; j < valLength; j++) {
+                if (read(arr, i + j) !== read(val, j)) {
+                  found = false;
+                  break
+                }
+              }
+              if (found) return i
+            }
+          }
+
+          return -1
+        }
+
+        Buffer.prototype.includes = function includes (val, byteOffset, encoding) {
+          return this.indexOf(val, byteOffset, encoding) !== -1
+        };
+
+        Buffer.prototype.indexOf = function indexOf (val, byteOffset, encoding) {
+          return bidirectionalIndexOf(this, val, byteOffset, encoding, true)
+        };
+
+        Buffer.prototype.lastIndexOf = function lastIndexOf (val, byteOffset, encoding) {
+          return bidirectionalIndexOf(this, val, byteOffset, encoding, false)
+        };
+
+        function hexWrite (buf, string, offset, length) {
+          offset = Number(offset) || 0;
+          const remaining = buf.length - offset;
+          if (!length) {
+            length = remaining;
+          } else {
+            length = Number(length);
+            if (length > remaining) {
+              length = remaining;
+            }
+          }
+
+          const strLen = string.length;
+
+          if (length > strLen / 2) {
+            length = strLen / 2;
+          }
+          let i;
+          for (i = 0; i < length; ++i) {
+            const parsed = parseInt(string.substr(i * 2, 2), 16);
+            if (numberIsNaN(parsed)) return i
+            buf[offset + i] = parsed;
+          }
+          return i
+        }
+
+        function utf8Write (buf, string, offset, length) {
+          return blitBuffer(utf8ToBytes(string, buf.length - offset), buf, offset, length)
+        }
+
+        function asciiWrite (buf, string, offset, length) {
+          return blitBuffer(asciiToBytes(string), buf, offset, length)
+        }
+
+        function base64Write (buf, string, offset, length) {
+          return blitBuffer(base64ToBytes(string), buf, offset, length)
+        }
+
+        function ucs2Write (buf, string, offset, length) {
+          return blitBuffer(utf16leToBytes(string, buf.length - offset), buf, offset, length)
+        }
+
+        Buffer.prototype.write = function write (string, offset, length, encoding) {
+          // Buffer#write(string)
+          if (offset === undefined) {
+            encoding = 'utf8';
+            length = this.length;
+            offset = 0;
+          // Buffer#write(string, encoding)
+          } else if (length === undefined && typeof offset === 'string') {
+            encoding = offset;
+            length = this.length;
+            offset = 0;
+          // Buffer#write(string, offset[, length][, encoding])
+          } else if (isFinite(offset)) {
+            offset = offset >>> 0;
+            if (isFinite(length)) {
+              length = length >>> 0;
+              if (encoding === undefined) encoding = 'utf8';
+            } else {
+              encoding = length;
+              length = undefined;
+            }
+          } else {
+            throw new Error(
+              'Buffer.write(string, encoding, offset[, length]) is no longer supported'
+            )
+          }
+
+          const remaining = this.length - offset;
+          if (length === undefined || length > remaining) length = remaining;
+
+          if ((string.length > 0 && (length < 0 || offset < 0)) || offset > this.length) {
+            throw new RangeError('Attempt to write outside buffer bounds')
+          }
+
+          if (!encoding) encoding = 'utf8';
+
+          let loweredCase = false;
+          for (;;) {
+            switch (encoding) {
+              case 'hex':
+                return hexWrite(this, string, offset, length)
+
+              case 'utf8':
+              case 'utf-8':
+                return utf8Write(this, string, offset, length)
+
+              case 'ascii':
+              case 'latin1':
+              case 'binary':
+                return asciiWrite(this, string, offset, length)
+
+              case 'base64':
+                // Warning: maxLength not taken into account in base64Write
+                return base64Write(this, string, offset, length)
+
+              case 'ucs2':
+              case 'ucs-2':
+              case 'utf16le':
+              case 'utf-16le':
+                return ucs2Write(this, string, offset, length)
+
+              default:
+                if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding)
+                encoding = ('' + encoding).toLowerCase();
+                loweredCase = true;
+            }
+          }
+        };
+
+        Buffer.prototype.toJSON = function toJSON () {
+          return {
+            type: 'Buffer',
+            data: Array.prototype.slice.call(this._arr || this, 0)
+          }
+        };
+
+        function base64Slice (buf, start, end) {
+          if (start === 0 && end === buf.length) {
+            return base64Js.fromByteArray(buf)
+          } else {
+            return base64Js.fromByteArray(buf.slice(start, end))
+          }
+        }
+
+        function utf8Slice (buf, start, end) {
+          end = Math.min(buf.length, end);
+          const res = [];
+
+          let i = start;
+          while (i < end) {
+            const firstByte = buf[i];
+            let codePoint = null;
+            let bytesPerSequence = (firstByte > 0xEF)
+              ? 4
+              : (firstByte > 0xDF)
+                  ? 3
+                  : (firstByte > 0xBF)
+                      ? 2
+                      : 1;
+
+            if (i + bytesPerSequence <= end) {
+              let secondByte, thirdByte, fourthByte, tempCodePoint;
+
+              switch (bytesPerSequence) {
+                case 1:
+                  if (firstByte < 0x80) {
+                    codePoint = firstByte;
+                  }
+                  break
+                case 2:
+                  secondByte = buf[i + 1];
+                  if ((secondByte & 0xC0) === 0x80) {
+                    tempCodePoint = (firstByte & 0x1F) << 0x6 | (secondByte & 0x3F);
+                    if (tempCodePoint > 0x7F) {
+                      codePoint = tempCodePoint;
+                    }
+                  }
+                  break
+                case 3:
+                  secondByte = buf[i + 1];
+                  thirdByte = buf[i + 2];
+                  if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80) {
+                    tempCodePoint = (firstByte & 0xF) << 0xC | (secondByte & 0x3F) << 0x6 | (thirdByte & 0x3F);
+                    if (tempCodePoint > 0x7FF && (tempCodePoint < 0xD800 || tempCodePoint > 0xDFFF)) {
+                      codePoint = tempCodePoint;
+                    }
+                  }
+                  break
+                case 4:
+                  secondByte = buf[i + 1];
+                  thirdByte = buf[i + 2];
+                  fourthByte = buf[i + 3];
+                  if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80 && (fourthByte & 0xC0) === 0x80) {
+                    tempCodePoint = (firstByte & 0xF) << 0x12 | (secondByte & 0x3F) << 0xC | (thirdByte & 0x3F) << 0x6 | (fourthByte & 0x3F);
+                    if (tempCodePoint > 0xFFFF && tempCodePoint < 0x110000) {
+                      codePoint = tempCodePoint;
+                    }
+                  }
+              }
+            }
+
+            if (codePoint === null) {
+              // we did not generate a valid codePoint so insert a
+              // replacement char (U+FFFD) and advance only 1 byte
+              codePoint = 0xFFFD;
+              bytesPerSequence = 1;
+            } else if (codePoint > 0xFFFF) {
+              // encode to utf16 (surrogate pair dance)
+              codePoint -= 0x10000;
+              res.push(codePoint >>> 10 & 0x3FF | 0xD800);
+              codePoint = 0xDC00 | codePoint & 0x3FF;
+            }
+
+            res.push(codePoint);
+            i += bytesPerSequence;
+          }
+
+          return decodeCodePointsArray(res)
+        }
+
+        // Based on http://stackoverflow.com/a/22747272/680742, the browser with
+        // the lowest limit is Chrome, with 0x10000 args.
+        // We go 1 magnitude less, for safety
+        const MAX_ARGUMENTS_LENGTH = 0x1000;
+
+        function decodeCodePointsArray (codePoints) {
+          const len = codePoints.length;
+          if (len <= MAX_ARGUMENTS_LENGTH) {
+            return String.fromCharCode.apply(String, codePoints) // avoid extra slice()
+          }
+
+          // Decode in chunks to avoid "call stack size exceeded".
+          let res = '';
+          let i = 0;
+          while (i < len) {
+            res += String.fromCharCode.apply(
+              String,
+              codePoints.slice(i, i += MAX_ARGUMENTS_LENGTH)
+            );
+          }
+          return res
+        }
+
+        function asciiSlice (buf, start, end) {
+          let ret = '';
+          end = Math.min(buf.length, end);
+
+          for (let i = start; i < end; ++i) {
+            ret += String.fromCharCode(buf[i] & 0x7F);
+          }
+          return ret
+        }
+
+        function latin1Slice (buf, start, end) {
+          let ret = '';
+          end = Math.min(buf.length, end);
+
+          for (let i = start; i < end; ++i) {
+            ret += String.fromCharCode(buf[i]);
+          }
+          return ret
+        }
+
+        function hexSlice (buf, start, end) {
+          const len = buf.length;
+
+          if (!start || start < 0) start = 0;
+          if (!end || end < 0 || end > len) end = len;
+
+          let out = '';
+          for (let i = start; i < end; ++i) {
+            out += hexSliceLookupTable[buf[i]];
+          }
+          return out
+        }
+
+        function utf16leSlice (buf, start, end) {
+          const bytes = buf.slice(start, end);
+          let res = '';
+          // If bytes.length is odd, the last 8 bits must be ignored (same as node.js)
+          for (let i = 0; i < bytes.length - 1; i += 2) {
+            res += String.fromCharCode(bytes[i] + (bytes[i + 1] * 256));
+          }
+          return res
+        }
+
+        Buffer.prototype.slice = function slice (start, end) {
+          const len = this.length;
+          start = ~~start;
+          end = end === undefined ? len : ~~end;
+
+          if (start < 0) {
+            start += len;
+            if (start < 0) start = 0;
+          } else if (start > len) {
+            start = len;
+          }
+
+          if (end < 0) {
+            end += len;
+            if (end < 0) end = 0;
+          } else if (end > len) {
+            end = len;
+          }
+
+          if (end < start) end = start;
+
+          const newBuf = this.subarray(start, end);
+          // Return an augmented `Uint8Array` instance
+          Object.setPrototypeOf(newBuf, Buffer.prototype);
+
+          return newBuf
+        };
+
+        /*
+         * Need to make sure that buffer isn't trying to write out of bounds.
+         */
+        function checkOffset (offset, ext, length) {
+          if ((offset % 1) !== 0 || offset < 0) throw new RangeError('offset is not uint')
+          if (offset + ext > length) throw new RangeError('Trying to access beyond buffer length')
+        }
+
+        Buffer.prototype.readUintLE =
+        Buffer.prototype.readUIntLE = function readUIntLE (offset, byteLength, noAssert) {
+          offset = offset >>> 0;
+          byteLength = byteLength >>> 0;
+          if (!noAssert) checkOffset(offset, byteLength, this.length);
+
+          let val = this[offset];
+          let mul = 1;
+          let i = 0;
+          while (++i < byteLength && (mul *= 0x100)) {
+            val += this[offset + i] * mul;
+          }
+
+          return val
+        };
+
+        Buffer.prototype.readUintBE =
+        Buffer.prototype.readUIntBE = function readUIntBE (offset, byteLength, noAssert) {
+          offset = offset >>> 0;
+          byteLength = byteLength >>> 0;
+          if (!noAssert) {
+            checkOffset(offset, byteLength, this.length);
+          }
+
+          let val = this[offset + --byteLength];
+          let mul = 1;
+          while (byteLength > 0 && (mul *= 0x100)) {
+            val += this[offset + --byteLength] * mul;
+          }
+
+          return val
+        };
+
+        Buffer.prototype.readUint8 =
+        Buffer.prototype.readUInt8 = function readUInt8 (offset, noAssert) {
+          offset = offset >>> 0;
+          if (!noAssert) checkOffset(offset, 1, this.length);
+          return this[offset]
+        };
+
+        Buffer.prototype.readUint16LE =
+        Buffer.prototype.readUInt16LE = function readUInt16LE (offset, noAssert) {
+          offset = offset >>> 0;
+          if (!noAssert) checkOffset(offset, 2, this.length);
+          return this[offset] | (this[offset + 1] << 8)
+        };
+
+        Buffer.prototype.readUint16BE =
+        Buffer.prototype.readUInt16BE = function readUInt16BE (offset, noAssert) {
+          offset = offset >>> 0;
+          if (!noAssert) checkOffset(offset, 2, this.length);
+          return (this[offset] << 8) | this[offset + 1]
+        };
+
+        Buffer.prototype.readUint32LE =
+        Buffer.prototype.readUInt32LE = function readUInt32LE (offset, noAssert) {
+          offset = offset >>> 0;
+          if (!noAssert) checkOffset(offset, 4, this.length);
+
+          return ((this[offset]) |
+              (this[offset + 1] << 8) |
+              (this[offset + 2] << 16)) +
+              (this[offset + 3] * 0x1000000)
+        };
+
+        Buffer.prototype.readUint32BE =
+        Buffer.prototype.readUInt32BE = function readUInt32BE (offset, noAssert) {
+          offset = offset >>> 0;
+          if (!noAssert) checkOffset(offset, 4, this.length);
+
+          return (this[offset] * 0x1000000) +
+            ((this[offset + 1] << 16) |
+            (this[offset + 2] << 8) |
+            this[offset + 3])
+        };
+
+        Buffer.prototype.readBigUInt64LE = defineBigIntMethod(function readBigUInt64LE (offset) {
+          offset = offset >>> 0;
+          validateNumber(offset, 'offset');
+          const first = this[offset];
+          const last = this[offset + 7];
+          if (first === undefined || last === undefined) {
+            boundsError(offset, this.length - 8);
+          }
+
+          const lo = first +
+            this[++offset] * 2 ** 8 +
+            this[++offset] * 2 ** 16 +
+            this[++offset] * 2 ** 24;
+
+          const hi = this[++offset] +
+            this[++offset] * 2 ** 8 +
+            this[++offset] * 2 ** 16 +
+            last * 2 ** 24;
+
+          return BigInt(lo) + (BigInt(hi) << BigInt(32))
+        });
+
+        Buffer.prototype.readBigUInt64BE = defineBigIntMethod(function readBigUInt64BE (offset) {
+          offset = offset >>> 0;
+          validateNumber(offset, 'offset');
+          const first = this[offset];
+          const last = this[offset + 7];
+          if (first === undefined || last === undefined) {
+            boundsError(offset, this.length - 8);
+          }
+
+          const hi = first * 2 ** 24 +
+            this[++offset] * 2 ** 16 +
+            this[++offset] * 2 ** 8 +
+            this[++offset];
+
+          const lo = this[++offset] * 2 ** 24 +
+            this[++offset] * 2 ** 16 +
+            this[++offset] * 2 ** 8 +
+            last;
+
+          return (BigInt(hi) << BigInt(32)) + BigInt(lo)
+        });
+
+        Buffer.prototype.readIntLE = function readIntLE (offset, byteLength, noAssert) {
+          offset = offset >>> 0;
+          byteLength = byteLength >>> 0;
+          if (!noAssert) checkOffset(offset, byteLength, this.length);
+
+          let val = this[offset];
+          let mul = 1;
+          let i = 0;
+          while (++i < byteLength && (mul *= 0x100)) {
+            val += this[offset + i] * mul;
+          }
+          mul *= 0x80;
+
+          if (val >= mul) val -= Math.pow(2, 8 * byteLength);
+
+          return val
+        };
+
+        Buffer.prototype.readIntBE = function readIntBE (offset, byteLength, noAssert) {
+          offset = offset >>> 0;
+          byteLength = byteLength >>> 0;
+          if (!noAssert) checkOffset(offset, byteLength, this.length);
+
+          let i = byteLength;
+          let mul = 1;
+          let val = this[offset + --i];
+          while (i > 0 && (mul *= 0x100)) {
+            val += this[offset + --i] * mul;
+          }
+          mul *= 0x80;
+
+          if (val >= mul) val -= Math.pow(2, 8 * byteLength);
+
+          return val
+        };
+
+        Buffer.prototype.readInt8 = function readInt8 (offset, noAssert) {
+          offset = offset >>> 0;
+          if (!noAssert) checkOffset(offset, 1, this.length);
+          if (!(this[offset] & 0x80)) return (this[offset])
+          return ((0xff - this[offset] + 1) * -1)
+        };
+
+        Buffer.prototype.readInt16LE = function readInt16LE (offset, noAssert) {
+          offset = offset >>> 0;
+          if (!noAssert) checkOffset(offset, 2, this.length);
+          const val = this[offset] | (this[offset + 1] << 8);
+          return (val & 0x8000) ? val | 0xFFFF0000 : val
+        };
+
+        Buffer.prototype.readInt16BE = function readInt16BE (offset, noAssert) {
+          offset = offset >>> 0;
+          if (!noAssert) checkOffset(offset, 2, this.length);
+          const val = this[offset + 1] | (this[offset] << 8);
+          return (val & 0x8000) ? val | 0xFFFF0000 : val
+        };
+
+        Buffer.prototype.readInt32LE = function readInt32LE (offset, noAssert) {
+          offset = offset >>> 0;
+          if (!noAssert) checkOffset(offset, 4, this.length);
+
+          return (this[offset]) |
+            (this[offset + 1] << 8) |
+            (this[offset + 2] << 16) |
+            (this[offset + 3] << 24)
+        };
+
+        Buffer.prototype.readInt32BE = function readInt32BE (offset, noAssert) {
+          offset = offset >>> 0;
+          if (!noAssert) checkOffset(offset, 4, this.length);
+
+          return (this[offset] << 24) |
+            (this[offset + 1] << 16) |
+            (this[offset + 2] << 8) |
+            (this[offset + 3])
+        };
+
+        Buffer.prototype.readBigInt64LE = defineBigIntMethod(function readBigInt64LE (offset) {
+          offset = offset >>> 0;
+          validateNumber(offset, 'offset');
+          const first = this[offset];
+          const last = this[offset + 7];
+          if (first === undefined || last === undefined) {
+            boundsError(offset, this.length - 8);
+          }
+
+          const val = this[offset + 4] +
+            this[offset + 5] * 2 ** 8 +
+            this[offset + 6] * 2 ** 16 +
+            (last << 24); // Overflow
+
+          return (BigInt(val) << BigInt(32)) +
+            BigInt(first +
+            this[++offset] * 2 ** 8 +
+            this[++offset] * 2 ** 16 +
+            this[++offset] * 2 ** 24)
+        });
+
+        Buffer.prototype.readBigInt64BE = defineBigIntMethod(function readBigInt64BE (offset) {
+          offset = offset >>> 0;
+          validateNumber(offset, 'offset');
+          const first = this[offset];
+          const last = this[offset + 7];
+          if (first === undefined || last === undefined) {
+            boundsError(offset, this.length - 8);
+          }
+
+          const val = (first << 24) + // Overflow
+            this[++offset] * 2 ** 16 +
+            this[++offset] * 2 ** 8 +
+            this[++offset];
+
+          return (BigInt(val) << BigInt(32)) +
+            BigInt(this[++offset] * 2 ** 24 +
+            this[++offset] * 2 ** 16 +
+            this[++offset] * 2 ** 8 +
+            last)
+        });
+
+        Buffer.prototype.readFloatLE = function readFloatLE (offset, noAssert) {
+          offset = offset >>> 0;
+          if (!noAssert) checkOffset(offset, 4, this.length);
+          return ieee754.read(this, offset, true, 23, 4)
+        };
+
+        Buffer.prototype.readFloatBE = function readFloatBE (offset, noAssert) {
+          offset = offset >>> 0;
+          if (!noAssert) checkOffset(offset, 4, this.length);
+          return ieee754.read(this, offset, false, 23, 4)
+        };
+
+        Buffer.prototype.readDoubleLE = function readDoubleLE (offset, noAssert) {
+          offset = offset >>> 0;
+          if (!noAssert) checkOffset(offset, 8, this.length);
+          return ieee754.read(this, offset, true, 52, 8)
+        };
+
+        Buffer.prototype.readDoubleBE = function readDoubleBE (offset, noAssert) {
+          offset = offset >>> 0;
+          if (!noAssert) checkOffset(offset, 8, this.length);
+          return ieee754.read(this, offset, false, 52, 8)
+        };
+
+        function checkInt (buf, value, offset, ext, max, min) {
+          if (!Buffer.isBuffer(buf)) throw new TypeError('"buffer" argument must be a Buffer instance')
+          if (value > max || value < min) throw new RangeError('"value" argument is out of bounds')
+          if (offset + ext > buf.length) throw new RangeError('Index out of range')
+        }
+
+        Buffer.prototype.writeUintLE =
+        Buffer.prototype.writeUIntLE = function writeUIntLE (value, offset, byteLength, noAssert) {
+          value = +value;
+          offset = offset >>> 0;
+          byteLength = byteLength >>> 0;
+          if (!noAssert) {
+            const maxBytes = Math.pow(2, 8 * byteLength) - 1;
+            checkInt(this, value, offset, byteLength, maxBytes, 0);
+          }
+
+          let mul = 1;
+          let i = 0;
+          this[offset] = value & 0xFF;
+          while (++i < byteLength && (mul *= 0x100)) {
+            this[offset + i] = (value / mul) & 0xFF;
+          }
+
+          return offset + byteLength
+        };
+
+        Buffer.prototype.writeUintBE =
+        Buffer.prototype.writeUIntBE = function writeUIntBE (value, offset, byteLength, noAssert) {
+          value = +value;
+          offset = offset >>> 0;
+          byteLength = byteLength >>> 0;
+          if (!noAssert) {
+            const maxBytes = Math.pow(2, 8 * byteLength) - 1;
+            checkInt(this, value, offset, byteLength, maxBytes, 0);
+          }
+
+          let i = byteLength - 1;
+          let mul = 1;
+          this[offset + i] = value & 0xFF;
+          while (--i >= 0 && (mul *= 0x100)) {
+            this[offset + i] = (value / mul) & 0xFF;
+          }
+
+          return offset + byteLength
+        };
+
+        Buffer.prototype.writeUint8 =
+        Buffer.prototype.writeUInt8 = function writeUInt8 (value, offset, noAssert) {
+          value = +value;
+          offset = offset >>> 0;
+          if (!noAssert) checkInt(this, value, offset, 1, 0xff, 0);
+          this[offset] = (value & 0xff);
+          return offset + 1
+        };
+
+        Buffer.prototype.writeUint16LE =
+        Buffer.prototype.writeUInt16LE = function writeUInt16LE (value, offset, noAssert) {
+          value = +value;
+          offset = offset >>> 0;
+          if (!noAssert) checkInt(this, value, offset, 2, 0xffff, 0);
+          this[offset] = (value & 0xff);
+          this[offset + 1] = (value >>> 8);
+          return offset + 2
+        };
+
+        Buffer.prototype.writeUint16BE =
+        Buffer.prototype.writeUInt16BE = function writeUInt16BE (value, offset, noAssert) {
+          value = +value;
+          offset = offset >>> 0;
+          if (!noAssert) checkInt(this, value, offset, 2, 0xffff, 0);
+          this[offset] = (value >>> 8);
+          this[offset + 1] = (value & 0xff);
+          return offset + 2
+        };
+
+        Buffer.prototype.writeUint32LE =
+        Buffer.prototype.writeUInt32LE = function writeUInt32LE (value, offset, noAssert) {
+          value = +value;
+          offset = offset >>> 0;
+          if (!noAssert) checkInt(this, value, offset, 4, 0xffffffff, 0);
+          this[offset + 3] = (value >>> 24);
+          this[offset + 2] = (value >>> 16);
+          this[offset + 1] = (value >>> 8);
+          this[offset] = (value & 0xff);
+          return offset + 4
+        };
+
+        Buffer.prototype.writeUint32BE =
+        Buffer.prototype.writeUInt32BE = function writeUInt32BE (value, offset, noAssert) {
+          value = +value;
+          offset = offset >>> 0;
+          if (!noAssert) checkInt(this, value, offset, 4, 0xffffffff, 0);
+          this[offset] = (value >>> 24);
+          this[offset + 1] = (value >>> 16);
+          this[offset + 2] = (value >>> 8);
+          this[offset + 3] = (value & 0xff);
+          return offset + 4
+        };
+
+        function wrtBigUInt64LE (buf, value, offset, min, max) {
+          checkIntBI(value, min, max, buf, offset, 7);
+
+          let lo = Number(value & BigInt(0xffffffff));
+          buf[offset++] = lo;
+          lo = lo >> 8;
+          buf[offset++] = lo;
+          lo = lo >> 8;
+          buf[offset++] = lo;
+          lo = lo >> 8;
+          buf[offset++] = lo;
+          let hi = Number(value >> BigInt(32) & BigInt(0xffffffff));
+          buf[offset++] = hi;
+          hi = hi >> 8;
+          buf[offset++] = hi;
+          hi = hi >> 8;
+          buf[offset++] = hi;
+          hi = hi >> 8;
+          buf[offset++] = hi;
+          return offset
+        }
+
+        function wrtBigUInt64BE (buf, value, offset, min, max) {
+          checkIntBI(value, min, max, buf, offset, 7);
+
+          let lo = Number(value & BigInt(0xffffffff));
+          buf[offset + 7] = lo;
+          lo = lo >> 8;
+          buf[offset + 6] = lo;
+          lo = lo >> 8;
+          buf[offset + 5] = lo;
+          lo = lo >> 8;
+          buf[offset + 4] = lo;
+          let hi = Number(value >> BigInt(32) & BigInt(0xffffffff));
+          buf[offset + 3] = hi;
+          hi = hi >> 8;
+          buf[offset + 2] = hi;
+          hi = hi >> 8;
+          buf[offset + 1] = hi;
+          hi = hi >> 8;
+          buf[offset] = hi;
+          return offset + 8
+        }
+
+        Buffer.prototype.writeBigUInt64LE = defineBigIntMethod(function writeBigUInt64LE (value, offset = 0) {
+          return wrtBigUInt64LE(this, value, offset, BigInt(0), BigInt('0xffffffffffffffff'))
+        });
+
+        Buffer.prototype.writeBigUInt64BE = defineBigIntMethod(function writeBigUInt64BE (value, offset = 0) {
+          return wrtBigUInt64BE(this, value, offset, BigInt(0), BigInt('0xffffffffffffffff'))
+        });
+
+        Buffer.prototype.writeIntLE = function writeIntLE (value, offset, byteLength, noAssert) {
+          value = +value;
+          offset = offset >>> 0;
+          if (!noAssert) {
+            const limit = Math.pow(2, (8 * byteLength) - 1);
+
+            checkInt(this, value, offset, byteLength, limit - 1, -limit);
+          }
+
+          let i = 0;
+          let mul = 1;
+          let sub = 0;
+          this[offset] = value & 0xFF;
+          while (++i < byteLength && (mul *= 0x100)) {
+            if (value < 0 && sub === 0 && this[offset + i - 1] !== 0) {
+              sub = 1;
+            }
+            this[offset + i] = ((value / mul) >> 0) - sub & 0xFF;
+          }
+
+          return offset + byteLength
+        };
+
+        Buffer.prototype.writeIntBE = function writeIntBE (value, offset, byteLength, noAssert) {
+          value = +value;
+          offset = offset >>> 0;
+          if (!noAssert) {
+            const limit = Math.pow(2, (8 * byteLength) - 1);
+
+            checkInt(this, value, offset, byteLength, limit - 1, -limit);
+          }
+
+          let i = byteLength - 1;
+          let mul = 1;
+          let sub = 0;
+          this[offset + i] = value & 0xFF;
+          while (--i >= 0 && (mul *= 0x100)) {
+            if (value < 0 && sub === 0 && this[offset + i + 1] !== 0) {
+              sub = 1;
+            }
+            this[offset + i] = ((value / mul) >> 0) - sub & 0xFF;
+          }
+
+          return offset + byteLength
+        };
+
+        Buffer.prototype.writeInt8 = function writeInt8 (value, offset, noAssert) {
+          value = +value;
+          offset = offset >>> 0;
+          if (!noAssert) checkInt(this, value, offset, 1, 0x7f, -0x80);
+          if (value < 0) value = 0xff + value + 1;
+          this[offset] = (value & 0xff);
+          return offset + 1
+        };
+
+        Buffer.prototype.writeInt16LE = function writeInt16LE (value, offset, noAssert) {
+          value = +value;
+          offset = offset >>> 0;
+          if (!noAssert) checkInt(this, value, offset, 2, 0x7fff, -0x8000);
+          this[offset] = (value & 0xff);
+          this[offset + 1] = (value >>> 8);
+          return offset + 2
+        };
+
+        Buffer.prototype.writeInt16BE = function writeInt16BE (value, offset, noAssert) {
+          value = +value;
+          offset = offset >>> 0;
+          if (!noAssert) checkInt(this, value, offset, 2, 0x7fff, -0x8000);
+          this[offset] = (value >>> 8);
+          this[offset + 1] = (value & 0xff);
+          return offset + 2
+        };
+
+        Buffer.prototype.writeInt32LE = function writeInt32LE (value, offset, noAssert) {
+          value = +value;
+          offset = offset >>> 0;
+          if (!noAssert) checkInt(this, value, offset, 4, 0x7fffffff, -0x80000000);
+          this[offset] = (value & 0xff);
+          this[offset + 1] = (value >>> 8);
+          this[offset + 2] = (value >>> 16);
+          this[offset + 3] = (value >>> 24);
+          return offset + 4
+        };
+
+        Buffer.prototype.writeInt32BE = function writeInt32BE (value, offset, noAssert) {
+          value = +value;
+          offset = offset >>> 0;
+          if (!noAssert) checkInt(this, value, offset, 4, 0x7fffffff, -0x80000000);
+          if (value < 0) value = 0xffffffff + value + 1;
+          this[offset] = (value >>> 24);
+          this[offset + 1] = (value >>> 16);
+          this[offset + 2] = (value >>> 8);
+          this[offset + 3] = (value & 0xff);
+          return offset + 4
+        };
+
+        Buffer.prototype.writeBigInt64LE = defineBigIntMethod(function writeBigInt64LE (value, offset = 0) {
+          return wrtBigUInt64LE(this, value, offset, -BigInt('0x8000000000000000'), BigInt('0x7fffffffffffffff'))
+        });
+
+        Buffer.prototype.writeBigInt64BE = defineBigIntMethod(function writeBigInt64BE (value, offset = 0) {
+          return wrtBigUInt64BE(this, value, offset, -BigInt('0x8000000000000000'), BigInt('0x7fffffffffffffff'))
+        });
+
+        function checkIEEE754 (buf, value, offset, ext, max, min) {
+          if (offset + ext > buf.length) throw new RangeError('Index out of range')
+          if (offset < 0) throw new RangeError('Index out of range')
+        }
+
+        function writeFloat (buf, value, offset, littleEndian, noAssert) {
+          value = +value;
+          offset = offset >>> 0;
+          if (!noAssert) {
+            checkIEEE754(buf, value, offset, 4);
+          }
+          ieee754.write(buf, value, offset, littleEndian, 23, 4);
+          return offset + 4
+        }
+
+        Buffer.prototype.writeFloatLE = function writeFloatLE (value, offset, noAssert) {
+          return writeFloat(this, value, offset, true, noAssert)
+        };
+
+        Buffer.prototype.writeFloatBE = function writeFloatBE (value, offset, noAssert) {
+          return writeFloat(this, value, offset, false, noAssert)
+        };
+
+        function writeDouble (buf, value, offset, littleEndian, noAssert) {
+          value = +value;
+          offset = offset >>> 0;
+          if (!noAssert) {
+            checkIEEE754(buf, value, offset, 8);
+          }
+          ieee754.write(buf, value, offset, littleEndian, 52, 8);
+          return offset + 8
+        }
+
+        Buffer.prototype.writeDoubleLE = function writeDoubleLE (value, offset, noAssert) {
+          return writeDouble(this, value, offset, true, noAssert)
+        };
+
+        Buffer.prototype.writeDoubleBE = function writeDoubleBE (value, offset, noAssert) {
+          return writeDouble(this, value, offset, false, noAssert)
+        };
+
+        // copy(targetBuffer, targetStart=0, sourceStart=0, sourceEnd=buffer.length)
+        Buffer.prototype.copy = function copy (target, targetStart, start, end) {
+          if (!Buffer.isBuffer(target)) throw new TypeError('argument should be a Buffer')
+          if (!start) start = 0;
+          if (!end && end !== 0) end = this.length;
+          if (targetStart >= target.length) targetStart = target.length;
+          if (!targetStart) targetStart = 0;
+          if (end > 0 && end < start) end = start;
+
+          // Copy 0 bytes; we're done
+          if (end === start) return 0
+          if (target.length === 0 || this.length === 0) return 0
+
+          // Fatal error conditions
+          if (targetStart < 0) {
+            throw new RangeError('targetStart out of bounds')
+          }
+          if (start < 0 || start >= this.length) throw new RangeError('Index out of range')
+          if (end < 0) throw new RangeError('sourceEnd out of bounds')
+
+          // Are we oob?
+          if (end > this.length) end = this.length;
+          if (target.length - targetStart < end - start) {
+            end = target.length - targetStart + start;
+          }
+
+          const len = end - start;
+
+          if (this === target && typeof Uint8Array.prototype.copyWithin === 'function') {
+            // Use built-in when available, missing from IE11
+            this.copyWithin(targetStart, start, end);
+          } else {
+            Uint8Array.prototype.set.call(
+              target,
+              this.subarray(start, end),
+              targetStart
+            );
+          }
+
+          return len
+        };
+
+        // Usage:
+        //    buffer.fill(number[, offset[, end]])
+        //    buffer.fill(buffer[, offset[, end]])
+        //    buffer.fill(string[, offset[, end]][, encoding])
+        Buffer.prototype.fill = function fill (val, start, end, encoding) {
+          // Handle string cases:
+          if (typeof val === 'string') {
+            if (typeof start === 'string') {
+              encoding = start;
+              start = 0;
+              end = this.length;
+            } else if (typeof end === 'string') {
+              encoding = end;
+              end = this.length;
+            }
+            if (encoding !== undefined && typeof encoding !== 'string') {
+              throw new TypeError('encoding must be a string')
+            }
+            if (typeof encoding === 'string' && !Buffer.isEncoding(encoding)) {
+              throw new TypeError('Unknown encoding: ' + encoding)
+            }
+            if (val.length === 1) {
+              const code = val.charCodeAt(0);
+              if ((encoding === 'utf8' && code < 128) ||
+                  encoding === 'latin1') {
+                // Fast path: If `val` fits into a single byte, use that numeric value.
+                val = code;
+              }
+            }
+          } else if (typeof val === 'number') {
+            val = val & 255;
+          } else if (typeof val === 'boolean') {
+            val = Number(val);
+          }
+
+          // Invalid ranges are not set to a default, so can range check early.
+          if (start < 0 || this.length < start || this.length < end) {
+            throw new RangeError('Out of range index')
+          }
+
+          if (end <= start) {
+            return this
+          }
+
+          start = start >>> 0;
+          end = end === undefined ? this.length : end >>> 0;
+
+          if (!val) val = 0;
+
+          let i;
+          if (typeof val === 'number') {
+            for (i = start; i < end; ++i) {
+              this[i] = val;
+            }
+          } else {
+            const bytes = Buffer.isBuffer(val)
+              ? val
+              : Buffer.from(val, encoding);
+            const len = bytes.length;
+            if (len === 0) {
+              throw new TypeError('The value "' + val +
+                '" is invalid for argument "value"')
+            }
+            for (i = 0; i < end - start; ++i) {
+              this[i + start] = bytes[i % len];
+            }
+          }
+
+          return this
+        };
+
+        // CUSTOM ERRORS
+        // =============
+
+        // Simplified versions from Node, changed for Buffer-only usage
+        const errors = {};
+        function E (sym, getMessage, Base) {
+          errors[sym] = class NodeError extends Base {
+            constructor () {
+              super();
+
+              Object.defineProperty(this, 'message', {
+                value: getMessage.apply(this, arguments),
+                writable: true,
+                configurable: true
+              });
+
+              // Add the error code to the name to include it in the stack trace.
+              this.name = `${this.name} [${sym}]`;
+              // Access the stack to generate the error message including the error code
+              // from the name.
+              this.stack; // eslint-disable-line no-unused-expressions
+              // Reset the name to the actual name.
+              delete this.name;
+            }
+
+            get code () {
+              return sym
+            }
+
+            set code (value) {
+              Object.defineProperty(this, 'code', {
+                configurable: true,
+                enumerable: true,
+                value,
+                writable: true
+              });
+            }
+
+            toString () {
+              return `${this.name} [${sym}]: ${this.message}`
+            }
+          };
+        }
+
+        E('ERR_BUFFER_OUT_OF_BOUNDS',
+          function (name) {
+            if (name) {
+              return `${name} is outside of buffer bounds`
+            }
+
+            return 'Attempt to access memory outside buffer bounds'
+          }, RangeError);
+        E('ERR_INVALID_ARG_TYPE',
+          function (name, actual) {
+            return `The "${name}" argument must be of type number. Received type ${typeof actual}`
+          }, TypeError);
+        E('ERR_OUT_OF_RANGE',
+          function (str, range, input) {
+            let msg = `The value of "${str}" is out of range.`;
+            let received = input;
+            if (Number.isInteger(input) && Math.abs(input) > 2 ** 32) {
+              received = addNumericalSeparator(String(input));
+            } else if (typeof input === 'bigint') {
+              received = String(input);
+              if (input > BigInt(2) ** BigInt(32) || input < -(BigInt(2) ** BigInt(32))) {
+                received = addNumericalSeparator(received);
+              }
+              received += 'n';
+            }
+            msg += ` It must be ${range}. Received ${received}`;
+            return msg
+          }, RangeError);
+
+        function addNumericalSeparator (val) {
+          let res = '';
+          let i = val.length;
+          const start = val[0] === '-' ? 1 : 0;
+          for (; i >= start + 4; i -= 3) {
+            res = `_${val.slice(i - 3, i)}${res}`;
+          }
+          return `${val.slice(0, i)}${res}`
+        }
+
+        // CHECK FUNCTIONS
+        // ===============
+
+        function checkBounds (buf, offset, byteLength) {
+          validateNumber(offset, 'offset');
+          if (buf[offset] === undefined || buf[offset + byteLength] === undefined) {
+            boundsError(offset, buf.length - (byteLength + 1));
+          }
+        }
+
+        function checkIntBI (value, min, max, buf, offset, byteLength) {
+          if (value > max || value < min) {
+            const n = typeof min === 'bigint' ? 'n' : '';
+            let range;
+            if (byteLength > 3) {
+              if (min === 0 || min === BigInt(0)) {
+                range = `>= 0${n} and < 2${n} ** ${(byteLength + 1) * 8}${n}`;
+              } else {
+                range = `>= -(2${n} ** ${(byteLength + 1) * 8 - 1}${n}) and < 2 ** ` +
+                        `${(byteLength + 1) * 8 - 1}${n}`;
+              }
+            } else {
+              range = `>= ${min}${n} and <= ${max}${n}`;
+            }
+            throw new errors.ERR_OUT_OF_RANGE('value', range, value)
+          }
+          checkBounds(buf, offset, byteLength);
+        }
+
+        function validateNumber (value, name) {
+          if (typeof value !== 'number') {
+            throw new errors.ERR_INVALID_ARG_TYPE(name, 'number', value)
+          }
+        }
+
+        function boundsError (value, length, type) {
+          if (Math.floor(value) !== value) {
+            validateNumber(value, type);
+            throw new errors.ERR_OUT_OF_RANGE(type || 'offset', 'an integer', value)
+          }
+
+          if (length < 0) {
+            throw new errors.ERR_BUFFER_OUT_OF_BOUNDS()
+          }
+
+          throw new errors.ERR_OUT_OF_RANGE(type || 'offset',
+                                            `>= ${type ? 1 : 0} and <= ${length}`,
+                                            value)
+        }
+
+        // HELPER FUNCTIONS
+        // ================
+
+        const INVALID_BASE64_RE = /[^+/0-9A-Za-z-_]/g;
+
+        function base64clean (str) {
+          // Node takes equal signs as end of the Base64 encoding
+          str = str.split('=')[0];
+          // Node strips out invalid characters like \n and \t from the string, base64-js does not
+          str = str.trim().replace(INVALID_BASE64_RE, '');
+          // Node converts strings with length < 2 to ''
+          if (str.length < 2) return ''
+          // Node allows for non-padded base64 strings (missing trailing ===), base64-js does not
+          while (str.length % 4 !== 0) {
+            str = str + '=';
+          }
+          return str
+        }
+
+        function utf8ToBytes (string, units) {
+          units = units || Infinity;
+          let codePoint;
+          const length = string.length;
+          let leadSurrogate = null;
+          const bytes = [];
+
+          for (let i = 0; i < length; ++i) {
+            codePoint = string.charCodeAt(i);
+
+            // is surrogate component
+            if (codePoint > 0xD7FF && codePoint < 0xE000) {
+              // last char was a lead
+              if (!leadSurrogate) {
+                // no lead yet
+                if (codePoint > 0xDBFF) {
+                  // unexpected trail
+                  if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD);
+                  continue
+                } else if (i + 1 === length) {
+                  // unpaired lead
+                  if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD);
+                  continue
+                }
+
+                // valid lead
+                leadSurrogate = codePoint;
+
+                continue
+              }
+
+              // 2 leads in a row
+              if (codePoint < 0xDC00) {
+                if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD);
+                leadSurrogate = codePoint;
+                continue
+              }
+
+              // valid surrogate pair
+              codePoint = (leadSurrogate - 0xD800 << 10 | codePoint - 0xDC00) + 0x10000;
+            } else if (leadSurrogate) {
+              // valid bmp char, but last char was a lead
+              if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD);
+            }
+
+            leadSurrogate = null;
+
+            // encode utf8
+            if (codePoint < 0x80) {
+              if ((units -= 1) < 0) break
+              bytes.push(codePoint);
+            } else if (codePoint < 0x800) {
+              if ((units -= 2) < 0) break
+              bytes.push(
+                codePoint >> 0x6 | 0xC0,
+                codePoint & 0x3F | 0x80
+              );
+            } else if (codePoint < 0x10000) {
+              if ((units -= 3) < 0) break
+              bytes.push(
+                codePoint >> 0xC | 0xE0,
+                codePoint >> 0x6 & 0x3F | 0x80,
+                codePoint & 0x3F | 0x80
+              );
+            } else if (codePoint < 0x110000) {
+              if ((units -= 4) < 0) break
+              bytes.push(
+                codePoint >> 0x12 | 0xF0,
+                codePoint >> 0xC & 0x3F | 0x80,
+                codePoint >> 0x6 & 0x3F | 0x80,
+                codePoint & 0x3F | 0x80
+              );
+            } else {
+              throw new Error('Invalid code point')
+            }
+          }
+
+          return bytes
+        }
+
+        function asciiToBytes (str) {
+          const byteArray = [];
+          for (let i = 0; i < str.length; ++i) {
+            // Node's code seems to be doing this and not & 0x7F..
+            byteArray.push(str.charCodeAt(i) & 0xFF);
+          }
+          return byteArray
+        }
+
+        function utf16leToBytes (str, units) {
+          let c, hi, lo;
+          const byteArray = [];
+          for (let i = 0; i < str.length; ++i) {
+            if ((units -= 2) < 0) break
+
+            c = str.charCodeAt(i);
+            hi = c >> 8;
+            lo = c % 256;
+            byteArray.push(lo);
+            byteArray.push(hi);
+          }
+
+          return byteArray
+        }
+
+        function base64ToBytes (str) {
+          return base64Js.toByteArray(base64clean(str))
+        }
+
+        function blitBuffer (src, dst, offset, length) {
+          let i;
+          for (i = 0; i < length; ++i) {
+            if ((i + offset >= dst.length) || (i >= src.length)) break
+            dst[i + offset] = src[i];
+          }
+          return i
+        }
+
+        // ArrayBuffer or Uint8Array objects from other contexts (i.e. iframes) do not pass
+        // the `instanceof` check but they should be treated as of that type.
+        // See: https://github.com/feross/buffer/issues/166
+        function isInstance (obj, type) {
+          return obj instanceof type ||
+            (obj != null && obj.constructor != null && obj.constructor.name != null &&
+              obj.constructor.name === type.name)
+        }
+        function numberIsNaN (obj) {
+          // For IE11 support
+          return obj !== obj // eslint-disable-line no-self-compare
+        }
+
+        // Create lookup table for `toString('hex')`
+        // See: https://github.com/feross/buffer/issues/219
+        const hexSliceLookupTable = (function () {
+          const alphabet = '0123456789abcdef';
+          const table = new Array(256);
+          for (let i = 0; i < 16; ++i) {
+            const i16 = i * 16;
+            for (let j = 0; j < 16; ++j) {
+              table[i16 + j] = alphabet[i] + alphabet[j];
+            }
+          }
+          return table
+        })();
+
+        // Return not function with Error if BigInt not supported
+        function defineBigIntMethod (fn) {
+          return typeof BigInt === 'undefined' ? BufferBigIntNotDefined : fn
+        }
+
+        function BufferBigIntNotDefined () {
+          throw new Error('BigInt not supported')
+        }
+        });
+        var buffer_1 = buffer.Buffer;
+        buffer.SlowBuffer;
+        buffer.INSPECT_MAX_BYTES;
+        buffer.kMaxLength;
+
         function arrBufToStr(buf, charSize) {
             var arr = charSize === 8 ? new Uint8Array(buf) : new Uint16Array(buf);
             return Array.from(arr)
@@ -8725,7 +13548,7 @@
         }
         function arrBufToBase64(buf) {
             var str = arrBufToStr(buf, 8);
-            return globalThis.btoa(str);
+            return buffer_1.from(str, 'binary').toString('base64');
         }
         function strToArrBuf(str, charSize) {
             var view = charSize === 8 ? new Uint8Array(str.length) : new Uint16Array(str.length);
@@ -8735,7 +13558,7 @@
             return view.buffer;
         }
         function base64ToArrBuf(base64) {
-            var str = globalThis.atob(base64);
+            var str = buffer_1.from(base64, 'base64').toString('binary');
             return strToArrBuf(str, 8);
         }
         function publicExponent() {
@@ -9820,51 +14643,9 @@
     //# sourceMappingURL=index.umd.js.map
     });
 
-    var types = createCommonjsModule(function (module, exports) {
-    Object.defineProperty(exports, "__esModule", { value: true });
-    (function (CryptoSystem) {
-        CryptoSystem["ECC"] = "ecc";
-        CryptoSystem["RSA"] = "rsa";
-    })(exports.CryptoSystem || (exports.CryptoSystem = {}));
-    (function (EccCurve) {
-        EccCurve["P_256"] = "P-256";
-        EccCurve["P_384"] = "P-384";
-        EccCurve["P_521"] = "P-521";
-    })(exports.EccCurve || (exports.EccCurve = {}));
-    (function (RsaSize) {
-        RsaSize[RsaSize["B1024"] = 1024] = "B1024";
-        RsaSize[RsaSize["B2048"] = 2048] = "B2048";
-        RsaSize[RsaSize["B4096"] = 4096] = "B4096";
-    })(exports.RsaSize || (exports.RsaSize = {}));
-    (function (SymmAlg) {
-        SymmAlg["AES_CTR"] = "AES-CTR";
-        SymmAlg["AES_CBC"] = "AES-CBC";
-    })(exports.SymmAlg || (exports.SymmAlg = {}));
-    (function (SymmKeyLength) {
-        SymmKeyLength[SymmKeyLength["B128"] = 128] = "B128";
-        SymmKeyLength[SymmKeyLength["B192"] = 192] = "B192";
-        SymmKeyLength[SymmKeyLength["B256"] = 256] = "B256";
-    })(exports.SymmKeyLength || (exports.SymmKeyLength = {}));
-    (function (HashAlg) {
-        HashAlg["SHA_1"] = "SHA-1";
-        HashAlg["SHA_256"] = "SHA-256";
-        HashAlg["SHA_384"] = "SHA-384";
-        HashAlg["SHA_512"] = "SHA-512";
-    })(exports.HashAlg || (exports.HashAlg = {}));
-    (function (CharSize) {
-        CharSize[CharSize["B8"] = 8] = "B8";
-        CharSize[CharSize["B16"] = 16] = "B16";
-    })(exports.CharSize || (exports.CharSize = {}));
-    (function (KeyUse) {
-        KeyUse["Read"] = "read";
-        KeyUse["Write"] = "write";
-    })(exports.KeyUse || (exports.KeyUse = {}));
-
-    });
-
     var KEYSTORE_CFG = { type: types.CryptoSystem.RSA };
     var ks = null;
-    var clear = function () { return __awaiter(void 0, void 0, void 0, function () {
+    var clear$1 = function () { return __awaiter(void 0, void 0, void 0, function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -9878,13 +14659,21 @@
             }
         });
     }); };
+    var create = function () { return __awaiter(void 0, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, index_umd.init(KEYSTORE_CFG)];
+                case 1: return [2 /*return*/, (_a.sent())];
+            }
+        });
+    }); };
     var set = function (userKeystore) { return __awaiter(void 0, void 0, void 0, function () {
         return __generator(this, function (_a) {
             ks = userKeystore;
             return [2 /*return*/];
         });
     }); };
-    var get = function () { return __awaiter(void 0, void 0, void 0, function () {
+    var get$1 = function () { return __awaiter(void 0, void 0, void 0, function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -9898,487 +14687,21 @@
         });
     }); };
 
-    var utils = createCommonjsModule(function (module, exports) {
-    var __awaiter = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
-        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-        return new (P || (P = Promise))(function (resolve, reject) {
-            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-            step((generator = generator.apply(thisArg, _arguments || [])).next());
-        });
-    };
-    var __generator = (commonjsGlobal && commonjsGlobal.__generator) || function (thisArg, body) {
-        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-        function verb(n) { return function (v) { return step([n, v]); }; }
-        function step(op) {
-            if (f) throw new TypeError("Generator is already executing.");
-            while (_) try {
-                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-                if (y = 0, t) op = [op[0] & 2, t.value];
-                switch (op[0]) {
-                    case 0: case 1: t = op; break;
-                    case 4: _.label++; return { value: op[1], done: false };
-                    case 5: _.label++; y = op[1]; op = [0]; continue;
-                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                    default:
-                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                        if (t[2]) _.ops.pop();
-                        _.trys.pop(); continue;
-                }
-                op = body.call(thisArg, _);
-            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-        }
-    };
-    Object.defineProperty(exports, "__esModule", { value: true });
-
-    function arrBufToStr(buf, charSize) {
-        var arr = charSize === 8 ? new Uint8Array(buf) : new Uint16Array(buf);
-        return Array.from(arr)
-            .map(function (b) { return String.fromCharCode(b); })
-            .join('');
-    }
-    exports.arrBufToStr = arrBufToStr;
-    function arrBufToBase64(buf) {
-        var str = arrBufToStr(buf, 8);
-        return globalThis.btoa(str);
-    }
-    exports.arrBufToBase64 = arrBufToBase64;
-    function strToArrBuf(str, charSize) {
-        var view = charSize === 8 ? new Uint8Array(str.length) : new Uint16Array(str.length);
-        for (var i = 0, strLen = str.length; i < strLen; i++) {
-            view[i] = str.charCodeAt(i);
-        }
-        return view.buffer;
-    }
-    exports.strToArrBuf = strToArrBuf;
-    function base64ToArrBuf(base64) {
-        var str = globalThis.atob(base64);
-        return strToArrBuf(str, 8);
-    }
-    exports.base64ToArrBuf = base64ToArrBuf;
-    function publicExponent() {
-        return new Uint8Array([0x01, 0x00, 0x01]);
-    }
-    exports.publicExponent = publicExponent;
-    function randomBuf(length) {
-        var arr = new Uint8Array(length);
-        globalThis.crypto.getRandomValues(arr);
-        return arr.buffer;
-    }
-    exports.randomBuf = randomBuf;
-    function joinBufs(fst, snd) {
-        var view1 = new Uint8Array(fst);
-        var view2 = new Uint8Array(snd);
-        var joined = new Uint8Array(view1.length + view2.length);
-        joined.set(view1);
-        joined.set(view2, view1.length);
-        return joined.buffer;
-    }
-    exports.joinBufs = joinBufs;
-    exports.normalizeUtf8ToBuf = function (msg) {
-        return exports.normalizeToBuf(msg, function (str) { return strToArrBuf(str, types.CharSize.B8); });
-    };
-    exports.normalizeUtf16ToBuf = function (msg) {
-        return exports.normalizeToBuf(msg, function (str) { return strToArrBuf(str, types.CharSize.B16); });
-    };
-    exports.normalizeBase64ToBuf = function (msg) {
-        return exports.normalizeToBuf(msg, base64ToArrBuf);
-    };
-    exports.normalizeUnicodeToBuf = function (msg, charSize) {
-        switch (charSize) {
-            case 8: return exports.normalizeUtf8ToBuf(msg);
-            default: return exports.normalizeUtf16ToBuf(msg);
-        }
-    };
-    exports.normalizeToBuf = function (msg, strConv) {
-        if (typeof msg === 'string') {
-            return strConv(msg);
-        }
-        else if (typeof msg === 'object' && msg.byteLength !== undefined) {
-            // this is the best runtime check I could find for ArrayBuffer/Uint8Array
-            var temp = new Uint8Array(msg);
-            return temp.buffer;
-        }
-        else {
-            throw new Error("Improper value. Must be a string, ArrayBuffer, Uint8Array");
-        }
-    };
-    /* istanbul ignore next */
-    function structuralClone(obj) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                return [2 /*return*/, new Promise(function (resolve) {
-                        var _a = new MessageChannel(), port1 = _a.port1, port2 = _a.port2;
-                        port2.onmessage = function (ev) { return resolve(ev.data); };
-                        port1.postMessage(obj);
-                    })];
-            });
-        });
-    }
-    exports.structuralClone = structuralClone;
-    exports.default = {
-        arrBufToStr: arrBufToStr,
-        arrBufToBase64: arrBufToBase64,
-        strToArrBuf: strToArrBuf,
-        base64ToArrBuf: base64ToArrBuf,
-        publicExponent: publicExponent,
-        randomBuf: randomBuf,
-        joinBufs: joinBufs,
-        normalizeUtf8ToBuf: exports.normalizeUtf8ToBuf,
-        normalizeUtf16ToBuf: exports.normalizeUtf16ToBuf,
-        normalizeBase64ToBuf: exports.normalizeBase64ToBuf,
-        normalizeToBuf: exports.normalizeToBuf,
-        structuralClone: structuralClone
-    };
-    //# sourceMappingURL=utils.js.map
+    var keystore$1 = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        clear: clear$1,
+        create: create,
+        set: set,
+        get: get$1
     });
 
-    var utils$1 = /*@__PURE__*/getDefaultExportFromCjs(utils);
-
-    var constants = createCommonjsModule(function (module, exports) {
-    Object.defineProperty(exports, "__esModule", { value: true });
-
-    exports.ECC_READ_ALG = 'ECDH';
-    exports.ECC_WRITE_ALG = 'ECDSA';
-    exports.RSA_READ_ALG = 'RSA-OAEP';
-    exports.RSA_WRITE_ALG = 'RSASSA-PKCS1-v1_5';
-    exports.SALT_LENGTH = 128;
-    exports.DEFAULT_CRYPTOSYSTEM = 'ecc';
-    exports.DEFAULT_ECC_CURVE = types.EccCurve.P_256;
-    exports.DEFAULT_RSA_SIZE = types.RsaSize.B2048;
-    exports.DEFAULT_SYMM_ALG = types.SymmAlg.AES_CTR;
-    exports.DEFAULT_SYMM_LEN = types.SymmKeyLength.B256;
-    exports.DEFAULT_CTR_LEN = 64;
-    exports.DEFAULT_HASH_ALG = types.HashAlg.SHA_256;
-    exports.DEFAULT_CHAR_SIZE = types.CharSize.B16;
-    exports.DEFAULT_STORE_NAME = 'keystore';
-    exports.DEFAULT_READ_KEY_NAME = 'read-key';
-    exports.DEFAULT_WRITE_KEY_NAME = 'write-key';
-    exports.default = {
-        ECC_READ_ALG: exports.ECC_READ_ALG,
-        ECC_WRITE_ALG: exports.ECC_WRITE_ALG,
-        RSA_READ_ALG: exports.RSA_READ_ALG,
-        RSA_WRITE_ALG: exports.RSA_WRITE_ALG,
-        SALT_LENGTH: exports.SALT_LENGTH,
-        DEFAULT_CRYPTOSYSTEM: exports.DEFAULT_CRYPTOSYSTEM,
-        DEFAULT_ECC_CURVE: exports.DEFAULT_ECC_CURVE,
-        DEFAULT_RSA_SIZE: exports.DEFAULT_RSA_SIZE,
-        DEFAULT_SYMM_ALG: exports.DEFAULT_SYMM_ALG,
-        DEFAULT_CTR_LEN: exports.DEFAULT_CTR_LEN,
-        DEFAULT_HASH_ALG: exports.DEFAULT_HASH_ALG,
-        DEFAULT_CHAR_SIZE: exports.DEFAULT_CHAR_SIZE,
-        DEFAULT_STORE_NAME: exports.DEFAULT_STORE_NAME,
-        DEFAULT_READ_KEY_NAME: exports.DEFAULT_READ_KEY_NAME,
-        DEFAULT_WRITE_KEY_NAME: exports.DEFAULT_WRITE_KEY_NAME,
-    };
-
-    });
-
-    var __awaiter$1 = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
-        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-        return new (P || (P = Promise))(function (resolve, reject) {
-            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-            step((generator = generator.apply(thisArg, _arguments || [])).next());
-        });
-    };
-    var __generator$1 = (commonjsGlobal && commonjsGlobal.__generator) || function (thisArg, body) {
-        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-        function verb(n) { return function (v) { return step([n, v]); }; }
-        function step(op) {
-            if (f) throw new TypeError("Generator is already executing.");
-            while (_) try {
-                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-                if (y = 0, t) op = [op[0] & 2, t.value];
-                switch (op[0]) {
-                    case 0: case 1: t = op; break;
-                    case 4: _.label++; return { value: op[1], done: false };
-                    case 5: _.label++; y = op[1]; op = [0]; continue;
-                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                    default:
-                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                        if (t[2]) _.ops.pop();
-                        _.trys.pop(); continue;
-                }
-                op = body.call(thisArg, _);
-            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-        }
-    };
-
-
-
-    function makeKey(opts) {
-        return __awaiter$1(this, void 0, void 0, function () {
-            return __generator$1(this, function (_a) {
-                return [2 /*return*/, globalThis.crypto.subtle.generateKey({
-                        name: (opts === null || opts === void 0 ? void 0 : opts.alg) || constants.DEFAULT_SYMM_ALG,
-                        length: (opts === null || opts === void 0 ? void 0 : opts.length) || constants.DEFAULT_SYMM_LEN,
-                    }, true, ['encrypt', 'decrypt'])];
-            });
-        });
-    }
-    var makeKey_1 = makeKey;
-    function importKey(base64key, opts) {
-        return __awaiter$1(this, void 0, void 0, function () {
-            var buf;
-            return __generator$1(this, function (_a) {
-                buf = utils.default.base64ToArrBuf(base64key);
-                return [2 /*return*/, globalThis.crypto.subtle.importKey('raw', buf, {
-                        name: (opts === null || opts === void 0 ? void 0 : opts.alg) || constants.DEFAULT_SYMM_ALG,
-                        length: (opts === null || opts === void 0 ? void 0 : opts.length) || constants.DEFAULT_SYMM_LEN,
-                    }, true, ['encrypt', 'decrypt'])];
-            });
-        });
-    }
-    var importKey_1 = importKey;
-    var _default = {
-        makeKey: makeKey,
-        importKey: importKey,
-    };
-    //# sourceMappingURL=keys.js.map
-
-    var keys = /*#__PURE__*/Object.defineProperty({
-    	makeKey: makeKey_1,
-    	importKey: importKey_1,
-    	default: _default
-    }, '__esModule', {value: true});
-
-    var __awaiter$2 = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
-        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-        return new (P || (P = Promise))(function (resolve, reject) {
-            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-            step((generator = generator.apply(thisArg, _arguments || [])).next());
-        });
-    };
-    var __generator$2 = (commonjsGlobal && commonjsGlobal.__generator) || function (thisArg, body) {
-        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-        function verb(n) { return function (v) { return step([n, v]); }; }
-        function step(op) {
-            if (f) throw new TypeError("Generator is already executing.");
-            while (_) try {
-                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-                if (y = 0, t) op = [op[0] & 2, t.value];
-                switch (op[0]) {
-                    case 0: case 1: t = op; break;
-                    case 4: _.label++; return { value: op[1], done: false };
-                    case 5: _.label++; y = op[1]; op = [0]; continue;
-                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                    default:
-                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                        if (t[2]) _.ops.pop();
-                        _.trys.pop(); continue;
-                }
-                op = body.call(thisArg, _);
-            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-        }
-    };
-
-
-
-
-
-    function encryptBytes(msg, key, opts) {
-        return __awaiter$2(this, void 0, void 0, function () {
-            var data, importedKey, _a, alg, iv, cipherBuf;
-            return __generator$2(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        data = utils.default.normalizeUtf16ToBuf(msg);
-                        if (!(typeof key === 'string')) return [3 /*break*/, 2];
-                        return [4 /*yield*/, keys.default.importKey(key, opts)];
-                    case 1:
-                        _a = _b.sent();
-                        return [3 /*break*/, 3];
-                    case 2:
-                        _a = key;
-                        _b.label = 3;
-                    case 3:
-                        importedKey = _a;
-                        alg = (opts === null || opts === void 0 ? void 0 : opts.alg) || constants.DEFAULT_SYMM_ALG;
-                        iv = (opts === null || opts === void 0 ? void 0 : opts.iv) || utils.default.randomBuf(16);
-                        return [4 /*yield*/, globalThis.crypto.subtle.encrypt({
-                                name: alg,
-                                // AES-CTR uses a counter, AES-GCM/AES-CBC use an initialization vector
-                                iv: alg === types.SymmAlg.AES_CTR ? undefined : iv,
-                                counter: alg === types.SymmAlg.AES_CTR ? new Uint8Array(iv) : undefined,
-                                length: alg === types.SymmAlg.AES_CTR ? constants.DEFAULT_CTR_LEN : undefined,
-                            }, importedKey, data)];
-                    case 4:
-                        cipherBuf = _b.sent();
-                        return [2 /*return*/, utils.default.joinBufs(iv, cipherBuf)];
-                }
-            });
-        });
-    }
-    var encryptBytes_1 = encryptBytes;
-    function decryptBytes(msg, key, opts) {
-        return __awaiter$2(this, void 0, void 0, function () {
-            var cipherText, importedKey, _a, alg, iv, cipherBytes, msgBuff;
-            return __generator$2(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        cipherText = utils.default.normalizeBase64ToBuf(msg);
-                        if (!(typeof key === 'string')) return [3 /*break*/, 2];
-                        return [4 /*yield*/, keys.default.importKey(key, opts)];
-                    case 1:
-                        _a = _b.sent();
-                        return [3 /*break*/, 3];
-                    case 2:
-                        _a = key;
-                        _b.label = 3;
-                    case 3:
-                        importedKey = _a;
-                        alg = (opts === null || opts === void 0 ? void 0 : opts.alg) || constants.DEFAULT_SYMM_ALG;
-                        iv = cipherText.slice(0, 16);
-                        cipherBytes = cipherText.slice(16);
-                        return [4 /*yield*/, globalThis.crypto.subtle.decrypt({ name: alg,
-                                // AES-CTR uses a counter, AES-GCM/AES-CBC use an initialization vector
-                                iv: alg === types.SymmAlg.AES_CTR ? undefined : iv,
-                                counter: alg === types.SymmAlg.AES_CTR ? new Uint8Array(iv) : undefined,
-                                length: alg === types.SymmAlg.AES_CTR ? constants.DEFAULT_CTR_LEN : undefined,
-                            }, importedKey, cipherBytes)];
-                    case 4:
-                        msgBuff = _b.sent();
-                        return [2 /*return*/, msgBuff];
-                }
-            });
-        });
-    }
-    var decryptBytes_1 = decryptBytes;
-    function encrypt(msg, key, opts) {
-        return __awaiter$2(this, void 0, void 0, function () {
-            var cipherText;
-            return __generator$2(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, encryptBytes(msg, key, opts)];
-                    case 1:
-                        cipherText = _a.sent();
-                        return [2 /*return*/, utils.default.arrBufToBase64(cipherText)];
-                }
-            });
-        });
-    }
-    var encrypt_1 = encrypt;
-    function decrypt(msg, key, opts) {
-        return __awaiter$2(this, void 0, void 0, function () {
-            var msgBytes;
-            return __generator$2(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, decryptBytes(msg, key, opts)];
-                    case 1:
-                        msgBytes = _a.sent();
-                        return [2 /*return*/, utils.default.arrBufToStr(msgBytes, 16)];
-                }
-            });
-        });
-    }
-    var decrypt_1 = decrypt;
-    function exportKey(key) {
-        return __awaiter$2(this, void 0, void 0, function () {
-            var raw;
-            return __generator$2(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, globalThis.crypto.subtle.exportKey('raw', key)];
-                    case 1:
-                        raw = _a.sent();
-                        return [2 /*return*/, utils.default.arrBufToBase64(raw)];
-                }
-            });
-        });
-    }
-    var exportKey_1 = exportKey;
-    var _default$1 = {
-        encryptBytes: encryptBytes,
-        decryptBytes: decryptBytes,
-        encrypt: encrypt,
-        decrypt: decrypt,
-        exportKey: exportKey
-    };
-    //# sourceMappingURL=operations.js.map
-
-    var operations = /*#__PURE__*/Object.defineProperty({
-    	encryptBytes: encryptBytes_1,
-    	decryptBytes: decryptBytes_1,
-    	encrypt: encrypt_1,
-    	decrypt: decrypt_1,
-    	exportKey: exportKey_1,
-    	default: _default$1
-    }, '__esModule', {value: true});
-
-    var aes = createCommonjsModule(function (module, exports) {
-    var __assign = (commonjsGlobal && commonjsGlobal.__assign) || function () {
-        __assign = Object.assign || function(t) {
-            for (var s, i = 1, n = arguments.length; i < n; i++) {
-                s = arguments[i];
-                for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                    t[p] = s[p];
-            }
-            return t;
-        };
-        return __assign.apply(this, arguments);
-    };
-    function __export(m) {
-        for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
-    }
-    Object.defineProperty(exports, "__esModule", { value: true });
-
-
-    __export(keys);
-    __export(operations);
-    exports.default = __assign(__assign({}, keys.default), operations.default);
-
-    });
-
-    var aes$1 = /*@__PURE__*/getDefaultExportFromCjs(aes);
-
-    var fromBuffer = function (buf) {
-        return Array.prototype.map.call(new Uint8Array(buf), function (x) { return ('00' + x.toString(16)).slice(-2); } // '00' is for left padding
-        ).join('');
-    };
-    var toBuffer$1 = function (hex) {
-        var arr = new Uint8Array(hex.length / 2);
-        for (var i = 0; i < arr.length; i++) {
-            arr[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
-        }
-        return arr.buffer;
-    };
-    //# sourceMappingURL=hex.js.map
-
-    var getKeyByName = function (keyName) { return __awaiter(void 0, void 0, void 0, function () {
-        var ks;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, get()];
-                case 1:
-                    ks = _a.sent();
-                    return [2 /*return*/, ks.exportSymmKey(keyName)];
-            }
-        });
-    }); };
-    var encrypt$1 = function (data, keyStr) { return __awaiter(void 0, void 0, void 0, function () {
+    var encrypt$2 = function (data, keyStr) { return __awaiter(void 0, void 0, void 0, function () {
         var key, encrypted;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, aes$1.importKey(keyStr, { length: types.SymmKeyLength.B256 })];
+                case 0:
+                    assertBrowser('aes.encrypt');
+                    return [4 /*yield*/, aes$1.importKey(keyStr, { length: types.SymmKeyLength.B256 })];
                 case 1:
                     key = _a.sent();
                     return [4 /*yield*/, aes$1.encryptBytes(data.buffer, key)];
@@ -10388,11 +14711,13 @@
             }
         });
     }); };
-    var decrypt$1 = function (encrypted, keyStr) { return __awaiter(void 0, void 0, void 0, function () {
+    var decrypt$2 = function (encrypted, keyStr) { return __awaiter(void 0, void 0, void 0, function () {
         var key, decryptedBuf;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, aes$1.importKey(keyStr, { length: types.SymmKeyLength.B256 })];
+                case 0:
+                    assertBrowser('aes.decrypt');
+                    return [4 /*yield*/, aes$1.importKey(keyStr, { length: types.SymmKeyLength.B256 })];
                 case 1:
                     key = _a.sent();
                     return [4 /*yield*/, aes$1.decryptBytes(encrypted.buffer, key)];
@@ -10406,541 +14731,488 @@
         var key;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, aes$1.makeKey({ length: types.SymmKeyLength.B256 })];
+                case 0:
+                    assertBrowser('aes.genKeyStr');
+                    return [4 /*yield*/, aes$1.makeKey({ length: types.SymmKeyLength.B256 })];
                 case 1:
                     key = _a.sent();
                     return [2 /*return*/, aes$1.exportKey(key)];
             }
         });
     }); };
-    var sha256Str = function (str) { return __awaiter(void 0, void 0, void 0, function () {
+    var decryptGCM = function (encrypted, keyStr, ivStr) { return __awaiter(void 0, void 0, void 0, function () {
+        var iv, sessionKey, decrypted;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    assertBrowser('aes.decryptGCM');
+                    iv = utils$1.base64ToArrBuf(ivStr);
+                    return [4 /*yield*/, window.crypto.subtle.importKey("raw", utils$1.base64ToArrBuf(keyStr), "AES-GCM", false, ["encrypt", "decrypt"])
+                        // Decrypt secrets
+                    ];
+                case 1:
+                    sessionKey = _a.sent();
+                    return [4 /*yield*/, window.crypto.subtle.decrypt({
+                            name: "AES-GCM",
+                            iv: iv
+                        }, sessionKey, utils$1.base64ToArrBuf(encrypted))];
+                case 2:
+                    decrypted = _a.sent();
+                    return [2 /*return*/, utils$1.arrBufToStr(decrypted, types.CharSize.B8)];
+            }
+        });
+    }); };
+    var sha256 = function (bytes) { return __awaiter(void 0, void 0, void 0, function () {
         var buf, hash;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    buf = utils.strToArrBuf(str, 8);
-                    return [4 /*yield*/, sha256(buf)];
+                    assertBrowser('hash.sha256');
+                    buf = bytes.buffer;
+                    return [4 /*yield*/, crypto.subtle.digest('SHA-256', buf)];
                 case 1:
                     hash = _a.sent();
-                    return [2 /*return*/, fromBuffer(hash)];
+                    return [2 /*return*/, new Uint8Array(hash)];
             }
         });
     }); };
-    var sha256 = function (buf) { return __awaiter(void 0, void 0, void 0, function () {
+    var rsaVerify = function (message, signature, publicKey) {
+        assertBrowser('rsa.verify');
+        var keyStr = utils$1.arrBufToBase64(publicKey.buffer);
+        return rsaOperations.verify(message, signature, keyStr);
+    };
+    var ed25519Verify = function (message, signature, publicKey) {
+        return nobleEd25519.verify(signature, message, publicKey);
+    };
+    var ksPublicReadKey = function () { return __awaiter(void 0, void 0, void 0, function () {
+        var ks;
         return __generator(this, function (_a) {
-            return [2 /*return*/, crypto.subtle.digest('SHA-256', buf)];
+            switch (_a.label) {
+                case 0:
+                    assertBrowser('keystore.publicReadKey');
+                    return [4 /*yield*/, get$1()];
+                case 1:
+                    ks = _a.sent();
+                    return [2 /*return*/, ks.publicReadKey()];
+            }
         });
     }); };
-    //# sourceMappingURL=basic.js.map
+    var ksPublicWriteKey = function () { return __awaiter(void 0, void 0, void 0, function () {
+        var ks;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    assertBrowser('keystore.publicWriteKey');
+                    return [4 /*yield*/, get$1()];
+                case 1:
+                    ks = _a.sent();
+                    return [2 /*return*/, ks.publicWriteKey()];
+            }
+        });
+    }); };
+    var ksDecrypt = function (encrypted) { return __awaiter(void 0, void 0, void 0, function () {
+        var ks;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    assertBrowser('keystore.decrypt');
+                    return [4 /*yield*/, get$1()];
+                case 1:
+                    ks = _a.sent();
+                    return [2 /*return*/, ks.decrypt(encrypted)];
+            }
+        });
+    }); };
+    var ksSign = function (message, charSize) { return __awaiter(void 0, void 0, void 0, function () {
+        var ks;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    assertBrowser('keystore.sign');
+                    return [4 /*yield*/, get$1()];
+                case 1:
+                    ks = _a.sent();
+                    return [2 /*return*/, ks.sign(message, { charSize: charSize })];
+            }
+        });
+    }); };
+    var ksImportSymmKey = function (key, name) { return __awaiter(void 0, void 0, void 0, function () {
+        var ks;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    assertBrowser('keystore.importSymmKey');
+                    return [4 /*yield*/, get$1()];
+                case 1:
+                    ks = _a.sent();
+                    return [2 /*return*/, ks.importSymmKey(key, name)];
+            }
+        });
+    }); };
+    var ksExportSymmKey = function (name) { return __awaiter(void 0, void 0, void 0, function () {
+        var ks;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    assertBrowser('keystore.exportSymmKey');
+                    return [4 /*yield*/, get$1()];
+                case 1:
+                    ks = _a.sent();
+                    return [2 /*return*/, ks.exportSymmKey(name)];
+            }
+        });
+    }); };
+    var ksKeyExists = function (name) { return __awaiter(void 0, void 0, void 0, function () {
+        var ks;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    assertBrowser('keystore.keyExists');
+                    return [4 /*yield*/, get$1()];
+                case 1:
+                    ks = _a.sent();
+                    return [2 /*return*/, ks.keyExists(name)];
+            }
+        });
+    }); };
+    var ksGetAlg = function () { return __awaiter(void 0, void 0, void 0, function () {
+        var ks;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    assertBrowser('keystore.getAlg');
+                    return [4 /*yield*/, get$1()];
+                case 1:
+                    ks = _a.sent();
+                    return [2 /*return*/, ks.cfg.type];
+            }
+        });
+    }); };
+    var ksClear = function () { return __awaiter(void 0, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            assertBrowser('keystore.clear');
+            return [2 /*return*/, clear$1()];
+        });
+    }); };
+
+    var getItem = function (key) {
+        assertBrowser('storage.getItem');
+        return localforage.getItem(key);
+    };
+    var setItem = function (key, val) {
+        assertBrowser('storage.setItem');
+        return localforage.setItem(key, val);
+    };
+    var removeItem = function (key) {
+        assertBrowser('storage.removeItem');
+        return localforage.removeItem(key);
+    };
+    var clear$2 = function () {
+        assertBrowser('storage.clear');
+        return localforage.clear();
+    };
+
+    var DEFAULT_IMPLEMENTATION = {
+        hash: {
+            sha256: sha256
+        },
+        aes: {
+            encrypt: encrypt$2,
+            decrypt: decrypt$2,
+            genKeyStr: genKeyStr,
+            decryptGCM: decryptGCM,
+        },
+        rsa: {
+            verify: rsaVerify
+        },
+        ed25519: {
+            verify: ed25519Verify
+        },
+        keystore: {
+            publicReadKey: ksPublicReadKey,
+            publicWriteKey: ksPublicWriteKey,
+            decrypt: ksDecrypt,
+            sign: ksSign,
+            importSymmKey: ksImportSymmKey,
+            exportSymmKey: ksExportSymmKey,
+            keyExists: ksKeyExists,
+            getAlg: ksGetAlg,
+            clear: ksClear,
+        },
+        storage: {
+            getItem: getItem,
+            setItem: setItem,
+            removeItem: removeItem,
+            clear: clear$2,
+        }
+    };
+    var impl = DEFAULT_IMPLEMENTATION;
+    var setDependencies = function (fns) {
+        impl = {
+            hash: merge(impl.hash, fns.hash),
+            aes: merge(impl.aes, fns.aes),
+            rsa: merge(impl.rsa, fns.rsa),
+            ed25519: merge(impl.ed25519, fns.ed25519),
+            keystore: merge(impl.keystore, fns.keystore),
+            storage: merge(impl.storage, fns.storage),
+        };
+        return impl;
+    };
+    var merge = function (first, second) {
+        return __assign(__assign({}, first), (second || {}));
+    };
+
+    var getItem$1 = function (key) {
+        return impl.storage.getItem(key);
+    };
+    var setItem$1 = function (key, val) {
+        return impl.storage.setItem(key, val);
+    };
+    var removeItem$1 = function (key) {
+        return impl.storage.removeItem(key);
+    };
+
+    var isDefined = function (val) {
+        return val !== undefined;
+    };
+    var notNull = function (val) {
+        return val !== null;
+    };
+    var isJust = notNull;
+    var isValue = function (val) {
+        return isDefined(val) && notNull(val);
+    };
+    var isBool = function (val) {
+        return typeof val === 'boolean';
+    };
+    var isNum = function (val) {
+        return typeof val === 'number';
+    };
+    var isString = function (val) {
+        return typeof val === 'string';
+    };
+    var isObject = function (val) {
+        return val !== null && typeof val === 'object';
+    };
+    var isBlob = function (val) {
+        var _a;
+        if (typeof Blob === 'undefined')
+            return false;
+        return val instanceof Blob || (isObject(val) && ((_a = val === null || val === void 0 ? void 0 : val.constructor) === null || _a === void 0 ? void 0 : _a.name) === 'Blob');
+    };
+
+    var removeKeyFromObj = function (obj, key) {
+        var _a = obj, _b = key; _a[_b]; var rest = __rest(_a, [typeof _b === "symbol" ? _b : _b + ""]); // eslint-disable-line
+        return rest;
+    };
+    var updateOrRemoveKeyFromObj = function (obj, key, val) {
+        var _a;
+        return (val === null
+            ? removeKeyFromObj(obj, key)
+            : __assign(__assign({}, obj), (_a = {}, _a[key] = val, _a)));
+    };
+    var mapObj = function (obj, fn) {
+        var newObj = {};
+        Object.entries(obj).forEach(function (_a) {
+            var key = _a[0], value = _a[1];
+            newObj[key] = fn(value, key);
+        });
+        return newObj;
+    };
+    var mapObjAsync = function (obj, fn) { return __awaiter(void 0, void 0, void 0, function () {
+        var newObj;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    newObj = {};
+                    return [4 /*yield*/, Promise.all(Object.entries(obj).map(function (_a) {
+                            var key = _a[0], value = _a[1];
+                            return __awaiter(void 0, void 0, void 0, function () {
+                                var _b, _c;
+                                return __generator(this, function (_d) {
+                                    switch (_d.label) {
+                                        case 0:
+                                            _b = newObj;
+                                            _c = key;
+                                            return [4 /*yield*/, fn(value, key)];
+                                        case 1:
+                                            _b[_c] = _d.sent();
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            });
+                        }))];
+                case 1:
+                    _a.sent();
+                    return [2 /*return*/, newObj];
+            }
+        });
+    }); };
+    var arrContains = function (arr, val) {
+        return arr.indexOf(val) > -1;
+    };
+    var asyncWaterfall = function (val, operations) { return __awaiter(void 0, void 0, void 0, function () {
+        var acc, i;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    acc = val;
+                    i = 0;
+                    _a.label = 1;
+                case 1:
+                    if (!(i < operations.length)) return [3 /*break*/, 4];
+                    return [4 /*yield*/, operations[i](acc)];
+                case 2:
+                    acc = _a.sent();
+                    _a.label = 3;
+                case 3:
+                    i++;
+                    return [3 /*break*/, 1];
+                case 4: return [2 /*return*/, acc];
+            }
+        });
+    }); };
+
+    var VERSION = "0.24.1";
+
+    var UCANS_STORAGE_KEY = "webnative.auth_ucans";
+    var USERNAME_STORAGE_KEY = "webnative.auth_username";
+    /**
+     * Retrieve the authenticated username.
+     */
+    function authenticatedUsername() {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/, getItem$1(USERNAME_STORAGE_KEY).then(function (u) { return u ? u : null; })];
+            });
+        });
+    }
 
     var index$1 = /*#__PURE__*/Object.freeze({
         __proto__: null,
-        clear: clear,
-        set: set,
-        get: get,
-        getKeyByName: getKeyByName,
-        encrypt: encrypt$1,
-        decrypt: decrypt$1,
-        genKeyStr: genKeyStr,
-        sha256Str: sha256Str,
-        sha256: sha256
+        api: api,
+        arrbufs: arrbufs,
+        base64: base64,
+        blob: blob,
+        UCANS_STORAGE_KEY: UCANS_STORAGE_KEY,
+        USERNAME_STORAGE_KEY: USERNAME_STORAGE_KEY,
+        authenticatedUsername: authenticatedUsername,
+        isDefined: isDefined,
+        notNull: notNull,
+        isJust: isJust,
+        isValue: isValue,
+        isBool: isBool,
+        isNum: isNum,
+        isString: isString,
+        isObject: isObject,
+        isBlob: isBlob,
+        removeKeyFromObj: removeKeyFromObj,
+        updateOrRemoveKeyFromObj: updateOrRemoveKeyFromObj,
+        mapObj: mapObj,
+        mapObjAsync: mapObjAsync,
+        arrContains: arrContains,
+        asyncWaterfall: asyncWaterfall,
+        VERSION: VERSION,
+        isBrowser: isBrowser,
+        assertBrowser: assertBrowser
     });
 
-    var splitParts = function (path) {
-        return path.split('/').filter(function (p) { return p.length > 0; });
+    var fromBytes = function (bytes) {
+        return Array.prototype.map.call(bytes, function (x) { return ('00' + x.toString(16)).slice(-2); } // '00' is for left padding
+        ).join('');
     };
-    var join = function (parts) {
-        return parts.join('/');
-    };
-    var takeHead = function (path) {
-        var parts = splitParts(path);
-        var next = parts.slice(1);
-        return {
-            head: parts[0] || null,
-            nextPath: next.length > 0 ? join(next) : null
-        };
-    };
-    var takeTail = function (path) {
-        var parts = splitParts(path);
-        var parent = parts.slice(0, parts.length - 1);
-        return {
-            tail: parts[parts.length - 1] || null,
-            parentPath: parent.length > 0 ? join(parent) : null
-        };
-    };
-    var splitNonEmpty = function (path) {
-        var parts = splitParts(path);
-        if (parts.length < 1) {
-            return null;
+    var toBytes = function (hex) {
+        var arr = new Uint8Array(hex.length / 2);
+        for (var i = 0; i < arr.length; i++) {
+            arr[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
         }
-        return parts;
-    };
-    var nextNonEmpty = function (parts) {
-        var next = parts.slice(1);
-        if (next.length < 1) {
-            return null;
-        }
-        return next;
-    };
-    var sameParent = function (a, b) {
-        return splitParts(a)[0] === splitParts(b)[0];
+        return arr;
     };
 
-    // CONSTANTS
-    // TODO: Waiting on API change.
-    //       Should be `dnslink`
-    var WNFS_PREFIX = "floofs";
-    // FUNCTIONS
-    /**
-     * Create a UCAN, User Controlled Authorization Networks, JWT.
-     * This JWT can be used for authorization.
-     *
-     * ### Header
-     *
-     * `alg`, Algorithm, the type of signature.
-     * `typ`, Type, the type of this data structure, JWT.
-     * `uav`, UCAN version.
-     *
-     * ### Payload
-     *
-     * `aud`, Audience, the ID of who it's intended for.
-     * `exp`, Expiry, unix timestamp of when the jwt is no longer valid.
-     * `iss`, Issuer, the ID of who sent this.
-     * `nbf`, Not Before, unix timestamp of when the jwt becomes valid.
-     * `prf`, Proof, an optional nested token with equal or greater privileges.
-     * `ptc`, Potency, which rights come with the token.
-     * `rsc`, Resource, the involved resource.
-     *
-     */
-    function build(_a) {
-        var audience = _a.audience, _b = _a.facts, facts = _b === void 0 ? [] : _b, issuer = _a.issuer, _c = _a.lifetimeInSeconds, lifetimeInSeconds = _c === void 0 ? 30 : _c, _d = _a.potency, potency = _d === void 0 ? 'APPEND' : _d, proof = _a.proof, _e = _a.resource, resource = _e === void 0 ? '*' : _e;
-        return __awaiter(this, void 0, void 0, function () {
-            var ks, currentTimeInSeconds, header, exp, nbf, prf, payload, encodedHeader, encodedPayload, signed, encodedSignature;
-            return __generator(this, function (_f) {
-                switch (_f.label) {
-                    case 0: return [4 /*yield*/, get()];
-                    case 1:
-                        ks = _f.sent();
-                        currentTimeInSeconds = Math.floor(Date.now() / 1000);
-                        header = {
-                            alg: jwtAlgorithm(ks.cfg.type) || 'UnknownAlgorithm',
-                            typ: 'JWT',
-                            uav: '1.0.0' // actually 0.3.1 but server isn't updated yet
-                        };
-                        exp = currentTimeInSeconds + lifetimeInSeconds;
-                        nbf = currentTimeInSeconds - 60;
-                        if (proof) {
-                            prf = decode(proof).payload;
-                            exp = Math.min(prf.exp, exp);
-                            nbf = Math.max(prf.nbf, nbf);
-                        }
-                        payload = {
-                            aud: audience,
-                            exp: exp,
-                            fct: facts,
-                            iss: issuer,
-                            nbf: nbf,
-                            prf: proof,
-                            ptc: potency,
-                            rsc: resource,
-                        };
-                        encodedHeader = urlEncode(JSON.stringify(header));
-                        encodedPayload = urlEncode(JSON.stringify(payload));
-                        return [4 /*yield*/, ks.sign(encodedHeader + "." + encodedPayload, { charSize: 8 })];
-                    case 2:
-                        signed = _f.sent();
-                        encodedSignature = makeUrlSafe(signed);
-                        // Make JWT
-                        return [2 /*return*/, encodedHeader + '.' +
-                                encodedPayload + '.' +
-                                encodedSignature];
-                }
-            });
-        });
-    }
-    /**
-     * Given a list of UCANs, generate a dictionary.
-     * The key will be in the form of `${resourceKey}:${resourceValue}`
-     */
-    function compileDictionary(ucans) {
-        return ucans.reduce(function (acc, ucanString) {
-            var _a, _b;
-            var ucan = decode(ucanString);
-            var rsc = ucan.payload.rsc;
-            if (typeof rsc !== "object") {
-                return __assign(__assign({}, acc), (_a = {}, _a[rsc] = ucan, _a));
+    var sha256Str = function (str) { return __awaiter(void 0, void 0, void 0, function () {
+        var buf, arr, hash;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    buf = utils.strToArrBuf(str, 8);
+                    arr = new Uint8Array(buf);
+                    return [4 /*yield*/, impl.hash.sha256(arr)];
+                case 1:
+                    hash = _a.sent();
+                    return [2 /*return*/, fromBytes(hash)];
             }
-            var resource = Array.from(Object.entries(rsc))[0];
-            var key = resource[0] + ":" + (resource[0] === WNFS_PREFIX
-                ? resource[1].replace(/\/+$/, "")
-                : resource[1]);
-            return __assign(__assign({}, acc), (_b = {}, _b[key] = ucan, _b));
-        }, {});
-    }
-    /**
-     * Try to decode a UCAN.
-     * Will throw if it fails.
-     *
-     * @param ucan The encoded UCAN to decode
-     */
-    function decode(ucan) {
-        var split = ucan.split(".");
-        var header = JSON.parse(urlDecode(split[0]));
-        var payload = JSON.parse(urlDecode(split[1]));
-        return {
-            header: header,
-            payload: payload,
-            signature: split[2]
-        };
-    }
-    /**
-     * Encode a UCAN.
-     *
-     * @param ucan The UCAN to encode
-     */
-    function encode(ucan) {
-        var encodedHeader = urlEncode(JSON.stringify(ucan.header));
-        var encodedPayload = urlEncode(JSON.stringify(ucan.payload));
-        return encodedHeader + '.' +
-            encodedPayload + '.' +
-            ucan.signature;
-    }
-    /**
-     * Check if a UCAN is expired.
-     *
-     * @param ucan The UCAN to validate
-     */
-    function isExpired(ucan) {
-        return ucan.payload.exp <= Math.floor(Date.now() / 1000);
-    }
-    /**
-     * Given a UCAN, lookup the root issuer.
-     *
-     * Throws when given an improperly formatted UCAN.
-     * This could be a nested UCAN (ie. proof).
-     *
-     * @param ucan A UCAN.
-     * @returns The root issuer.
-     */
-    function rootIssuer(ucan, level) {
-        if (level === void 0) { level = 0; }
-        var p = extractPayload(ucan, level);
-        if (p.prf)
-            return rootIssuer(p.prf, level + 1);
-        return p.iss;
-    }
-    // ㊙️
-    /**
-     * JWT algorithm to be used in a JWT header.
-     */
-    function jwtAlgorithm(cryptoSystem) {
-        switch (cryptoSystem) {
-            case types.CryptoSystem.RSA: return 'RS256';
-            default: return null;
+        });
+    }); };
+    var hash = {
+        sha256: function (bytes) {
+            return impl.hash.sha256(bytes);
+        },
+        sha256Str: sha256Str
+    };
+    var aes$2 = {
+        encrypt: function (bytes, key) {
+            return impl.aes.encrypt(bytes, key);
+        },
+        decrypt: function (bytes, key) {
+            return impl.aes.decrypt(bytes, key);
+        },
+        genKeyStr: function () {
+            return impl.aes.genKeyStr();
+        },
+        decryptGCM: function (encrypted, keyStr, ivStr) {
+            return impl.aes.decryptGCM(encrypted, keyStr, ivStr);
         }
-    }
-    /**
-     * Extract the payload of a UCAN.
-     *
-     * Throws when given an improperly formatted UCAN.
-     */
-    function extractPayload(ucan, level) {
-        try {
-            return JSON.parse(urlDecode(ucan.split(".")[1]));
+    };
+    var rsa$1 = {
+        verify: function (message, signature, publicKey) {
+            return impl.rsa.verify(message, signature, publicKey);
         }
-        catch (_) {
-            throw new Error("Invalid UCAN (" + level + " level" + (level === 1 ? "" : "s") + " deep): `" + ucan + "`");
+    };
+    var ed25519 = {
+        verify: function (message, signature, publicKey) {
+            return impl.ed25519.verify(message, signature, publicKey);
         }
-    }
+    };
+    var keystore$2 = {
+        publicReadKey: function () {
+            return impl.keystore.publicReadKey();
+        },
+        publicWriteKey: function () {
+            return impl.keystore.publicWriteKey();
+        },
+        decrypt: function (encrypted) {
+            return impl.keystore.decrypt(encrypted);
+        },
+        sign: function (message, charSize) {
+            return impl.keystore.sign(message, charSize);
+        },
+        importSymmKey: function (key, name) {
+            return impl.keystore.importSymmKey(key, name);
+        },
+        exportSymmKey: function (name) {
+            return impl.keystore.exportSymmKey(name);
+        },
+        keyExists: function (keyName) {
+            return impl.keystore.keyExists(keyName);
+        },
+        getAlg: function () {
+            return impl.keystore.getAlg();
+        },
+        clear: function () {
+            return impl.keystore.clear();
+        }
+    };
 
-    var ucan = /*#__PURE__*/Object.freeze({
+    var index$2 = /*#__PURE__*/Object.freeze({
         __proto__: null,
-        WNFS_PREFIX: WNFS_PREFIX,
-        build: build,
-        compileDictionary: compileDictionary,
-        decode: decode,
-        encode: encode,
-        isExpired: isExpired,
-        rootIssuer: rootIssuer
+        sha256Str: sha256Str,
+        hash: hash,
+        aes: aes$2,
+        rsa: rsa$1,
+        ed25519: ed25519,
+        keystore: keystore$2
     });
 
-    var dictionary = {};
-    // FUNCTIONS
-    /**
-     * You didn't see anything 👀
-     */
-    function clearStorage() {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        dictionary = {};
-                        return [4 /*yield*/, localforage.removeItem(UCANS_STORAGE_KEY)];
-                    case 1:
-                        _a.sent();
-                        return [2 /*return*/];
-                }
-            });
-        });
-    }
-    /**
-     * Lookup the prefix for a filesystem key in the dictionary.
-     */
-    function dictionaryFilesystemPrefix(username) {
-        // const host = `${username}.${setup.endpoints.user}`
-        // TODO: Waiting on API change.
-        //       Should be `${WNFS_PREFIX}:${host}/`
-        return WNFS_PREFIX + ":/";
-    }
-    /**
-     * Look up a UCAN with a file system path.
-     */
-    function lookupFilesystemUcan(path) {
-        return __awaiter(this, void 0, void 0, function () {
-            var pathParts, username, prefix;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        pathParts = splitParts(path);
-                        return [4 /*yield*/, authenticatedUsername()];
-                    case 1:
-                        username = _a.sent();
-                        prefix = username ? dictionaryFilesystemPrefix() : "";
-                        if (dictionary["*"]) {
-                            return [2 /*return*/, dictionary["*"]];
-                        }
-                        return [2 /*return*/, pathParts.reduce(function (acc, part, idx) {
-                                if (acc)
-                                    return acc;
-                                var partialPath = join(pathParts.slice(0, pathParts.length - idx));
-                                return dictionary["" + prefix + partialPath] || null;
-                            }, null)];
-                }
-            });
-        });
-    }
-    /**
-     * Store UCANs and update the in-memory dictionary.
-     */
-    function store(ucans) {
-        return __awaiter(this, void 0, void 0, function () {
-            var existing, newList, filteredList, encodedList;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, localforage.getItem(UCANS_STORAGE_KEY)];
-                    case 1:
-                        existing = _a.sent();
-                        newList = (existing || []).concat(ucans);
-                        dictionary = compileDictionary(newList);
-                        filteredList = listFromDictionary();
-                        encodedList = filteredList.map(encode);
-                        return [4 /*yield*/, localforage.setItem(UCANS_STORAGE_KEY, encodedList)];
-                    case 2:
-                        _a.sent();
-                        return [2 /*return*/];
-                }
-            });
-        });
-    }
-    /**
-     * See if the stored UCANs in the in-memory dictionary
-     * conform to the given `Permissions`.
-     */
-    function validatePermissions(_a, username) {
-        var app = _a.app, fs = _a.fs;
-        var prefix = dictionaryFilesystemPrefix();
-        // Root access
-        var rootUcan = dictionary["*"];
-        if (rootUcan && !isExpired(rootUcan))
-            return true;
-        // Check permissions
-        if (app) {
-            var u = dictionary[prefix + "private/Apps/" + app.creator + "/" + app.name];
-            if (!u || isExpired(u))
-                return false;
-        }
-        if (fs && fs.privatePaths) {
-            var priv = fs.privatePaths.every(function (pathRaw) {
-                var path = pathRaw.replace(/^\/+/, "");
-                var pathWithPrefix = path.length ? prefix + "private/" + path : prefix + "private";
-                var u = dictionary[pathWithPrefix];
-                return u && !isExpired(u);
-            });
-            if (!priv)
-                return false;
-        }
-        if (fs && fs.publicPaths) {
-            var publ = fs.publicPaths.every(function (pathRaw) {
-                var path = pathRaw.replace(/^\/+/, "");
-                var pathWithPrefix = path.length ? prefix + "public/" + path : prefix + "public";
-                var u = dictionary[pathWithPrefix];
-                return u && !isExpired(u);
-            });
-            if (!publ)
-                return false;
-        }
-        return true;
-    }
-    // ㊙️
-    function listFromDictionary() {
-        return Object.values(dictionary);
-    }
-
-    var index_umd$1 = createCommonjsModule(function (module, exports) {
-    (function (global, factory) {
-    	 factory(exports) ;
-    }(commonjsGlobal, (function (exports) {
-    	/* eslint-disable no-undefined,no-param-reassign,no-shadow */
-
-    	/**
-    	 * Throttle execution of a function. Especially useful for rate limiting
-    	 * execution of handlers on events like resize and scroll.
-    	 *
-    	 * @param  {number}    delay -          A zero-or-greater delay in milliseconds. For event callbacks, values around 100 or 250 (or even higher) are most useful.
-    	 * @param  {boolean}   [noTrailing] -   Optional, defaults to false. If noTrailing is true, callback will only execute every `delay` milliseconds while the
-    	 *                                    throttled-function is being called. If noTrailing is false or unspecified, callback will be executed one final time
-    	 *                                    after the last throttled-function call. (After the throttled-function has not been called for `delay` milliseconds,
-    	 *                                    the internal counter is reset).
-    	 * @param  {Function}  callback -       A function to be executed after delay milliseconds. The `this` context and all arguments are passed through, as-is,
-    	 *                                    to `callback` when the throttled-function is executed.
-    	 * @param  {boolean}   [debounceMode] - If `debounceMode` is true (at begin), schedule `clear` to execute after `delay` ms. If `debounceMode` is false (at end),
-    	 *                                    schedule `callback` to execute after `delay` ms.
-    	 *
-    	 * @returns {Function}  A new, throttled, function.
-    	 */
-    	function throttle (delay, noTrailing, callback, debounceMode) {
-    	  /*
-    	   * After wrapper has stopped being called, this timeout ensures that
-    	   * `callback` is executed at the proper times in `throttle` and `end`
-    	   * debounce modes.
-    	   */
-    	  var timeoutID;
-    	  var cancelled = false; // Keep track of the last time `callback` was executed.
-
-    	  var lastExec = 0; // Function to clear existing timeout
-
-    	  function clearExistingTimeout() {
-    	    if (timeoutID) {
-    	      clearTimeout(timeoutID);
-    	    }
-    	  } // Function to cancel next exec
-
-
-    	  function cancel() {
-    	    clearExistingTimeout();
-    	    cancelled = true;
-    	  } // `noTrailing` defaults to falsy.
-
-
-    	  if (typeof noTrailing !== 'boolean') {
-    	    debounceMode = callback;
-    	    callback = noTrailing;
-    	    noTrailing = undefined;
-    	  }
-    	  /*
-    	   * The `wrapper` function encapsulates all of the throttling / debouncing
-    	   * functionality and when executed will limit the rate at which `callback`
-    	   * is executed.
-    	   */
-
-
-    	  function wrapper() {
-    	    for (var _len = arguments.length, arguments_ = new Array(_len), _key = 0; _key < _len; _key++) {
-    	      arguments_[_key] = arguments[_key];
-    	    }
-
-    	    var self = this;
-    	    var elapsed = Date.now() - lastExec;
-
-    	    if (cancelled) {
-    	      return;
-    	    } // Execute `callback` and update the `lastExec` timestamp.
-
-
-    	    function exec() {
-    	      lastExec = Date.now();
-    	      callback.apply(self, arguments_);
-    	    }
-    	    /*
-    	     * If `debounceMode` is true (at begin) this is used to clear the flag
-    	     * to allow future `callback` executions.
-    	     */
-
-
-    	    function clear() {
-    	      timeoutID = undefined;
-    	    }
-
-    	    if (debounceMode && !timeoutID) {
-    	      /*
-    	       * Since `wrapper` is being called for the first time and
-    	       * `debounceMode` is true (at begin), execute `callback`.
-    	       */
-    	      exec();
-    	    }
-
-    	    clearExistingTimeout();
-
-    	    if (debounceMode === undefined && elapsed > delay) {
-    	      /*
-    	       * In throttle mode, if `delay` time has been exceeded, execute
-    	       * `callback`.
-    	       */
-    	      exec();
-    	    } else if (noTrailing !== true) {
-    	      /*
-    	       * In trailing throttle mode, since `delay` time has not been
-    	       * exceeded, schedule `callback` to execute `delay` ms after most
-    	       * recent execution.
-    	       *
-    	       * If `debounceMode` is true (at begin), schedule `clear` to execute
-    	       * after `delay` ms.
-    	       *
-    	       * If `debounceMode` is false (at end), schedule `callback` to
-    	       * execute after `delay` ms.
-    	       */
-    	      timeoutID = setTimeout(debounceMode ? clear : exec, debounceMode === undefined ? delay - elapsed : delay);
-    	    }
-    	  }
-
-    	  wrapper.cancel = cancel; // Return the wrapper function.
-
-    	  return wrapper;
-    	}
-
-    	/* eslint-disable no-undefined */
-    	/**
-    	 * Debounce execution of a function. Debouncing, unlike throttling,
-    	 * guarantees that a function is only executed a single time, either at the
-    	 * very beginning of a series of calls, or at the very end.
-    	 *
-    	 * @param  {number}   delay -         A zero-or-greater delay in milliseconds. For event callbacks, values around 100 or 250 (or even higher) are most useful.
-    	 * @param  {boolean}  [atBegin] -     Optional, defaults to false. If atBegin is false or unspecified, callback will only be executed `delay` milliseconds
-    	 *                                  after the last debounced-function call. If atBegin is true, callback will be executed only at the first debounced-function call.
-    	 *                                  (After the throttled-function has not been called for `delay` milliseconds, the internal counter is reset).
-    	 * @param  {Function} callback -      A function to be executed after delay milliseconds. The `this` context and all arguments are passed through, as-is,
-    	 *                                  to `callback` when the debounced-function is executed.
-    	 *
-    	 * @returns {Function} A new, debounced function.
-    	 */
-
-    	function debounce (delay, atBegin, callback) {
-    	  return callback === undefined ? throttle(delay, atBegin, false) : throttle(delay, callback, atBegin !== false);
-    	}
-
-    	exports.debounce = debounce;
-    	exports.throttle = throttle;
-
-    	Object.defineProperty(exports, '__esModule', { value: true });
-
-    })));
-    //# sourceMappingURL=index.umd.js.map
-    });
-
-    /*@__PURE__*/getDefaultExportFromCjs(index_umd$1);
-
-    // MISC
-    // ----
     var Branch;
     (function (Branch) {
         Branch["Public"] = "public";
@@ -10949,6 +15221,236 @@
         Branch["PrivateLog"] = "privateLog";
         Branch["Version"] = "version";
     })(Branch || (Branch = {}));
+    var Kind;
+    (function (Kind) {
+        Kind["Directory"] = "directory";
+        Kind["File"] = "file";
+    })(Kind || (Kind = {}));
+    // CREATION
+    /**
+     * Utility function to create a `DirectoryPath`
+     */
+    function directory() {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        if (args.some(function (p) { return p.includes("/"); })) {
+            throw new Error("Forward slashes `/` are not allowed");
+        }
+        return { directory: args };
+    }
+    /**
+     * Utility function to create a `FilePath`
+     */
+    function file() {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        if (args.some(function (p) { return p.includes("/"); })) {
+            throw new Error("Forward slashes `/` are not allowed");
+        }
+        return { file: args };
+    }
+    /**
+     * Utility function to create a root `DirectoryPath`
+     */
+    function root() {
+        return { directory: [] };
+    }
+    // POSIX
+    /**
+     * Transform a string into a `DistinctivePath`.
+     *
+     * Directories should have the format `path/to/dir/` and
+     * files should have the format `path/to/file`.
+     *
+     * Leading forward slashes are removed too, so you can pass absolute paths.
+     */
+    function fromPosix(path) {
+        var split = path.replace(/^\/+/, "").split("/");
+        if (path.endsWith("/"))
+            return { directory: split.slice(0, -1) };
+        else if (path === "")
+            return root();
+        return { file: split };
+    }
+    /**
+     * Transform a `DistinctivePath` into a string.
+     *
+     * Directories will have the format `path/to/dir/` and
+     * files will have the format `path/to/file`.
+     */
+    function toPosix(path, _a) {
+        var _b = _a === void 0 ? { absolute: false } : _a, absolute = _b.absolute;
+        var prefix = absolute ? "/" : "";
+        var joinedPath = unwrap(path).join("/");
+        if (isDirectory(path))
+            return prefix + joinedPath + (joinedPath.length ? "/" : "");
+        return prefix + joinedPath;
+    }
+    // 🛠
+    /**
+     * Combine two `DistinctivePath`s.
+     */
+    function combine(a, b) {
+        return map(function (p) { return unwrap(a).concat(p); }, b);
+    }
+    /**
+     * Is this `DistinctivePath` of the given `Branch`?
+     */
+    function isBranch(branch, path) {
+        return unwrap(path)[0] === branch;
+    }
+    /**
+     * Is this `DistinctivePath` a directory?
+     */
+    function isDirectory(path) {
+        return !!path.directory;
+    }
+    /**
+     * Is this `DistinctivePath` a file?
+     */
+    function isFile(path) {
+        return !!path.file;
+    }
+    /**
+     * Is this `DirectoryPath` a root directory?
+     */
+    function isRootDirectory(path) {
+        return path.directory.length === 0;
+    }
+    /**
+     * Check if two `DistinctivePath` have the same `Branch`.
+     */
+    function isSameBranch(a, b) {
+        return unwrap(a)[0] === unwrap(b)[0];
+    }
+    /**
+     * Check if two `DistinctivePath` are of the same kind.
+     */
+    function isSameKind(a, b) {
+        if (isDirectory(a) && isDirectory(b))
+            return true;
+        else if (isFile(a) && isFile(b))
+            return true;
+        else
+            return false;
+    }
+    /**
+     * What `Kind` of path are we dealing with?
+     */
+    function kind(path) {
+        if (isDirectory(path))
+            return Kind.Directory;
+        return Kind.File;
+    }
+    /**
+     * Map a `DistinctivePath`.
+     */
+    function map(fn, path) {
+        if (isDirectory(path))
+            return { directory: fn(path.directory) };
+        else if (isFile(path))
+            return { file: fn(path.file) };
+        return path;
+    }
+    /**
+     * Get the parent directory of a `DistinctivePath`.
+     */
+    function parent(path) {
+        return isDirectory(path) && isRootDirectory(path)
+            ? null
+            : directory.apply(void 0, unwrap(path).slice(0, -1));
+    }
+    /**
+     * Remove the `Branch` of a `DistinctivePath` (ie. the top-level directory)
+     */
+    function removeBranch(path) {
+        return map(function (p) { return isDirectory(path) || p.length > 1 ? p.slice(1) : p; }, path);
+    }
+    /**
+     * Unwrap a `DistinctivePath`.
+     */
+    function unwrap(path) {
+        if (isDirectory(path)) {
+            return path.directory;
+        }
+        else if (isFile(path)) {
+            return path.file;
+        }
+        return [];
+    }
+    // ⚗️
+    /**
+     * Render a raw `Path` to a string for logging purposes.
+     */
+    function log(path) {
+        return "[ " + path.join(", ") + " ]";
+    }
+
+    var pathing = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        get Branch () { return Branch; },
+        get Kind () { return Kind; },
+        directory: directory,
+        file: file,
+        root: root,
+        fromPosix: fromPosix,
+        toPosix: toPosix,
+        combine: combine,
+        isBranch: isBranch,
+        isDirectory: isDirectory,
+        isFile: isFile,
+        isRootDirectory: isRootDirectory,
+        isSameBranch: isSameBranch,
+        isSameKind: isSameKind,
+        kind: kind,
+        map: map,
+        parent: parent,
+        removeBranch: removeBranch,
+        unwrap: unwrap,
+        log: log
+    });
+
+    function bareNameFilter(_a) {
+        var path = _a.path;
+        return __awaiter(this, void 0, void 0, function () {
+            var hash$1;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0: return [4 /*yield*/, hash.sha256Str(pathToString(path))];
+                    case 1:
+                        hash$1 = _b.sent();
+                        return [2 /*return*/, "wnfs__bareNameFilter__" + hash$1];
+                }
+            });
+        });
+    }
+    function readKey(_a) {
+        var path = _a.path;
+        return __awaiter(this, void 0, void 0, function () {
+            var hash$1;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0: return [4 /*yield*/, hash.sha256Str(pathToString(path))];
+                    case 1:
+                        hash$1 = _b.sent();
+                        return [2 /*return*/, "wnfs__readKey__" + hash$1];
+                }
+            });
+        });
+    }
+    /**
+     * This bit needs to backwards compatible.
+     *
+     * In webnative version < 0.24, we used to have `readKey({ path: "/private" })`
+     * for the private root tree (aka. directory).
+     */
+    function pathToString(path) {
+        return "/" + unwrap(path).join("/");
+    }
 
     /* eslint-env browser */
 
@@ -11405,7 +15907,7 @@
     // Copyright (c) 2014-2018 The Bitcoin Core developers (base58.cpp)
     // Distributed under the MIT software license, see the accompanying
     // file LICENSE or http://www.opensource.org/licenses/mit-license.php.
-    function base (ALPHABET) {
+    function base$1 (ALPHABET) {
       if (ALPHABET.length >= 255) { throw new TypeError('Alphabet too long') }
       var BASE_MAP = new Uint8Array(256);
       for (var j = 0; j < BASE_MAP.length; j++) {
@@ -11522,233 +16024,7 @@
         decode: decode
       }
     }
-    var src = base;
-
-    var global$1 = (typeof global !== "undefined" ? global :
-      typeof self !== "undefined" ? self :
-      typeof window !== "undefined" ? window : {});
-
-    // shim for using process in browser
-    // based off https://github.com/defunctzombie/node-process/blob/master/browser.js
-
-    function defaultSetTimout() {
-        throw new Error('setTimeout has not been defined');
-    }
-    function defaultClearTimeout () {
-        throw new Error('clearTimeout has not been defined');
-    }
-    var cachedSetTimeout = defaultSetTimout;
-    var cachedClearTimeout = defaultClearTimeout;
-    if (typeof global$1.setTimeout === 'function') {
-        cachedSetTimeout = setTimeout;
-    }
-    if (typeof global$1.clearTimeout === 'function') {
-        cachedClearTimeout = clearTimeout;
-    }
-
-    function runTimeout(fun) {
-        if (cachedSetTimeout === setTimeout) {
-            //normal enviroments in sane situations
-            return setTimeout(fun, 0);
-        }
-        // if setTimeout wasn't available but was latter defined
-        if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
-            cachedSetTimeout = setTimeout;
-            return setTimeout(fun, 0);
-        }
-        try {
-            // when when somebody has screwed with setTimeout but no I.E. maddness
-            return cachedSetTimeout(fun, 0);
-        } catch(e){
-            try {
-                // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
-                return cachedSetTimeout.call(null, fun, 0);
-            } catch(e){
-                // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
-                return cachedSetTimeout.call(this, fun, 0);
-            }
-        }
-
-
-    }
-    function runClearTimeout(marker) {
-        if (cachedClearTimeout === clearTimeout) {
-            //normal enviroments in sane situations
-            return clearTimeout(marker);
-        }
-        // if clearTimeout wasn't available but was latter defined
-        if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
-            cachedClearTimeout = clearTimeout;
-            return clearTimeout(marker);
-        }
-        try {
-            // when when somebody has screwed with setTimeout but no I.E. maddness
-            return cachedClearTimeout(marker);
-        } catch (e){
-            try {
-                // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
-                return cachedClearTimeout.call(null, marker);
-            } catch (e){
-                // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
-                // Some versions of I.E. have different rules for clearTimeout vs setTimeout
-                return cachedClearTimeout.call(this, marker);
-            }
-        }
-
-
-
-    }
-    var queue = [];
-    var draining = false;
-    var currentQueue;
-    var queueIndex = -1;
-
-    function cleanUpNextTick() {
-        if (!draining || !currentQueue) {
-            return;
-        }
-        draining = false;
-        if (currentQueue.length) {
-            queue = currentQueue.concat(queue);
-        } else {
-            queueIndex = -1;
-        }
-        if (queue.length) {
-            drainQueue();
-        }
-    }
-
-    function drainQueue() {
-        if (draining) {
-            return;
-        }
-        var timeout = runTimeout(cleanUpNextTick);
-        draining = true;
-
-        var len = queue.length;
-        while(len) {
-            currentQueue = queue;
-            queue = [];
-            while (++queueIndex < len) {
-                if (currentQueue) {
-                    currentQueue[queueIndex].run();
-                }
-            }
-            queueIndex = -1;
-            len = queue.length;
-        }
-        currentQueue = null;
-        draining = false;
-        runClearTimeout(timeout);
-    }
-    function nextTick(fun) {
-        var args = new Array(arguments.length - 1);
-        if (arguments.length > 1) {
-            for (var i = 1; i < arguments.length; i++) {
-                args[i - 1] = arguments[i];
-            }
-        }
-        queue.push(new Item(fun, args));
-        if (queue.length === 1 && !draining) {
-            runTimeout(drainQueue);
-        }
-    }
-    // v8 likes predictible objects
-    function Item(fun, array) {
-        this.fun = fun;
-        this.array = array;
-    }
-    Item.prototype.run = function () {
-        this.fun.apply(null, this.array);
-    };
-    var title = 'browser';
-    var platform = 'browser';
-    var browser = true;
-    var env = {};
-    var argv = [];
-    var version = ''; // empty string to avoid regexp issues
-    var versions = {};
-    var release = {};
-    var config = {};
-
-    function noop() {}
-
-    var on = noop;
-    var addListener = noop;
-    var once = noop;
-    var off = noop;
-    var removeListener = noop;
-    var removeAllListeners = noop;
-    var emit = noop;
-
-    function binding(name) {
-        throw new Error('process.binding is not supported');
-    }
-
-    function cwd () { return '/' }
-    function chdir (dir) {
-        throw new Error('process.chdir is not supported');
-    }function umask() { return 0; }
-
-    // from https://github.com/kumavis/browser-process-hrtime/blob/master/index.js
-    var performance = global$1.performance || {};
-    var performanceNow =
-      performance.now        ||
-      performance.mozNow     ||
-      performance.msNow      ||
-      performance.oNow       ||
-      performance.webkitNow  ||
-      function(){ return (new Date()).getTime() };
-
-    // generate timestamp or delta
-    // see http://nodejs.org/api/process.html#process_process_hrtime
-    function hrtime(previousTimestamp){
-      var clocktime = performanceNow.call(performance)*1e-3;
-      var seconds = Math.floor(clocktime);
-      var nanoseconds = Math.floor((clocktime%1)*1e9);
-      if (previousTimestamp) {
-        seconds = seconds - previousTimestamp[0];
-        nanoseconds = nanoseconds - previousTimestamp[1];
-        if (nanoseconds<0) {
-          seconds--;
-          nanoseconds += 1e9;
-        }
-      }
-      return [seconds,nanoseconds]
-    }
-
-    var startTime = new Date();
-    function uptime() {
-      var currentTime = new Date();
-      var dif = currentTime - startTime;
-      return dif / 1000;
-    }
-
-    var browser$1 = {
-      nextTick: nextTick,
-      title: title,
-      browser: browser,
-      env: env,
-      argv: argv,
-      version: version,
-      versions: versions,
-      on: on,
-      addListener: addListener,
-      once: once,
-      off: off,
-      removeListener: removeListener,
-      removeAllListeners: removeAllListeners,
-      emit: emit,
-      binding: binding,
-      cwd: cwd,
-      chdir: chdir,
-      umask: umask,
-      hrtime: hrtime,
-      platform: platform,
-      release: release,
-      config: config,
-      uptime: uptime
-    };
+    var src = base$1;
 
     var inherits;
     if (typeof Object.create === 'function'){
@@ -12278,7 +16554,7 @@
 
 
     // log is just a thin wrapper to console.log that prepends a timestamp
-    function log() {
+    function log$1() {
       console.log('%s - %s', timestamp(), format.apply(null, arguments));
     }
 
@@ -12300,7 +16576,7 @@
     var util = {
       inherits: inherits$1,
       _extend: _extend,
-      log: log,
+      log: log$1,
       isBuffer: isBuffer,
       isPrimitive: isPrimitive,
       isFunction: isFunction,
@@ -12343,19 +16619,19 @@
         isFunction: isFunction,
         isPrimitive: isPrimitive,
         isBuffer: isBuffer,
-        log: log,
+        log: log$1,
         inherits: inherits$1,
         _extend: _extend,
         'default': util
     });
 
-    var require$$0 = /*@__PURE__*/getAugmentedNamespace(util$1);
+    var require$$0$1 = /*@__PURE__*/getAugmentedNamespace(util$1);
 
     var TextEncoder_1 =
-      typeof TextEncoder !== "undefined" ? TextEncoder : require$$0.TextEncoder;
+      typeof TextEncoder !== "undefined" ? TextEncoder : require$$0$1.TextEncoder;
 
     var TextDecoder_1 =
-      typeof TextDecoder !== "undefined" ? TextDecoder : require$$0.TextDecoder;
+      typeof TextDecoder !== "undefined" ? TextDecoder : require$$0$1.TextDecoder;
 
     var lib = {
     	TextEncoder: TextEncoder_1,
@@ -12447,7 +16723,7 @@
       }
     }
 
-    var base$1 = Base;
+    var base$2 = Base;
 
     /** @typedef {import('./types').CodecFactory} CodecFactory */
 
@@ -12621,7 +16897,7 @@
 
     /** @type {Record<BaseName,Base>} */
     const names = constants$1.reduce((prev, tupple) => {
-      prev[tupple[0]] = new base$1(tupple[0], tupple[1], tupple[2], tupple[3]);
+      prev[tupple[0]] = new base$2(tupple[0], tupple[1], tupple[2], tupple[3]);
       return prev
     }, /** @type {Record<BaseName,Base>} */({}));
 
@@ -15174,7 +19450,7 @@
     	"Richard Schneider <makaretu@gmail.com>",
     	"Xmader <xmader@outlook.com>"
     ];
-    var require$$0$1 = {
+    var require$$0$2 = {
     	name: name,
     	version: version$1,
     	description: description,
@@ -15197,7 +19473,7 @@
     	contributors: contributors
     };
 
-    const { version: version$2 } = require$$0$1;
+    const { version: version$2 } = require$$0$2;
     const blockSymbol = Symbol.for('@ipld/js-ipld-block/block');
     const readonly = { writable: false, configurable: false, enumerable: true };
 
@@ -16630,7 +20906,7 @@
     var set$1 = function (userIpfs) {
         ipfs = userIpfs;
     };
-    var get$1 = function () { return __awaiter(void 0, void 0, void 0, function () {
+    var get$2 = function () { return __awaiter(void 0, void 0, void 0, function () {
         var port;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -16648,6 +20924,7 @@
     function iframe() {
         return new Promise(function (resolve, reject) {
             var iframe = document.createElement("iframe");
+            iframe.id = "webnative-ipfs";
             iframe.style.width = "0";
             iframe.style.height = "0";
             iframe.style.border = "none";
@@ -21146,7 +25423,7 @@ message PBNode {
     // the function as async because it must return a Promise to match the API
     // for other functions that do perform asynchronous work (see sha.browser.js)
     // eslint-disable-next-line
-    const hash = (algorithm) => async (data) => {
+    const hash$1 = (algorithm) => async (data) => {
       switch (algorithm) {
         case 'sha3-224':
           return new Uint8Array(sha3.sha3_224.arrayBuffer(data))
@@ -21186,18 +25463,18 @@ message PBNode {
       sha2256: sha('sha2-256'),
       sha2512: sha('sha2-512'),
       dblSha2256: sha('dbl-sha2-256'),
-      sha3224: hash('sha3-224'),
-      sha3256: hash('sha3-256'),
-      sha3384: hash('sha3-384'),
-      sha3512: hash('sha3-512'),
-      shake128: hash('shake-128'),
-      shake256: hash('shake-256'),
-      keccak224: hash('keccak-224'),
-      keccak256: hash('keccak-256'),
-      keccak384: hash('keccak-384'),
-      keccak512: hash('keccak-512'),
-      murmur3128: hash('murmur3-128'),
-      murmur332: hash('murmur3-32'),
+      sha3224: hash$1('sha3-224'),
+      sha3256: hash$1('sha3-256'),
+      sha3384: hash$1('sha3-384'),
+      sha3512: hash$1('sha3-512'),
+      shake128: hash$1('shake-128'),
+      shake256: hash$1('shake-256'),
+      keccak224: hash$1('keccak-224'),
+      keccak256: hash$1('keccak-256'),
+      keccak384: hash$1('keccak-384'),
+      keccak512: hash$1('keccak-512'),
+      murmur3128: hash$1('murmur3-128'),
+      murmur332: hash$1('murmur3-32'),
       addBlake: blake_1
     };
 
@@ -21736,7 +26013,7 @@ message PBNode {
         var ipfs, result;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, get$1()];
+                case 0: return [4 /*yield*/, get$2()];
                 case 1:
                     ipfs = _a.sent();
                     return [4 /*yield*/, ipfs.add(content, { cidVersion: 1, pin: true })];
@@ -21755,7 +26032,7 @@ message PBNode {
         var e_1, _c;
         return __generator(this, function (_d) {
             switch (_d.label) {
-                case 0: return [4 /*yield*/, get$1()];
+                case 0: return [4 /*yield*/, get$2()];
                 case 1:
                     ipfs = _d.sent();
                     chunks = [];
@@ -21822,7 +26099,7 @@ message PBNode {
         var e_2, _c;
         return __generator(this, function (_d) {
             switch (_d.label) {
-                case 0: return [4 /*yield*/, get$1()];
+                case 0: return [4 /*yield*/, get$2()];
                 case 1:
                     ipfs = _d.sent();
                     links = [];
@@ -21863,7 +26140,7 @@ message PBNode {
         var ipfs, raw, node;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, get$1()];
+                case 0: return [4 /*yield*/, get$2()];
                 case 1:
                     ipfs = _a.sent();
                     return [4 /*yield*/, attemptPin(cid)];
@@ -21881,7 +26158,7 @@ message PBNode {
         var ipfs, cidObj, cid, nodeSize;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, get$1()
+                case 0: return [4 /*yield*/, get$2()
                     // using this format because Gateway doesn't like `dag-cbor` nodes.
                     // I think this is because UnixFS requires `dag-pb` & the gateway requires UnixFS for directory traversal
                 ];
@@ -21916,7 +26193,7 @@ message PBNode {
         var ipfs, stat;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, get$1()];
+                case 0: return [4 /*yield*/, get$2()];
                 case 1:
                     ipfs = _a.sent();
                     return [4 /*yield*/, ipfs.files.stat("/ipfs/" + cid)];
@@ -21930,7 +26207,7 @@ message PBNode {
         var ipfs, err_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, get$1()];
+                case 0: return [4 /*yield*/, get$2()];
                 case 1:
                     ipfs = _a.sent();
                     _a.label = 2;
@@ -29997,7 +34274,7 @@ message PBNode {
                     normalized = _a;
                     encoded = src$a.encode(normalized);
                     if (!isJust(key)) return [3 /*break*/, 5];
-                    return [4 /*yield*/, encrypt$1(encoded, key)];
+                    return [4 /*yield*/, aes$2.encrypt(encoded, key)];
                 case 4:
                     _b = _c.sent();
                     return [3 /*break*/, 6];
@@ -30018,7 +34295,7 @@ message PBNode {
                 case 1:
                     buf = _b.sent();
                     if (!isJust(key)) return [3 /*break*/, 3];
-                    return [4 /*yield*/, decrypt$1(buf, key)];
+                    return [4 /*yield*/, aes$2.decrypt(buf, key)];
                 case 2:
                     _a = _b.sent();
                     return [3 /*break*/, 4];
@@ -30039,11 +34316,11 @@ message PBNode {
         catAndDecode: catAndDecode
     });
 
-    var index$2 = /*#__PURE__*/Object.freeze({
+    var index$3 = /*#__PURE__*/Object.freeze({
         __proto__: null,
         encoded: encoded,
         set: set$1,
-        get: get$1,
+        get: get$2,
         iframe: iframe,
         add: add,
         catRaw: catRaw,
@@ -30057,6 +34334,972 @@ message PBNode {
         attemptPin: attemptPin,
         DAG_NODE_DATA: DAG_NODE_DATA
     });
+
+    /**
+     * Path for `AppInfo`.
+     */
+    function appDataPath(app) {
+        return directory(Branch.Private, "Apps", app.creator, app.name);
+    }
+    /**
+     * Lists the filesystems paths for a set of `Permissions`.
+     * This'll return a list of `DistinctivePath`s.
+     */
+    function paths(permissions) {
+        var _a, _b, _c, _d;
+        var list = [];
+        if (permissions.app)
+            list.push(appDataPath(permissions.app));
+        if ((_a = permissions.fs) === null || _a === void 0 ? void 0 : _a.private)
+            list = list.concat((_b = permissions.fs) === null || _b === void 0 ? void 0 : _b.private.map(function (p) { return combine(directory(Branch.Private), p); }));
+        if ((_c = permissions.fs) === null || _c === void 0 ? void 0 : _c.public)
+            list = list.concat((_d = permissions.fs) === null || _d === void 0 ? void 0 : _d.public.map(function (p) { return combine(directory(Branch.Public), p); }));
+        return list;
+    }
+
+    /**
+     * Base-N/Base-X encoding/decoding functions.
+     *
+     * Original implementation from base-x:
+     * https://github.com/cryptocoinjs/base-x
+     *
+     * Which is MIT licensed:
+     *
+     * The MIT License (MIT)
+     *
+     * Copyright base-x contributors (c) 2016
+     *
+     * Permission is hereby granted, free of charge, to any person obtaining a copy
+     * of this software and associated documentation files (the "Software"), to deal
+     * in the Software without restriction, including without limitation the rights
+     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+     * copies of the Software, and to permit persons to whom the Software is
+     * furnished to do so, subject to the following conditions:
+     *
+     * The above copyright notice and this permission notice shall be included in
+     * all copies or substantial portions of the Software.
+     *
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+     * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+     * DEALINGS IN THE SOFTWARE.
+     */
+
+    // baseN alphabet indexes
+    const _reverseAlphabets = {};
+
+    /**
+     * BaseN-encodes a Uint8Array using the given alphabet.
+     *
+     * @param {Uint8Array} input the bytes to encode in a Uint8Array.
+     * @param {number} maxline the maximum number of encoded characters per line to
+     *          use, defaults to none.
+     *
+     * @return {string} the baseN-encoded output string.
+     */
+    function encode$8(input, alphabet, maxline) {
+      if(!(input instanceof Uint8Array)) {
+        throw new TypeError('"input" must be a Uint8Array.');
+      }
+      if(typeof alphabet !== 'string') {
+        throw new TypeError('"alphabet" must be a string.');
+      }
+      if(maxline !== undefined && typeof maxline !== 'number') {
+        throw new TypeError('"maxline" must be a number.');
+      }
+      if(input.length === 0) {
+        return '';
+      }
+
+      let output = '';
+
+      let i = 0;
+      const base = alphabet.length;
+      const first = alphabet.charAt(0);
+      const digits = [0];
+      for(i = 0; i < input.length; ++i) {
+        let carry = input[i];
+        for(let j = 0; j < digits.length; ++j) {
+          carry += digits[j] << 8;
+          digits[j] = carry % base;
+          carry = (carry / base) | 0;
+        }
+
+        while(carry > 0) {
+          digits.push(carry % base);
+          carry = (carry / base) | 0;
+        }
+      }
+
+      // deal with leading zeros
+      for(i = 0; input[i] === 0 && i < input.length - 1; ++i) {
+        output += first;
+      }
+      // convert digits to a string
+      for(i = digits.length - 1; i >= 0; --i) {
+        output += alphabet[digits[i]];
+      }
+
+      if(maxline) {
+        const regex = new RegExp('.{1,' + maxline + '}', 'g');
+        output = output.match(regex).join('\r\n');
+      }
+
+      return output;
+    }
+
+    /**
+     * Decodes a baseN-encoded (using the given alphabet) string to a
+     * Uint8Array.
+     *
+     * @param {string} input the baseN-encoded input string.
+     *
+     * @return {Uint8Array} the decoded bytes in a Uint8Array.
+     */
+    function decode$8(input, alphabet) {
+      if(typeof input !== 'string') {
+        throw new TypeError('"input" must be a string.');
+      }
+      if(typeof alphabet !== 'string') {
+        throw new TypeError('"alphabet" must be a string.');
+      }
+      if(input.length === 0) {
+        return new Uint8Array();
+      }
+
+      let table = _reverseAlphabets[alphabet];
+      if(!table) {
+        // compute reverse alphabet
+        table = _reverseAlphabets[alphabet] = [];
+        for(let i = 0; i < alphabet.length; ++i) {
+          table[alphabet.charCodeAt(i)] = i;
+        }
+      }
+
+      // remove whitespace characters
+      input = input.replace(/\s/g, '');
+
+      const base = alphabet.length;
+      const first = alphabet.charAt(0);
+      const bytes = [0];
+      for(let i = 0; i < input.length; i++) {
+        const value = table[input.charCodeAt(i)];
+        if(value === undefined) {
+          return;
+        }
+
+        let carry = value;
+        for(let j = 0; j < bytes.length; ++j) {
+          carry += bytes[j] * base;
+          bytes[j] = carry & 0xff;
+          carry >>= 8;
+        }
+
+        while(carry > 0) {
+          bytes.push(carry & 0xff);
+          carry >>= 8;
+        }
+      }
+
+      // deal with leading zeros
+      for(let k = 0; input[k] === first && k < input.length - 1; ++k) {
+        bytes.push(0);
+      }
+
+      return new Uint8Array(bytes.reverse());
+    }
+
+    /*!
+     * Copyright (c) 2019-2020 Digital Bazaar, Inc. All rights reserved.
+     */
+
+    // base58 characters (Bitcoin alphabet)
+    const alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+
+    function encode$9(input, maxline) {
+      return encode$8(input, alphabet, maxline);
+    }
+
+    function decode$9(input) {
+      return decode$8(input, alphabet);
+    }
+
+    var EDWARDS_DID_PREFIX = new Uint8Array([0xed, 0x01]);
+    var BLS_DID_PREFIX = new Uint8Array([0xea, 0x01]);
+    var RSA_DID_PREFIX = new Uint8Array([0x00, 0xf5, 0x02]);
+    var BASE58_DID_PREFIX = 'did:key:z';
+    var KeyType;
+    (function (KeyType) {
+        KeyType["RSA"] = "rsa";
+        KeyType["Edwards"] = "ed25519";
+        KeyType["BLS"] = "bls12-381";
+    })(KeyType || (KeyType = {}));
+    // KINDS
+    /**
+     * Create a DID based on the exchange key-pair.
+     */
+    function exchange() {
+        return __awaiter(this, void 0, void 0, function () {
+            var pubKeyB64, ksAlg;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, keystore$2.publicReadKey()];
+                    case 1:
+                        pubKeyB64 = _a.sent();
+                        return [4 /*yield*/, keystore$2.getAlg()];
+                    case 2:
+                        ksAlg = _a.sent();
+                        return [2 /*return*/, publicKeyToDid(pubKeyB64, toKeyType(ksAlg))];
+                }
+            });
+        });
+    }
+    /**
+     * Get the root write-key DID for a user.
+     * Stored at `_did.${username}.${endpoints.user}`
+     */
+    function root$1(username) {
+        return __awaiter(this, void 0, void 0, function () {
+            var domain, maybeDid;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        domain = setup.endpoints.user;
+                        _a.label = 1;
+                    case 1:
+                        _a.trys.push([1, 3, , 4]);
+                        return [4 /*yield*/, lookupTxtRecord("_did." + username + "." + domain)];
+                    case 2:
+                        maybeDid = _a.sent();
+                        if (maybeDid !== null)
+                            return [2 /*return*/, maybeDid];
+                        return [3 /*break*/, 4];
+                    case 3:
+                        _a.sent();
+                        return [3 /*break*/, 4];
+                    case 4: throw new Error("Could not locate user DID in DNS.");
+                }
+            });
+        });
+    }
+    /**
+     * Create a DID based on the write key-pair.
+     */
+    function write$1() {
+        return __awaiter(this, void 0, void 0, function () {
+            var pubKeyB64, ksAlg;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, keystore$2.publicWriteKey()];
+                    case 1:
+                        pubKeyB64 = _a.sent();
+                        return [4 /*yield*/, keystore$2.getAlg()];
+                    case 2:
+                        ksAlg = _a.sent();
+                        return [2 /*return*/, publicKeyToDid(pubKeyB64, toKeyType(ksAlg))];
+                }
+            });
+        });
+    }
+    // TRANSFORMERS
+    /**
+     * Convert a base64 public key to a DID (did:key).
+     */
+    function publicKeyToDid(publicKey, type) {
+        var pubKeyBuf = utils.base64ToArrBuf(publicKey);
+        // Prefix public-write key
+        var prefix = magicBytes(type);
+        if (prefix === null) {
+            throw new Error("Key type '" + type + "' not supported");
+        }
+        var prefixedBuf = utils.joinBufs(prefix, pubKeyBuf);
+        // Encode prefixed
+        return BASE58_DID_PREFIX + encode$9(new Uint8Array(prefixedBuf));
+    }
+    /**
+     * Convert a DID (did:key) to a base64 public key.
+     */
+    function didToPublicKey(did) {
+        if (!did.startsWith(BASE58_DID_PREFIX)) {
+            throw new Error("Please use a base58-encoded DID formatted `did:key:z...`");
+        }
+        var didWithoutPrefix = did.substr(BASE58_DID_PREFIX.length);
+        var magicalBuf = decode$9(didWithoutPrefix);
+        var _a = parseMagicBytes(magicalBuf), keyBuffer = _a.keyBuffer, type = _a.type;
+        return {
+            publicKey: utils.arrBufToBase64(keyBuffer),
+            type: type
+        };
+    }
+    // VALIDATION
+    /**
+     * Verify the signature of some data (string, ArrayBuffer or Uint8Array), given a DID.
+     */
+    function verifySignedData(_a) {
+        var _b = _a.charSize, charSize = _b === void 0 ? 16 : _b, data = _a.data, did = _a.did, signature = _a.signature;
+        return __awaiter(this, void 0, void 0, function () {
+            var _c, type, publicKey, sigBytes, dataBytes, keyBytes, _d;
+            return __generator(this, function (_e) {
+                switch (_e.label) {
+                    case 0:
+                        _e.trys.push([0, 7, , 8]);
+                        _c = didToPublicKey(did), type = _c.type, publicKey = _c.publicKey;
+                        sigBytes = new Uint8Array(utils.base64ToArrBuf(signature));
+                        dataBytes = new Uint8Array(utils.normalizeUnicodeToBuf(data, charSize));
+                        keyBytes = new Uint8Array(utils.base64ToArrBuf(publicKey));
+                        _d = type;
+                        switch (_d) {
+                            case KeyType.Edwards: return [3 /*break*/, 1];
+                            case KeyType.RSA: return [3 /*break*/, 3];
+                        }
+                        return [3 /*break*/, 5];
+                    case 1: return [4 /*yield*/, ed25519.verify(dataBytes, sigBytes, keyBytes)];
+                    case 2: return [2 /*return*/, _e.sent()];
+                    case 3: return [4 /*yield*/, rsa$1.verify(dataBytes, sigBytes, keyBytes)];
+                    case 4: return [2 /*return*/, _e.sent()];
+                    case 5: return [2 /*return*/, false];
+                    case 6: return [3 /*break*/, 8];
+                    case 7:
+                        _e.sent();
+                        return [2 /*return*/, false];
+                    case 8: return [2 /*return*/];
+                }
+            });
+        });
+    }
+    // ㊙️
+    /**
+     * Magic bytes.
+     */
+    function magicBytes(keyType) {
+        switch (keyType) {
+            case KeyType.Edwards: return EDWARDS_DID_PREFIX;
+            case KeyType.RSA: return RSA_DID_PREFIX;
+            case KeyType.BLS: return BLS_DID_PREFIX;
+            default: return null;
+        }
+    }
+    /**
+     * Parse magic bytes on prefixed key-buffer
+     * to determine cryptosystem & the unprefixed key-buffer.
+     */
+    var parseMagicBytes = function (prefixedKey) {
+        // RSA
+        if (hasPrefix(prefixedKey, RSA_DID_PREFIX)) {
+            return {
+                keyBuffer: prefixedKey.slice(RSA_DID_PREFIX.byteLength),
+                type: KeyType.RSA
+            };
+            // EDWARDS
+        }
+        else if (hasPrefix(prefixedKey, EDWARDS_DID_PREFIX)) {
+            return {
+                keyBuffer: prefixedKey.slice(EDWARDS_DID_PREFIX.byteLength),
+                type: KeyType.Edwards
+            };
+            // BLS
+        }
+        else if (hasPrefix(prefixedKey, BLS_DID_PREFIX)) {
+            return {
+                keyBuffer: prefixedKey.slice(BLS_DID_PREFIX.byteLength),
+                type: KeyType.BLS
+            };
+        }
+        throw new Error("Unsupported key algorithm. Try using RSA.");
+    };
+    /**
+     * Determines if an ArrayBuffer has a given indeterminate length-prefix.
+     */
+    var hasPrefix = function (prefixedKey, prefix) {
+        return equal(prefix, prefixedKey.slice(0, prefix.byteLength));
+    };
+    var toKeyType = function (str) {
+        switch (str) {
+            case 'rsa': return KeyType.RSA;
+            case 'ed25519': return KeyType.Edwards;
+            case 'bls12-381': return KeyType.BLS;
+        }
+        throw new Error("Key Type " + str + " not supported");
+    };
+    //# sourceMappingURL=did.js.map
+
+    var did$1 = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        get KeyType () { return KeyType; },
+        exchange: exchange,
+        root: root$1,
+        ucan: write$1,
+        write: write$1,
+        publicKeyToDid: publicKeyToDid,
+        didToPublicKey: didToPublicKey,
+        verifySignedData: verifySignedData
+    });
+
+    // CONSTANTS
+    // TODO: Waiting on API change.
+    //       Should be `dnslink`
+    var WNFS_PREFIX = "wnfs";
+    // FUNCTIONS
+    /**
+     * Create a UCAN, User Controlled Authorization Networks, JWT.
+     * This JWT can be used for authorization.
+     *
+     * ### Header
+     *
+     * `alg`, Algorithm, the type of signature.
+     * `typ`, Type, the type of this data structure, JWT.
+     * `uav`, UCAN version.
+     *
+     * ### Payload
+     *
+     * `aud`, Audience, the ID of who it's intended for.
+     * `exp`, Expiry, unix timestamp of when the jwt is no longer valid.
+     * `iss`, Issuer, the ID of who sent this.
+     * `nbf`, Not Before, unix timestamp of when the jwt becomes valid.
+     * `prf`, Proof, an optional nested token with equal or greater privileges.
+     * `ptc`, Potency, which rights come with the token.
+     * `rsc`, Resource, the involved resource.
+     *
+     */
+    function build(_a) {
+        var _b = _a.addSignature, addSignature = _b === void 0 ? true : _b, audience = _a.audience, _c = _a.facts, facts = _c === void 0 ? [] : _c, issuer = _a.issuer, _d = _a.lifetimeInSeconds, lifetimeInSeconds = _d === void 0 ? 30 : _d, _e = _a.potency, potency = _e === void 0 ? 'APPEND' : _e, proof = _a.proof, resource = _a.resource;
+        return __awaiter(this, void 0, void 0, function () {
+            var currentTimeInSeconds, decodedProof, ksAlg, header, exp, nbf, prf, payload, _f, signature, _g;
+            var _h;
+            return __generator(this, function (_j) {
+                switch (_j.label) {
+                    case 0:
+                        currentTimeInSeconds = Math.floor(Date.now() / 1000);
+                        decodedProof = proof && decode$a(proof);
+                        return [4 /*yield*/, keystore$2.getAlg()
+                            // Header
+                        ];
+                    case 1:
+                        ksAlg = _j.sent();
+                        header = {
+                            alg: jwtAlgorithm(ksAlg) || 'UnknownAlgorithm',
+                            typ: 'JWT',
+                            uav: '1.0.0' // actually 0.3.1 but server isn't updated yet
+                        };
+                        exp = currentTimeInSeconds + lifetimeInSeconds;
+                        nbf = currentTimeInSeconds - 60;
+                        if (decodedProof) {
+                            prf = decodedProof.payload;
+                            exp = Math.min(prf.exp, exp);
+                            nbf = Math.max(prf.nbf, nbf);
+                        }
+                        _h = {
+                            aud: audience,
+                            exp: exp,
+                            fct: facts
+                        };
+                        _f = issuer;
+                        if (_f) return [3 /*break*/, 3];
+                        return [4 /*yield*/, write$1()];
+                    case 2:
+                        _f = (_j.sent());
+                        _j.label = 3;
+                    case 3:
+                        payload = (_h.iss = _f,
+                            _h.nbf = nbf,
+                            _h.prf = proof || null,
+                            _h.ptc = potency,
+                            _h.rsc = resource ? resource : (decodedProof ? decodedProof.payload.rsc : '*'),
+                            _h);
+                        if (!addSignature) return [3 /*break*/, 5];
+                        return [4 /*yield*/, sign$1(header, payload)];
+                    case 4:
+                        _g = _j.sent();
+                        return [3 /*break*/, 6];
+                    case 5:
+                        _g = null;
+                        _j.label = 6;
+                    case 6:
+                        signature = _g;
+                        return [2 /*return*/, {
+                                header: header,
+                                payload: payload,
+                                signature: signature
+                            }];
+                }
+            });
+        });
+    }
+    /**
+     * Given a list of UCANs, generate a dictionary.
+     * The key will be in the form of `${resourceKey}:${resourceValue}`
+     */
+    function compileDictionary(ucans) {
+        return ucans.reduce(function (acc, ucanString) {
+            var _a, _b;
+            var ucan = decode$a(ucanString);
+            var rsc = ucan.payload.rsc;
+            if (isExpired(ucan))
+                return acc;
+            if (typeof rsc !== "object") {
+                return __assign(__assign({}, acc), (_a = {}, _a[rsc] = ucanString, _a));
+            }
+            var resource = Array.from(Object.entries(rsc))[0];
+            var key = resource[0] + ":" + (resource[0] === WNFS_PREFIX
+                ? resource[1].replace(/^\/+/, "")
+                : resource[1]);
+            return __assign(__assign({}, acc), (_b = {}, _b[key] = ucanString, _b));
+        }, {});
+    }
+    /**
+     * Try to decode a UCAN.
+     * Will throw if it fails.
+     *
+     * @param ucan The encoded UCAN to decode
+     */
+    function decode$a(ucan) {
+        var split = ucan.split(".");
+        var header = JSON.parse(urlDecode(split[0]));
+        var payload = JSON.parse(urlDecode(split[1]));
+        return {
+            header: header,
+            payload: payload,
+            signature: split[2] || null
+        };
+    }
+    /**
+     * Encode a UCAN.
+     *
+     * @param ucan The UCAN to encode
+     */
+    function encode$a(ucan) {
+        var encodedHeader = encodeHeader(ucan.header);
+        var encodedPayload = encodePayload(ucan.payload);
+        return encodedHeader + '.' +
+            encodedPayload + '.' +
+            ucan.signature;
+    }
+    /**
+     * Encode the header of a UCAN.
+     *
+     * @param header The UcanHeader to encode
+     */
+    function encodeHeader(header) {
+        return urlEncode(JSON.stringify(header));
+    }
+    /**
+     * Encode the payload of a UCAN.
+     *
+     * @param payload The UcanPayload to encode
+     */
+    function encodePayload(payload) {
+        return urlEncode(JSON.stringify(__assign({}, payload)));
+    }
+    /**
+     * Check if a UCAN is expired.
+     *
+     * @param ucan The UCAN to validate
+     */
+    function isExpired(ucan) {
+        return ucan.payload.exp <= Math.floor(Date.now() / 1000);
+    }
+    /**
+     * Check if a UCAN is valid.
+     *
+     * @param ucan The decoded UCAN
+     * @param did The DID associated with the signature of the UCAN
+     */
+    function isValid(ucan) {
+        return __awaiter(this, void 0, void 0, function () {
+            var encodedHeader, encodedPayload, a, prf, b;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        encodedHeader = encodeHeader(ucan.header);
+                        encodedPayload = encodePayload(ucan.payload);
+                        return [4 /*yield*/, verifySignedData({
+                                charSize: 8,
+                                data: encodedHeader + "." + encodedPayload,
+                                did: ucan.payload.iss,
+                                signature: makeUrlUnsafe(ucan.signature || "")
+                            })];
+                    case 1:
+                        a = _a.sent();
+                        if (!a)
+                            return [2 /*return*/, a];
+                        if (!ucan.payload.prf)
+                            return [2 /*return*/, true
+                                // Verify proofs
+                            ];
+                        prf = decode$a(ucan.payload.prf);
+                        b = prf.payload.aud === ucan.payload.iss;
+                        if (!b)
+                            return [2 /*return*/, b];
+                        return [4 /*yield*/, isValid(prf)];
+                    case 2: return [2 /*return*/, _a.sent()];
+                }
+            });
+        });
+    }
+    /**
+     * Given a UCAN, lookup the root issuer.
+     *
+     * Throws when given an improperly formatted UCAN.
+     * This could be a nested UCAN (ie. proof).
+     *
+     * @param ucan A UCAN.
+     * @returns The root issuer.
+     */
+    function rootIssuer(ucan, level) {
+        if (level === void 0) { level = 0; }
+        var p = extractPayload(ucan, level);
+        if (p.prf)
+            return rootIssuer(p.prf, level + 1);
+        return p.iss;
+    }
+    /**
+     * Generate UCAN signature.
+     */
+    function sign$1(header, payload) {
+        return __awaiter(this, void 0, void 0, function () {
+            var encodedHeader, encodedPayload, _a, _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        encodedHeader = encodeHeader(header);
+                        encodedPayload = encodePayload(payload);
+                        _b = (_a = base64).makeUrlSafe;
+                        return [4 /*yield*/, keystore$2.sign(encodedHeader + "." + encodedPayload, 8)];
+                    case 1: return [2 /*return*/, _b.apply(_a, [_c.sent()])];
+                }
+            });
+        });
+    }
+    // ㊙️
+    /**
+     * JWT algorithm to be used in a JWT header.
+     */
+    function jwtAlgorithm(cryptoSystem) {
+        switch (cryptoSystem) {
+            case "ed25519": return 'EdDSA';
+            case "rsa": return 'RS256';
+            default: return null;
+        }
+    }
+    /**
+     * Extract the payload of a UCAN.
+     *
+     * Throws when given an improperly formatted UCAN.
+     */
+    function extractPayload(ucan, level) {
+        try {
+            return JSON.parse(urlDecode(ucan.split(".")[1]));
+        }
+        catch (_) {
+            throw new Error("Invalid UCAN (" + level + " level" + (level === 1 ? "" : "s") + " deep): `" + ucan + "`");
+        }
+    }
+
+    var ucan = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        WNFS_PREFIX: WNFS_PREFIX,
+        build: build,
+        compileDictionary: compileDictionary,
+        decode: decode$a,
+        encode: encode$a,
+        encodeHeader: encodeHeader,
+        encodePayload: encodePayload,
+        isExpired: isExpired,
+        isValid: isValid,
+        rootIssuer: rootIssuer,
+        sign: sign$1
+    });
+
+    var dictionary = {};
+    // FUNCTIONS
+    /**
+     * You didn't see anything 👀
+     */
+    function clearStorage() {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        dictionary = {};
+                        return [4 /*yield*/, removeItem$1(UCANS_STORAGE_KEY)];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    }
+    /**
+     * Lookup the prefix for a filesystem key in the dictionary.
+     */
+    function dictionaryFilesystemPrefix(username) {
+        // const host = `${username}.${setup.endpoints.user}`
+        // TODO: Waiting on API change.
+        //       Should be `${WNFS_PREFIX}:${host}/`
+        return WNFS_PREFIX + ":";
+    }
+    /**
+     * Look up a UCAN for a platform app.
+     */
+    function lookupAppUcan(domain) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/, dictionary["*"] || dictionary["app:*"] || dictionary["app:" + domain]];
+            });
+        });
+    }
+    /**
+     * Look up a UCAN with a file system path.
+     */
+    function lookupFilesystemUcan(path) {
+        return __awaiter(this, void 0, void 0, function () {
+            var all, isDirectory$1, pathParts, username, prefix;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (dictionary["*"]) {
+                            return [2 /*return*/, dictionary["*"]];
+                        }
+                        all = path === "*";
+                        isDirectory$1 = all ? false : isDirectory(path);
+                        pathParts = all ? ["*"] : unwrap(path);
+                        return [4 /*yield*/, authenticatedUsername()];
+                    case 1:
+                        username = _a.sent();
+                        prefix = username ? dictionaryFilesystemPrefix() : "";
+                        return [2 /*return*/, pathParts.reduce(function (acc, part, idx) {
+                                if (acc)
+                                    return acc;
+                                var isLastPart = idx === 0;
+                                var partsSlice = pathParts.slice(0, pathParts.length - idx);
+                                var partialPath = toPosix(isLastPart && !isDirectory$1
+                                    ? file.apply(pathing, partsSlice) : directory.apply(pathing, partsSlice));
+                                return dictionary["" + prefix + partialPath] || null;
+                            }, null)];
+                }
+            });
+        });
+    }
+    /**
+     * Store UCANs and update the in-memory dictionary.
+     */
+    function store(ucans) {
+        return __awaiter(this, void 0, void 0, function () {
+            var existing, newList, filteredList;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, getItem$1(UCANS_STORAGE_KEY)];
+                    case 1:
+                        existing = _a.sent();
+                        newList = (existing || []).concat(ucans);
+                        dictionary = compileDictionary(newList);
+                        filteredList = listFromDictionary();
+                        return [4 /*yield*/, setItem$1(UCANS_STORAGE_KEY, filteredList)];
+                    case 2:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    }
+    /**
+     * See if the stored UCANs in the in-memory dictionary
+     * conform to the given `Permissions`.
+     */
+    function validatePermissions(_a, username) {
+        var app = _a.app, fs = _a.fs;
+        var prefix = dictionaryFilesystemPrefix();
+        // Root access
+        var rootUcan = dictionary["*"];
+        if (rootUcan && !isExpired(decode$a(rootUcan)))
+            return true;
+        // Check permissions
+        if (app) {
+            var k = prefix + toPosix(appDataPath(app));
+            var u = dictionary[k];
+            if (!u || isExpired(decode$a(u)))
+                return false;
+        }
+        if (fs === null || fs === void 0 ? void 0 : fs.private) {
+            var priv = fs.private.every(function (path) {
+                var pathWithPrefix = prefix + "private/" + toPosix(path);
+                var u = dictionary[pathWithPrefix];
+                return u && !isExpired(decode$a(u));
+            });
+            if (!priv)
+                return false;
+        }
+        if (fs === null || fs === void 0 ? void 0 : fs.public) {
+            var publ = fs.public.every(function (path) {
+                var pathWithPrefix = prefix + "public/" + toPosix(path);
+                var u = dictionary[pathWithPrefix];
+                return u && !isExpired(decode$a(u));
+            });
+            if (!publ)
+                return false;
+        }
+        return true;
+    }
+    // ㊙️
+    function listFromDictionary() {
+        return Object.values(dictionary);
+    }
+
+    var index_umd$1 = createCommonjsModule(function (module, exports) {
+    (function (global, factory) {
+    	 factory(exports) ;
+    }(commonjsGlobal, (function (exports) {
+    	/* eslint-disable no-undefined,no-param-reassign,no-shadow */
+
+    	/**
+    	 * Throttle execution of a function. Especially useful for rate limiting
+    	 * execution of handlers on events like resize and scroll.
+    	 *
+    	 * @param  {number}    delay -          A zero-or-greater delay in milliseconds. For event callbacks, values around 100 or 250 (or even higher) are most useful.
+    	 * @param  {boolean}   [noTrailing] -   Optional, defaults to false. If noTrailing is true, callback will only execute every `delay` milliseconds while the
+    	 *                                    throttled-function is being called. If noTrailing is false or unspecified, callback will be executed one final time
+    	 *                                    after the last throttled-function call. (After the throttled-function has not been called for `delay` milliseconds,
+    	 *                                    the internal counter is reset).
+    	 * @param  {Function}  callback -       A function to be executed after delay milliseconds. The `this` context and all arguments are passed through, as-is,
+    	 *                                    to `callback` when the throttled-function is executed.
+    	 * @param  {boolean}   [debounceMode] - If `debounceMode` is true (at begin), schedule `clear` to execute after `delay` ms. If `debounceMode` is false (at end),
+    	 *                                    schedule `callback` to execute after `delay` ms.
+    	 *
+    	 * @returns {Function}  A new, throttled, function.
+    	 */
+    	function throttle (delay, noTrailing, callback, debounceMode) {
+    	  /*
+    	   * After wrapper has stopped being called, this timeout ensures that
+    	   * `callback` is executed at the proper times in `throttle` and `end`
+    	   * debounce modes.
+    	   */
+    	  var timeoutID;
+    	  var cancelled = false; // Keep track of the last time `callback` was executed.
+
+    	  var lastExec = 0; // Function to clear existing timeout
+
+    	  function clearExistingTimeout() {
+    	    if (timeoutID) {
+    	      clearTimeout(timeoutID);
+    	    }
+    	  } // Function to cancel next exec
+
+
+    	  function cancel() {
+    	    clearExistingTimeout();
+    	    cancelled = true;
+    	  } // `noTrailing` defaults to falsy.
+
+
+    	  if (typeof noTrailing !== 'boolean') {
+    	    debounceMode = callback;
+    	    callback = noTrailing;
+    	    noTrailing = undefined;
+    	  }
+    	  /*
+    	   * The `wrapper` function encapsulates all of the throttling / debouncing
+    	   * functionality and when executed will limit the rate at which `callback`
+    	   * is executed.
+    	   */
+
+
+    	  function wrapper() {
+    	    for (var _len = arguments.length, arguments_ = new Array(_len), _key = 0; _key < _len; _key++) {
+    	      arguments_[_key] = arguments[_key];
+    	    }
+
+    	    var self = this;
+    	    var elapsed = Date.now() - lastExec;
+
+    	    if (cancelled) {
+    	      return;
+    	    } // Execute `callback` and update the `lastExec` timestamp.
+
+
+    	    function exec() {
+    	      lastExec = Date.now();
+    	      callback.apply(self, arguments_);
+    	    }
+    	    /*
+    	     * If `debounceMode` is true (at begin) this is used to clear the flag
+    	     * to allow future `callback` executions.
+    	     */
+
+
+    	    function clear() {
+    	      timeoutID = undefined;
+    	    }
+
+    	    if (debounceMode && !timeoutID) {
+    	      /*
+    	       * Since `wrapper` is being called for the first time and
+    	       * `debounceMode` is true (at begin), execute `callback`.
+    	       */
+    	      exec();
+    	    }
+
+    	    clearExistingTimeout();
+
+    	    if (debounceMode === undefined && elapsed > delay) {
+    	      /*
+    	       * In throttle mode, if `delay` time has been exceeded, execute
+    	       * `callback`.
+    	       */
+    	      exec();
+    	    } else if (noTrailing !== true) {
+    	      /*
+    	       * In trailing throttle mode, since `delay` time has not been
+    	       * exceeded, schedule `callback` to execute `delay` ms after most
+    	       * recent execution.
+    	       *
+    	       * If `debounceMode` is true (at begin), schedule `clear` to execute
+    	       * after `delay` ms.
+    	       *
+    	       * If `debounceMode` is false (at end), schedule `callback` to
+    	       * execute after `delay` ms.
+    	       */
+    	      timeoutID = setTimeout(debounceMode ? clear : exec, debounceMode === undefined ? delay - elapsed : delay);
+    	    }
+    	  }
+
+    	  wrapper.cancel = cancel; // Return the wrapper function.
+
+    	  return wrapper;
+    	}
+
+    	/* eslint-disable no-undefined */
+    	/**
+    	 * Debounce execution of a function. Debouncing, unlike throttling,
+    	 * guarantees that a function is only executed a single time, either at the
+    	 * very beginning of a series of calls, or at the very end.
+    	 *
+    	 * @param  {number}   delay -         A zero-or-greater delay in milliseconds. For event callbacks, values around 100 or 250 (or even higher) are most useful.
+    	 * @param  {boolean}  [atBegin] -     Optional, defaults to false. If atBegin is false or unspecified, callback will only be executed `delay` milliseconds
+    	 *                                  after the last debounced-function call. If atBegin is true, callback will be executed only at the first debounced-function call.
+    	 *                                  (After the throttled-function has not been called for `delay` milliseconds, the internal counter is reset).
+    	 * @param  {Function} callback -      A function to be executed after delay milliseconds. The `this` context and all arguments are passed through, as-is,
+    	 *                                  to `callback` when the debounced-function is executed.
+    	 *
+    	 * @returns {Function} A new, debounced function.
+    	 */
+
+    	function debounce (delay, atBegin, callback) {
+    	  return callback === undefined ? throttle(delay, atBegin, false) : throttle(delay, callback, atBegin !== false);
+    	}
+
+    	exports.debounce = debounce;
+    	exports.throttle = throttle;
+
+    	Object.defineProperty(exports, '__esModule', { value: true });
+
+    })));
+    //# sourceMappingURL=index.umd.js.map
+    });
+
+    /*@__PURE__*/getDefaultExportFromCjs(index_umd$1);
 
     var toDAGLink$1 = function (link) {
         var name = link.name, cid = link.cid, size = link.size;
@@ -30166,7 +35409,7 @@ message PBNode {
     }); };
 
     /** @internal */
-    var isFile = function (obj) {
+    var isFile$1 = function (obj) {
         return isObject(obj) && obj.content !== undefined;
     };
     var isBaseLink = function (obj) {
@@ -30324,7 +35567,7 @@ message PBNode {
             }
         });
     }); };
-    var get$2 = function (cid) { return __awaiter(void 0, void 0, void 0, function () {
+    var get$3 = function (cid) { return __awaiter(void 0, void 0, void 0, function () {
         var links, metadata, skeleton, _a, userland, previous;
         var _b, _c;
         return __generator(this, function (_d) {
@@ -33493,7 +38736,7 @@ message PBNode {
         'default': _nodeResolve_empty
     });
 
-    var require$$0$2 = /*@__PURE__*/getAugmentedNamespace(_nodeResolve_empty$1);
+    var require$$0$3 = /*@__PURE__*/getAugmentedNamespace(_nodeResolve_empty$1);
 
     /*
     Copyright 2019 David Bau.
@@ -33730,7 +38973,7 @@ message PBNode {
       module.exports = seedrandom;
       // When in node.js, try using crypto package for autoseeding.
       try {
-        nodecrypto = require$$0$2;
+        nodecrypto = require$$0$3;
       } catch (ex) {}
     } else {
       // When included as a plain script, set up Math.seedrandom global.
@@ -33886,10 +39129,10 @@ message PBNode {
         });
         return BaseFilter;
     }());
-    var _default$2 = BaseFilter;
+    var _default$8 = BaseFilter;
 
     var baseFilter = /*#__PURE__*/Object.defineProperty({
-    	default: _default$2
+    	default: _default$8
     }, '__esModule', {value: true});
 
     var Reflect$1;
@@ -35307,7 +40550,7 @@ message PBNode {
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
     */
-    var __extends$1 = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
+    var __extends$2 = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -35350,7 +40593,7 @@ message PBNode {
      * @author Arnaud Grall
      */
     var BloomFilter = /** @class */ (function (_super) {
-        __extends$1(BloomFilter, _super);
+        __extends$2(BloomFilter, _super);
         /**
          * Constructor
          * @param filter - The filter as an array of 1s & 0s
@@ -35406,16 +40649,15 @@ message PBNode {
             return filter;
         };
         /**
-         * Import an existing bloom filter from an ArrayBuffer
-         * @param buf - The existing bloom filter as ArrayBuffer
+         * Import an existing bloom filter from a Uint8Array
+         * @param bytes - The existing bloom filter as Uint8Array
          * @param nbHashes - The number of hash functions used
-         * @return A {@link BloomFilter} from the buffer
+         * @return A {@link BloomFilter} from the bytes array
          */
-        BloomFilter.fromBuffer = function (buf, nbHashes) {
-            var arr = new Uint8Array(buf);
+        BloomFilter.fromBytes = function (bytes, nbHashes) {
             var filter = [];
-            for (var i = 0; i < arr.length; i++) {
-                var bits = utils$5.uint8ToBits(arr[i]);
+            for (var i = 0; i < bytes.length; i++) {
+                var bits = utils$5.uint8ToBits(bytes[i]);
                 filter = filter.concat(bits);
             }
             return new BloomFilter_1(filter, nbHashes);
@@ -35497,16 +40739,16 @@ message PBNode {
             return this._filter.every(function (value, index) { return other._filter[index] === value; });
         };
         /**
-         * Exports to an ArrayBuffer
-         * @return ArrayBuffer of filter
+         * Exports to a Uint8Array
+         * @return Uint8Array of filter
          */
-        BloomFilter.prototype.toBuffer = function () {
+        BloomFilter.prototype.toBytes = function () {
             var arr = new Uint8Array(Math.ceil(this._size / 8));
             for (var i = 0; i < arr.length; i++) {
                 var bits = this._filter.slice(i * 8, i * 8 + 8);
                 arr[i] = utils$5.bitsToUint8(bits);
             }
-            return arr.buffer;
+            return arr;
         };
         var BloomFilter_1;
         __decorate([
@@ -35532,10 +40774,10 @@ message PBNode {
         ], BloomFilter);
         return BloomFilter;
     }(base_filter_1.default));
-    var _default$3 = BloomFilter;
+    var _default$9 = BloomFilter;
 
     var bloomFilter = /*#__PURE__*/Object.defineProperty({
-    	default: _default$3
+    	default: _default$9
     }, '__esModule', {value: true});
 
     /* file : counting-bloom-filter.ts
@@ -35561,7 +40803,7 @@ message PBNode {
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
     */
-    var __extends$2 = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
+    var __extends$3 = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -35602,7 +40844,7 @@ message PBNode {
      * @author Thomas Minier & Arnaud Grall
      */
     var CountingBloomFilter = /** @class */ (function (_super) {
-        __extends$2(CountingBloomFilter, _super);
+        __extends$3(CountingBloomFilter, _super);
         /**
          * Constructor
          * @param size - The size of the filter
@@ -35770,10 +41012,10 @@ message PBNode {
         ], CountingBloomFilter);
         return CountingBloomFilter;
     }(base_filter_1$1.default));
-    var _default$4 = CountingBloomFilter;
+    var _default$a = CountingBloomFilter;
 
     var countingBloomFilter = /*#__PURE__*/Object.defineProperty({
-    	default: _default$4
+    	default: _default$a
     }, '__esModule', {value: true});
 
     /* file : partitioned-bloom-filter.ts
@@ -35799,7 +41041,7 @@ message PBNode {
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
     */
-    var __extends$3 = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
+    var __extends$4 = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -35878,7 +41120,7 @@ message PBNode {
      * @author Thomas Minier & Arnaud Grall
      */
     var PartitionedBloomFilter = /** @class */ (function (_super) {
-        __extends$3(PartitionedBloomFilter, _super);
+        __extends$4(PartitionedBloomFilter, _super);
         /**
          * Constructor
          * @param size - The total number of cells
@@ -36071,10 +41313,10 @@ message PBNode {
         ], PartitionedBloomFilter);
         return PartitionedBloomFilter;
     }(base_filter_1$2.default));
-    var _default$5 = PartitionedBloomFilter;
+    var _default$b = PartitionedBloomFilter;
 
     var partitionedBloomFilter = /*#__PURE__*/Object.defineProperty({
-    	default: _default$5
+    	default: _default$b
     }, '__esModule', {value: true});
 
     /* file : count-min-sketch.ts
@@ -36100,7 +41342,7 @@ message PBNode {
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
     */
-    var __extends$4 = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
+    var __extends$5 = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -36153,7 +41395,7 @@ message PBNode {
      * @author Thomas Minier & Arnaud Grall
      */
     var CountMinSketch = /** @class */ (function (_super) {
-        __extends$4(CountMinSketch, _super);
+        __extends$5(CountMinSketch, _super);
         /**
          * Constructor
          * @param columns - Number of columns
@@ -36333,10 +41575,10 @@ message PBNode {
         ], CountMinSketch);
         return CountMinSketch;
     }(base_filter_1$3.default));
-    var _default$6 = CountMinSketch;
+    var _default$c = CountMinSketch;
 
     var countMinSketch = /*#__PURE__*/Object.defineProperty({
-    	default: _default$6
+    	default: _default$c
     }, '__esModule', {value: true});
 
     /* file: hyperloglog.ts
@@ -36362,7 +41604,7 @@ message PBNode {
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
     */
-    var __extends$5 = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
+    var __extends$6 = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -36420,7 +41662,7 @@ message PBNode {
      * @author Thomas Minier
      */
     var HyperLogLog = /** @class */ (function (_super) {
-        __extends$5(HyperLogLog, _super);
+        __extends$6(HyperLogLog, _super);
         /**
          * Constructor
          * @param nbRegisters - The number of registers to use
@@ -36547,10 +41789,10 @@ message PBNode {
         ], HyperLogLog);
         return HyperLogLog;
     }(base_filter_1$4.default));
-    var _default$7 = HyperLogLog;
+    var _default$d = HyperLogLog;
 
     var hyperloglog = /*#__PURE__*/Object.defineProperty({
-    	default: _default$7
+    	default: _default$d
     }, '__esModule', {value: true});
 
     /**
@@ -53727,7 +58969,7 @@ message PBNode {
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
     */
-    var __extends$6 = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
+    var __extends$7 = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -53752,7 +58994,7 @@ message PBNode {
     var __param$5 = (commonjsGlobal && commonjsGlobal.__param) || function (paramIndex, decorator) {
         return function (target, key) { decorator(target, key, paramIndex); }
     };
-    var __generator$3 = (commonjsGlobal && commonjsGlobal.__generator) || function (thisArg, body) {
+    var __generator$9 = (commonjsGlobal && commonjsGlobal.__generator) || function (thisArg, body) {
         var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
         return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
         function verb(n) { return function (v) { return step([n, v]); }; }
@@ -53876,7 +59118,7 @@ message PBNode {
      * @author Arnaud Grall
      */
     var TopK = /** @class */ (function (_super) {
-        __extends$6(TopK, _super);
+        __extends$7(TopK, _super);
         /**
          * Constructor
          * @param k - How many elements to store
@@ -53949,7 +59191,7 @@ message PBNode {
             var heap = this._heap;
             return function () {
                 var i, elt;
-                return __generator$3(this, function (_a) {
+                return __generator$9(this, function (_a) {
                     switch (_a.label) {
                         case 0:
                             i = heap.length - 1;
@@ -54011,10 +59253,10 @@ message PBNode {
         ], TopK);
         return TopK;
     }(base_filter_1$5.default));
-    var _default$8 = TopK;
+    var _default$e = TopK;
 
     var topk = /*#__PURE__*/Object.defineProperty({
-    	default: _default$8
+    	default: _default$e
     }, '__esModule', {value: true});
 
     /* file: min-hash.ts
@@ -54040,7 +59282,7 @@ message PBNode {
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
     */
-    var __extends$7 = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
+    var __extends$8 = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -54098,7 +59340,7 @@ message PBNode {
      * @author Thomas Minier
      */
     var EmptyMinHashError = /** @class */ (function (_super) {
-        __extends$7(EmptyMinHashError, _super);
+        __extends$8(EmptyMinHashError, _super);
         function EmptyMinHashError() {
             return _super !== null && _super.apply(this, arguments) || this;
         }
@@ -54123,7 +59365,7 @@ message PBNode {
      * @author Thomas Minier
      */
     var MinHash = /** @class */ (function (_super) {
-        __extends$7(MinHash, _super);
+        __extends$8(MinHash, _super);
         /**
          * Constructor
          * @param nbHashes - Number of hash functions to use for comouting the MinHash signature
@@ -54302,10 +59544,10 @@ message PBNode {
         };
         return MinHashFactory;
     }());
-    var _default$9 = MinHashFactory;
+    var _default$f = MinHashFactory;
 
     var minHashFactory = /*#__PURE__*/Object.defineProperty({
-    	default: _default$9
+    	default: _default$f
     }, '__esModule', {value: true});
 
     /**
@@ -54896,10 +60138,10 @@ message PBNode {
         ], Bucket);
         return Bucket;
     }());
-    var _default$a = Bucket;
+    var _default$g = Bucket;
 
     var bucket = /*#__PURE__*/Object.defineProperty({
-    	default: _default$a
+    	default: _default$g
     }, '__esModule', {value: true});
 
     /* file : cuckoo-filter.ts
@@ -54925,7 +60167,7 @@ message PBNode {
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
     */
-    var __extends$8 = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
+    var __extends$9 = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -54977,7 +60219,7 @@ message PBNode {
      * @author Thomas Minier & Arnaud Grall
      */
     var CuckooFilter = /** @class */ (function (_super) {
-        __extends$8(CuckooFilter, _super);
+        __extends$9(CuckooFilter, _super);
         /**
          * Constructor
          * @param size - The filter size
@@ -55282,13 +60524,13 @@ message PBNode {
         ], CuckooFilter);
         return CuckooFilter;
     }(base_filter_1$7.default));
-    var _default$b = CuckooFilter;
+    var _default$h = CuckooFilter;
 
     var cuckooFilter = /*#__PURE__*/Object.defineProperty({
-    	default: _default$b
+    	default: _default$h
     }, '__esModule', {value: true});
 
-    var __extends$9 = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
+    var __extends$a = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -55328,7 +60570,7 @@ message PBNode {
      * @author Thomas Minier
      */
     var Cell = /** @class */ (function (_super) {
-        __extends$9(Cell, _super);
+        __extends$a(Cell, _super);
         /**
          * Constructor.
          * To create an empty cell, you might want to use the static Cell#empty() method.
@@ -55453,13 +60695,13 @@ message PBNode {
         ], Cell);
         return Cell;
     }(base_filter_1$8.default));
-    var _default$c = Cell;
+    var _default$i = Cell;
 
     var cell = /*#__PURE__*/Object.defineProperty({
-    	default: _default$c
+    	default: _default$i
     }, '__esModule', {value: true});
 
-    var __extends$a = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
+    var __extends$b = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
         var extendStatics = function (d, b) {
             extendStatics = Object.setPrototypeOf ||
                 ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -55484,7 +60726,7 @@ message PBNode {
     var __param$8 = (commonjsGlobal && commonjsGlobal.__param) || function (paramIndex, decorator) {
         return function (target, key) { decorator(target, key, paramIndex); }
     };
-    var __generator$4 = (commonjsGlobal && commonjsGlobal.__generator) || function (thisArg, body) {
+    var __generator$a = (commonjsGlobal && commonjsGlobal.__generator) || function (thisArg, body) {
         var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
         return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
         function verb(n) { return function (v) { return step([n, v]); }; }
@@ -55529,7 +60771,7 @@ message PBNode {
      * @author Thomas Minier
      */
     var InvertibleBloomFilter = /** @class */ (function (_super) {
-        __extends$a(InvertibleBloomFilter, _super);
+        __extends$b(InvertibleBloomFilter, _super);
         /**
          * Construct an Invertible Bloom Lookup Table
          * @param size - The number of cells in the InvertibleBloomFilter. It should be set to d * alpha, where d is the number of difference and alpha is a constant
@@ -55674,12 +60916,12 @@ message PBNode {
             var seenBefore = [];
             return function () {
                 var _loop_1, index, state_1;
-                return __generator$4(this, function (_a) {
+                return __generator$a(this, function (_a) {
                     switch (_a.label) {
                         case 0:
                             _loop_1 = function (index) {
                                 var localCell;
-                                return __generator$4(this, function (_a) {
+                                return __generator$a(this, function (_a) {
                                     switch (_a.label) {
                                         case 0:
                                             localCell = that._elements[index];
@@ -55832,10 +61074,10 @@ message PBNode {
         ], InvertibleBloomFilter);
         return InvertibleBloomFilter;
     }(base_filter_1$9.default));
-    var _default$d = InvertibleBloomFilter;
+    var _default$j = InvertibleBloomFilter;
 
     var invertibleBloomLookupTables = /*#__PURE__*/Object.defineProperty({
-    	default: _default$d
+    	default: _default$j
     }, '__esModule', {value: true});
 
     /* file : api.ts
@@ -55900,15 +61142,15 @@ message PBNode {
     }); };
     // add some string to a name filter
     var addToBare = function (bareFilter, toAdd) { return __awaiter(void 0, void 0, void 0, function () {
-        var filter, hash;
+        var filter, hash$1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     filter = fromHex(bareFilter);
-                    return [4 /*yield*/, sha256Str(toAdd)];
+                    return [4 /*yield*/, hash.sha256Str(toAdd)];
                 case 1:
-                    hash = _a.sent();
-                    filter.add(hash);
+                    hash$1 = _a.sent();
+                    filter.add(hash$1);
                     return [4 /*yield*/, toHex$1(filter)];
                 case 2: return [2 /*return*/, (_a.sent())];
             }
@@ -55937,13 +61179,15 @@ message PBNode {
     }); };
     // hash a filter with sha256
     var toHash = function (filter) { return __awaiter(void 0, void 0, void 0, function () {
-        var hash;
+        var filterBytes, hash$1;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, sha256(filter.toBuffer())];
+                case 0:
+                    filterBytes = new Uint8Array(filter.toBytes());
+                    return [4 /*yield*/, hash.sha256(filterBytes)];
                 case 1:
-                    hash = _a.sent();
-                    return [2 /*return*/, (fromBuffer(hash))];
+                    hash$1 = _a.sent();
+                    return [2 /*return*/, (fromBytes(hash$1))];
             }
         });
     }); };
@@ -55951,28 +61195,28 @@ message PBNode {
     var saturateFilter = function (filter, threshold) {
         if (threshold === void 0) { threshold = SATURATION_THRESHOLD; }
         return __awaiter(void 0, void 0, void 0, function () {
-            var bits, before, toHash, hash;
+            var bits, before, toHash, hash$1;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        if (threshold > filter.toBuffer().byteLength * 8) {
+                        if (threshold > filter.toBytes().byteLength * 8) {
                             throw new Error("threshold is bigger than filter size");
                         }
                         bits = countOnes(filter);
                         if (bits >= threshold) {
                             return [2 /*return*/, filter];
                         }
-                        before = filter.toBuffer();
+                        before = filter.toBytes();
                         toHash = before;
                         _a.label = 1;
-                    case 1: return [4 /*yield*/, sha256(toHash)];
+                    case 1: return [4 /*yield*/, hash.sha256(toHash)];
                     case 2:
-                        hash = _a.sent();
-                        filter.add(fromBuffer(hash));
-                        toHash = hash;
+                        hash$1 = _a.sent();
+                        filter.add(fromBytes(hash$1));
+                        toHash = hash$1;
                         _a.label = 3;
                     case 3:
-                        if (bufEquals(before, filter.toBuffer())) return [3 /*break*/, 1];
+                        if (bufEquals(before, filter.toBytes())) return [3 /*break*/, 1];
                         _a.label = 4;
                     case 4: return [2 /*return*/, saturateFilter(filter, threshold)];
                 }
@@ -55981,7 +61225,7 @@ message PBNode {
     };
     // count the number of 1 bits in a filter
     var countOnes = function (filter) {
-        var arr = new Uint32Array(filter.toBuffer());
+        var arr = new Uint32Array(filter.toBytes());
         var count = 0;
         for (var i = 0; i < arr.length; i++) {
             count += bitCount32(arr[i]);
@@ -55990,12 +61234,12 @@ message PBNode {
     };
     // convert a filter to hex
     var toHex$1 = function (filter) {
-        return fromBuffer(filter.toBuffer());
+        return fromBytes(filter.toBytes());
     };
     // convert hex to a BloomFilter object
     var fromHex = function (string) {
-        var buf = toBuffer$1(string);
-        return BloomFilter$1.fromBuffer(buf, HASH_COUNT);
+        var buf = toBytes(string);
+        return BloomFilter$1.fromBytes(buf, HASH_COUNT);
     };
     var bufEquals = function (buf1, buf2) {
         if (buf1.byteLength !== buf2.byteLength)
@@ -56016,7 +61260,6 @@ message PBNode {
         var b = (a & 0x33333333) + ((a >> 2) & 0x33333333);
         return ((b + (b >> 4) & 0xF0F0F0F) * 0x1010101) >> 24;
     };
-    //# sourceMappingURL=namefilter.js.map
 
     var addNode = function (mmpt, node, key) { return __awaiter(void 0, void 0, void 0, function () {
         var _a, cid, size, filter, name, contentBareFilter, contentFilter, contentName, _b, skeleton, isFile;
@@ -56126,6 +61369,20 @@ message PBNode {
             }
         });
     }); };
+    var getLatestByBareNameFilter = function (mmpt, bareName, key) { return __awaiter(void 0, void 0, void 0, function () {
+        var revisionFilter, name;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, addRevision(bareName, key, 1)];
+                case 1:
+                    revisionFilter = _a.sent();
+                    return [4 /*yield*/, toPrivateName(revisionFilter)];
+                case 2:
+                    name = _a.sent();
+                    return [2 /*return*/, getByLatestName(mmpt, name, key)];
+            }
+        });
+    }); };
     var findLatestRevision = function (mmpt, bareName, key, lastKnownRevision) { return __awaiter(void 0, void 0, void 0, function () {
         var lowerBound, upperBound, i, lastRevision, toCheck, thisRevision, midpoint, thisRevision;
         return __generator(this, function (_a) {
@@ -56187,7 +61444,7 @@ message PBNode {
     }); };
 
     // FUNCTIONS
-    var encode$8 = function (major, minor, patch) {
+    var encode$b = function (major, minor, patch) {
         return {
             major: major,
             minor: minor,
@@ -56199,9 +61456,9 @@ message PBNode {
         return major + "." + minor + "." + patch;
     };
     // VERSIONS
-    var v0 = encode$8(0, 0, 0);
-    var v1 = encode$8(1, 0, 0);
-    var latest = encode$8(1, 0, 0);
+    var v0 = encode$b(0, 0, 0);
+    var v1 = encode$b(1, 0, 0);
+    var latest = encode$b(1, 0, 0);
 
     /** @internal */
     var BaseFile = /** @class */ (function () {
@@ -56279,7 +61536,6 @@ message PBNode {
         return BareFile;
     }(BaseFile));
 
-    /** @internal */
     var BaseTree = /** @class */ (function () {
         function BaseTree(version) {
             this.version = version;
@@ -56308,7 +61564,7 @@ message PBNode {
                             if (dir === null) {
                                 throw new Error("Path does not exist");
                             }
-                            else if (isFile(dir)) {
+                            else if (isFile$1(dir)) {
                                 throw new Error('Can not `ls` a file');
                             }
                             return [2 /*return*/, dir.getLinks()];
@@ -56327,7 +61583,7 @@ message PBNode {
                             if (file === null) {
                                 throw new Error("Path does not exist");
                             }
-                            else if (!isFile(file)) {
+                            else if (!isFile$1(file)) {
                                 throw new Error('Can not `cat` a directory');
                             }
                             return [2 /*return*/, file.content];
@@ -56345,26 +61601,26 @@ message PBNode {
         };
         BaseTree.prototype.mkdirRecurse = function (path, onUpdate) {
             return __awaiter(this, void 0, void 0, function () {
-                var _a, head, nextPath, child;
+                var head, nextPath, child;
                 var _this = this;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
                         case 0:
-                            _a = takeHead(path), head = _a.head, nextPath = _a.nextPath;
-                            if (head === null) {
+                            head = path[0], nextPath = path.slice(1);
+                            if (!head) {
                                 throw new Error("Invalid path: empty");
                             }
                             return [4 /*yield*/, this.getOrCreateDirectChild(head, onUpdate)];
                         case 1:
-                            child = _b.sent();
-                            if (isFile(child)) {
-                                throw new Error("There is a file along the given path: " + path);
+                            child = _a.sent();
+                            if (isFile$1(child)) {
+                                throw new Error("There is a file along the given path: " + log(path));
                             }
-                            if (!(nextPath !== null)) return [3 /*break*/, 3];
+                            if (!nextPath.length) return [3 /*break*/, 3];
                             return [4 /*yield*/, child.mkdirRecurse(nextPath, function () { return _this.updateDirectChild(child, head, onUpdate); })];
                         case 2:
-                            _b.sent();
-                            _b.label = 3;
+                            _a.sent();
+                            _a.label = 3;
                         case 3: return [2 /*return*/, this];
                     }
                 });
@@ -56385,25 +61641,25 @@ message PBNode {
         };
         BaseTree.prototype.addRecurse = function (path, content, onUpdate) {
             return __awaiter(this, void 0, void 0, function () {
-                var _a, head, nextPath, child_1;
+                var head, nextPath, child_1;
                 var _this = this;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
                         case 0:
-                            _a = takeHead(path), head = _a.head, nextPath = _a.nextPath;
-                            if (head === null) {
+                            head = path[0], nextPath = path.slice(1);
+                            if (!head) {
                                 throw new Error("Invalid path: empty");
                             }
-                            if (!(nextPath === null)) return [3 /*break*/, 2];
+                            if (!(nextPath.length === 0)) return [3 /*break*/, 2];
                             return [4 /*yield*/, this.createOrUpdateChildFile(content, head, onUpdate)];
                         case 1:
-                            _b.sent();
+                            _a.sent();
                             return [3 /*break*/, 5];
                         case 2: return [4 /*yield*/, this.getOrCreateDirectChild(head, onUpdate)];
                         case 3:
-                            child_1 = _b.sent();
-                            if (isFile(child_1)) {
-                                throw new Error("There is a file along the given path: " + path);
+                            child_1 = _a.sent();
+                            if (isFile$1(child_1)) {
+                                throw new Error("There is a file along the given path: " + log(path));
                             }
                             return [4 /*yield*/, child_1.addRecurse(nextPath, content, function () { return __awaiter(_this, void 0, void 0, function () {
                                     return __generator(this, function (_a) {
@@ -56416,8 +61672,8 @@ message PBNode {
                                     });
                                 }); })];
                         case 4:
-                            _b.sent();
-                            _b.label = 5;
+                            _a.sent();
+                            _a.label = 5;
                         case 5: return [2 /*return*/, this];
                     }
                 });
@@ -56438,33 +61694,33 @@ message PBNode {
         };
         BaseTree.prototype.rmRecurse = function (path, onUpdate) {
             return __awaiter(this, void 0, void 0, function () {
-                var _a, head, nextPath, _b, child_2;
+                var head, nextPath, _a, child_2;
                 var _this = this;
-                return __generator(this, function (_c) {
-                    switch (_c.label) {
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
                         case 0:
-                            _a = takeHead(path), head = _a.head, nextPath = _a.nextPath;
-                            if (head === null) {
+                            head = path[0], nextPath = path.slice(1);
+                            if (!head) {
                                 throw new Error("Invalid path: empty");
                             }
-                            if (!(nextPath === null)) return [3 /*break*/, 3];
+                            if (!(nextPath.length === 0)) return [3 /*break*/, 3];
                             this.removeDirectChild(head);
-                            _b = onUpdate;
-                            if (!_b) return [3 /*break*/, 2];
+                            _a = onUpdate;
+                            if (!_a) return [3 /*break*/, 2];
                             return [4 /*yield*/, onUpdate()];
                         case 1:
-                            _b = (_c.sent());
-                            _c.label = 2;
+                            _a = (_b.sent());
+                            _b.label = 2;
                         case 2:
                             return [3 /*break*/, 6];
                         case 3: return [4 /*yield*/, this.getDirectChild(head)];
                         case 4:
-                            child_2 = _c.sent();
+                            child_2 = _b.sent();
                             if (child_2 === null) {
                                 throw new Error("Invalid path: does not exist");
                             }
-                            else if (isFile(child_2)) {
-                                throw new Error("There is a file along the given path: " + path);
+                            else if (isFile$1(child_2)) {
+                                throw new Error("There is a file along the given path: " + log(path));
                             }
                             return [4 /*yield*/, child_2.rmRecurse(nextPath, function () { return __awaiter(_this, void 0, void 0, function () {
                                     return __generator(this, function (_a) {
@@ -56477,8 +61733,8 @@ message PBNode {
                                     });
                                 }); })];
                         case 5:
-                            _c.sent();
-                            _c.label = 6;
+                            _b.sent();
+                            _b.label = 6;
                         case 6: return [2 /*return*/, this];
                     }
                 });
@@ -56486,51 +61742,48 @@ message PBNode {
         };
         BaseTree.prototype.mv = function (from, to) {
             return __awaiter(this, void 0, void 0, function () {
-                var node, _a, tail, parentPath, parent, toParts;
+                var node, parentPath, parent;
                 var _this = this;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
                         case 0: return [4 /*yield*/, this.get(from)];
                         case 1:
-                            node = _b.sent();
+                            node = _a.sent();
                             if (node === null) {
-                                throw new Error("Path does not exist: " + from);
+                                throw new Error("Path does not exist: " + log(from));
                             }
-                            _a = takeTail(to), tail = _a.tail, parentPath = _a.parentPath;
-                            parentPath = parentPath || '';
-                            if (tail === null) {
-                                throw new Error("Path does not exist: " + to);
+                            if (to.length < 1) {
+                                throw new Error("Path does not exist: " + log(to));
                             }
+                            parentPath = to.slice(0, -1);
                             return [4 /*yield*/, this.get(parentPath)];
                         case 2:
-                            parent = _b.sent();
+                            parent = _a.sent();
                             if (!!parent) return [3 /*break*/, 5];
                             return [4 /*yield*/, this.mkdir(parentPath)];
                         case 3:
-                            _b.sent();
+                            _a.sent();
                             return [4 /*yield*/, this.get(parentPath)];
                         case 4:
-                            parent = _b.sent();
+                            parent = _a.sent();
                             return [3 /*break*/, 6];
                         case 5:
-                            if (isFile(parent)) {
-                                throw new Error("Can not `mv` to a file: " + parentPath);
+                            if (isFile$1(parent)) {
+                                throw new Error("Can not `mv` to a file: " + log(parentPath));
                             }
-                            _b.label = 6;
-                        case 6:
-                            toParts = splitParts(to);
-                            return [4 /*yield*/, this.rm(from)];
+                            _a.label = 6;
+                        case 6: return [4 /*yield*/, this.rm(from)];
                         case 7:
-                            _b.sent();
-                            return [4 /*yield*/, __spreadArrays(toParts).reverse().reduce(function (acc, part, idx) {
+                            _a.sent();
+                            return [4 /*yield*/, __spreadArrays(to).reverse().reduce(function (acc, part, idx) {
                                     return acc.then(function (child) { return __awaiter(_this, void 0, void 0, function () {
                                         var childParentParts, tree, _a;
                                         return __generator(this, function (_b) {
                                             switch (_b.label) {
                                                 case 0:
-                                                    childParentParts = toParts.slice(0, -(idx + 1));
+                                                    childParentParts = to.slice(0, -(idx + 1));
                                                     if (!childParentParts.length) return [3 /*break*/, 2];
-                                                    return [4 /*yield*/, this.get(join(childParentParts))];
+                                                    return [4 /*yield*/, this.get(childParentParts)];
                                                 case 1:
                                                     _a = _b.sent();
                                                     return [3 /*break*/, 3];
@@ -56539,7 +61792,7 @@ message PBNode {
                                                     _b.label = 3;
                                                 case 3:
                                                     tree = _a;
-                                                    if (!(tree && !isFile(tree))) return [3 /*break*/, 5];
+                                                    if (!(tree && !isFile$1(tree))) return [3 /*break*/, 5];
                                                     return [4 /*yield*/, tree.updateDirectChild(child, part, null)];
                                                 case 4:
                                                     _b.sent();
@@ -56550,7 +61803,7 @@ message PBNode {
                                     }); });
                                 }, Promise.resolve(node))];
                         case 8:
-                            _b.sent();
+                            _a.sent();
                             return [2 /*return*/, this];
                     }
                 });
@@ -56753,22 +62006,23 @@ message PBNode {
                 });
             });
         };
+        // TODO
         BareTree.prototype.get = function (path) {
             return __awaiter(this, void 0, void 0, function () {
-                var _a, head, nextPath, nextTree;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
+                var head, nextPath, nextTree;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
                         case 0:
-                            _a = takeHead(path), head = _a.head, nextPath = _a.nextPath;
-                            if (head === null)
+                            head = path[0], nextPath = path.slice(1);
+                            if (!head)
                                 return [2 /*return*/, this];
                             return [4 /*yield*/, this.getDirectChild(head)];
                         case 1:
-                            nextTree = _b.sent();
-                            if (nextPath === null) {
+                            nextTree = _a.sent();
+                            if (!nextPath.length) {
                                 return [2 /*return*/, nextTree];
                             }
-                            else if (nextTree === null || isFile(nextTree)) {
+                            else if (nextTree === null || isFile$1(nextTree)) {
                                 return [2 /*return*/, null];
                             }
                             return [2 /*return*/, nextTree.get(nextPath)];
@@ -56787,7 +62041,8 @@ message PBNode {
         return BareTree;
     }(BaseTree));
 
-    var nibbles = { "0": true, "1": true, "2": true, "3": true, "4": true, "5": true, "6": true, "7": true,
+    var nibbles = {
+        "0": true, "1": true, "2": true, "3": true, "4": true, "5": true, "6": true, "7": true,
         "8": true, "9": true, "a": true, "b": true, "c": true, "d": true, "e": true, "f": true,
     };
     var isNibble = function (str) { return nibbles[str] === true; };
@@ -56861,7 +62116,7 @@ message PBNode {
                             return [4 /*yield*/, nextTree.add(name.slice(1), value)];
                         case 4:
                             _a.sent();
-                            return [4 /*yield*/, this.putAndUpdateLink(nextNameOrSib, nextTree)];
+                            return [4 /*yield*/, this.putAndUpdateChildLink(nextNameOrSib)];
                         case 5:
                             _a.sent();
                             return [3 /*break*/, 9];
@@ -56875,7 +62130,7 @@ message PBNode {
                                 ])];
                         case 7:
                             _a.sent();
-                            return [4 /*yield*/, this.putAndUpdateLink(name[0], newTree)];
+                            return [4 /*yield*/, this.putAndUpdateChildLink(name[0])];
                         case 8:
                             _a.sent();
                             _a.label = 9;
@@ -56884,14 +62139,26 @@ message PBNode {
                 });
             });
         };
-        MMPT.prototype.putAndUpdateLink = function (name, child) {
+        MMPT.prototype.putAndUpdateChildLink = function (name) {
+            var _a, _b;
             return __awaiter(this, void 0, void 0, function () {
-                var _a, cid, size;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
-                        case 0: return [4 /*yield*/, child.putDetailed()];
+                var cidBefore, _c, cid, size, cidNow;
+                return __generator(this, function (_d) {
+                    switch (_d.label) {
+                        case 0:
+                            cidBefore = (_a = this.links[name]) === null || _a === void 0 ? void 0 : _a.cid;
+                            return [4 /*yield*/, this.children[name].putDetailed()];
                         case 1:
-                            _a = _b.sent(), cid = _a.cid, size = _a.size;
+                            _c = _d.sent(), cid = _c.cid, size = _c.size;
+                            cidNow = (_b = this.links[name]) === null || _b === void 0 ? void 0 : _b.cid;
+                            if (!(cidBefore != cidNow)) return [3 /*break*/, 3];
+                            return [4 /*yield*/, this.putAndUpdateChildLink(name)];
+                        case 2: 
+                        // If there are changes in-between, we have to
+                        // re-try updating. Otherwise we can overwrite changes that
+                        // a concurrent update made
+                        return [2 /*return*/, _d.sent()];
+                        case 3:
                             this.links[name] = make(name, cid, false, size);
                             return [2 /*return*/];
                     }
@@ -57126,7 +62393,7 @@ message PBNode {
         mode: isFile ? 644 : 755,
         _type: isFile ? UnixNodeType.File : UnixNodeType.Directory,
     }); };
-    var empty = function (isFile) { return ({
+    var empty$2 = function (isFile) { return ({
         isFile: isFile,
         version: latest,
         unixMeta: emptyUnix(isFile)
@@ -57153,7 +62420,7 @@ message PBNode {
                 return __generator(this, function (_a) {
                     return [2 /*return*/, new PublicFile({
                             content: content,
-                            header: { metadata: empty(true) },
+                            header: { metadata: empty$2(true) },
                             cid: null
                         })];
                 });
@@ -57164,7 +62431,7 @@ message PBNode {
                 var info;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, get$2(cid)];
+                        case 0: return [4 /*yield*/, get$3(cid)];
                         case 1:
                             info = _a.sent();
                             return [2 /*return*/, PublicFile.fromInfo(info, cid)];
@@ -57219,6 +62486,13 @@ message PBNode {
             return getPath(child.subSkeleton, nextPath);
         }
     };
+    function nextNonEmpty(parts) {
+        var next = parts.slice(1);
+        if (next.length < 1) {
+            return null;
+        }
+        return next;
+    }
 
     var PublicTree = /** @class */ (function (_super) {
         __extends(PublicTree, _super);
@@ -57238,7 +62512,7 @@ message PBNode {
                     return [2 /*return*/, new PublicTree({
                             links: {},
                             header: {
-                                metadata: empty(false),
+                                metadata: empty$2(false),
                                 skeleton: {},
                             },
                             cid: null
@@ -57251,7 +62525,7 @@ message PBNode {
                 var info;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, get$2(cid)];
+                        case 0: return [4 /*yield*/, get$3(cid)];
                         case 1:
                             info = _a.sent();
                             if (!isTreeInfo(info)) {
@@ -57423,17 +62697,16 @@ message PBNode {
         };
         PublicTree.prototype.get = function (path) {
             return __awaiter(this, void 0, void 0, function () {
-                var parts, skeletonInfo, info;
+                var skeletonInfo, info;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
-                            parts = splitNonEmpty(path);
-                            if (parts === null)
+                            if (path.length < 1)
                                 return [2 /*return*/, this];
-                            skeletonInfo = getPath(this.header.skeleton, parts);
+                            skeletonInfo = getPath(this.header.skeleton, path);
                             if (skeletonInfo === null)
                                 return [2 /*return*/, null];
-                            return [4 /*yield*/, get$2(skeletonInfo.cid)];
+                            return [4 /*yield*/, get$3(skeletonInfo.cid)];
                         case 1:
                             info = _a.sent();
                             return [2 /*return*/, isFileInfo(info)
@@ -57641,7 +62914,7 @@ message PBNode {
                         case 0: return [4 /*yield*/, addToBare(parentNameFilter, key)];
                         case 1:
                             bareNameFilter = _a.sent();
-                            return [4 /*yield*/, genKeyStr()];
+                            return [4 /*yield*/, aes$2.genKeyStr()];
                         case 2:
                             contentKey = _a.sent();
                             return [4 /*yield*/, putEncryptedFile(content, contentKey)];
@@ -57655,10 +62928,36 @@ message PBNode {
                                         bareNameFilter: bareNameFilter,
                                         key: contentKey,
                                         revision: 1,
-                                        metadata: empty(true),
+                                        metadata: empty$2(true),
                                         content: contentInfo.cid
                                     }
                                 })];
+                    }
+                });
+            });
+        };
+        PrivateFile.fromBareNameFilter = function (mmpt, bareNameFilter, key) {
+            return __awaiter(this, void 0, void 0, function () {
+                var info;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, getLatestByBareNameFilter(mmpt, bareNameFilter, key)];
+                        case 1:
+                            info = _a.sent();
+                            return [2 /*return*/, this.fromInfo(mmpt, key, info)];
+                    }
+                });
+            });
+        };
+        PrivateFile.fromLatestName = function (mmpt, name, key) {
+            return __awaiter(this, void 0, void 0, function () {
+                var info;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, getByLatestName(mmpt, name, key)];
+                        case 1:
+                            info = _a.sent();
+                            return [2 /*return*/, PrivateFile.fromInfo(mmpt, key, info)];
                     }
                 });
             });
@@ -57671,9 +62970,6 @@ message PBNode {
                         case 0: return [4 /*yield*/, getByName(mmpt, name, key)];
                         case 1:
                             info = _a.sent();
-                            if (!isPrivateFileInfo(info)) {
-                                throw new Error("Could not parse a valid private file using the given key");
-                            }
                             return [2 /*return*/, PrivateFile.fromInfo(mmpt, key, info)];
                     }
                 });
@@ -57684,7 +62980,11 @@ message PBNode {
                 var content;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, getEncryptedFile(info.content, info.key)];
+                        case 0:
+                            if (!isPrivateFileInfo(info)) {
+                                throw new Error("Could not parse a valid private file using the given key");
+                            }
+                            return [4 /*yield*/, getEncryptedFile(info.content, info.key)];
                         case 1:
                             content = _a.sent();
                             return [2 /*return*/, new PrivateFile({
@@ -57790,7 +63090,7 @@ message PBNode {
                                     mmpt: mmpt,
                                     key: key,
                                     header: {
-                                        metadata: empty(false),
+                                        metadata: empty$2(false),
                                         bareNameFilter: bareNameFilter,
                                         revision: 1,
                                         links: {},
@@ -57803,25 +63103,39 @@ message PBNode {
         };
         PrivateTree.fromBaseKey = function (mmpt, key) {
             return __awaiter(this, void 0, void 0, function () {
-                var bareNameFilter, revisionFilter, name, info;
+                var bareNameFilter;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0: return [4 /*yield*/, createBare(key)];
                         case 1:
                             bareNameFilter = _a.sent();
-                            return [4 /*yield*/, addRevision(bareNameFilter, key, 1)];
-                        case 2:
-                            revisionFilter = _a.sent();
-                            return [4 /*yield*/, toPrivateName(revisionFilter)];
-                        case 3:
-                            name = _a.sent();
-                            return [4 /*yield*/, getByLatestName(mmpt, name, key)];
-                        case 4:
+                            return [2 /*return*/, this.fromBareNameFilter(mmpt, bareNameFilter, key)];
+                    }
+                });
+            });
+        };
+        PrivateTree.fromBareNameFilter = function (mmpt, bareNameFilter, key) {
+            return __awaiter(this, void 0, void 0, function () {
+                var info;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, getLatestByBareNameFilter(mmpt, bareNameFilter, key)];
+                        case 1:
                             info = _a.sent();
-                            if (!isPrivateTreeInfo(info)) {
-                                throw new Error("Could not parse a valid private tree using the given key");
-                            }
-                            return [2 /*return*/, new PrivateTree({ mmpt: mmpt, key: key, header: info })];
+                            return [2 /*return*/, this.fromInfo(mmpt, key, info)];
+                    }
+                });
+            });
+        };
+        PrivateTree.fromLatestName = function (mmpt, name, key) {
+            return __awaiter(this, void 0, void 0, function () {
+                var info;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, getByLatestName(mmpt, name, key)];
+                        case 1:
+                            info = _a.sent();
+                            return [2 /*return*/, this.fromInfo(mmpt, key, info)];
                     }
                 });
             });
@@ -57834,10 +63148,7 @@ message PBNode {
                         case 0: return [4 /*yield*/, getByName(mmpt, name, key)];
                         case 1:
                             info = _a.sent();
-                            if (!isPrivateTreeInfo(info)) {
-                                throw new Error("Could not parse a valid private tree using the given key");
-                            }
-                            return [2 /*return*/, new PrivateTree({ mmpt: mmpt, key: key, header: info })];
+                            return [2 /*return*/, this.fromInfo(mmpt, key, info)];
                     }
                 });
             });
@@ -57845,6 +63156,9 @@ message PBNode {
         PrivateTree.fromInfo = function (mmpt, key, info) {
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
+                    if (!isPrivateTreeInfo(info)) {
+                        throw new Error("Could not parse a valid private tree using the given key");
+                    }
                     return [2 /*return*/, new PrivateTree({ mmpt: mmpt, key: key, header: info })];
                 });
             });
@@ -57854,7 +63168,7 @@ message PBNode {
                 var key, child, existing;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, genKeyStr()];
+                        case 0: return [4 /*yield*/, aes$2.genKeyStr()];
                         case 1:
                             key = _a.sent();
                             return [4 /*yield*/, PrivateTree.create(this.mmpt, key, this.header.bareNameFilter)];
@@ -57884,7 +63198,7 @@ message PBNode {
                         case 1:
                             existing = _a.sent();
                             if (!(existing === null)) return [3 /*break*/, 4];
-                            return [4 /*yield*/, genKeyStr()];
+                            return [4 /*yield*/, aes$2.genKeyStr()];
                         case 2:
                             key = _a.sent();
                             return [4 /*yield*/, PrivateFile.create(this.mmpt, content, this.header.bareNameFilter, key)];
@@ -57960,11 +63274,11 @@ message PBNode {
                             if (childInfo === undefined)
                                 return [2 /*return*/, null];
                             if (!childInfo.isFile) return [3 /*break*/, 2];
-                            return [4 /*yield*/, PrivateFile.fromName(this.mmpt, childInfo.pointer, childInfo.key)];
+                            return [4 /*yield*/, PrivateFile.fromLatestName(this.mmpt, childInfo.pointer, childInfo.key)];
                         case 1:
                             _a = _b.sent();
                             return [3 /*break*/, 4];
-                        case 2: return [4 /*yield*/, PrivateTree.fromName(this.mmpt, childInfo.pointer, childInfo.key)
+                        case 2: return [4 /*yield*/, PrivateTree.fromLatestName(this.mmpt, childInfo.pointer, childInfo.key)
                             // check that the child wasn't added while retrieving the content from the network
                         ];
                         case 3:
@@ -58014,14 +63328,13 @@ message PBNode {
         };
         PrivateTree.prototype.get = function (path) {
             return __awaiter(this, void 0, void 0, function () {
-                var parts, head, rest, next, result;
+                var head, rest, next, result;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
-                            parts = splitParts(path);
-                            if (parts.length === 0)
+                            if (path.length === 0)
                                 return [2 /*return*/, this];
-                            head = parts[0], rest = parts.slice(1);
+                            head = path[0], rest = path.slice(1);
                             next = this.header.skeleton[head];
                             if (next === undefined)
                                 return [2 /*return*/, null];
@@ -58049,7 +63362,7 @@ message PBNode {
                             _a = {
                                 key: nodeInfo.key
                             };
-                            return [4 /*yield*/, getByCID(nodeInfo.cid, nodeInfo.key)];
+                            return [4 /*yield*/, getLatestByCID(this.mmpt, nodeInfo.cid, nodeInfo.key)];
                         case 1: return [2 /*return*/, (_a.node = _b.sent(),
                                 _a)];
                         case 2:
@@ -58057,7 +63370,7 @@ message PBNode {
                             if (nextChild !== undefined) {
                                 return [2 /*return*/, this.getRecurse(nextChild, rest)];
                             }
-                            return [4 /*yield*/, getByCID(nodeInfo.cid, nodeInfo.key)];
+                            return [4 /*yield*/, getLatestByCID(this.mmpt, nodeInfo.cid, nodeInfo.key)];
                         case 3:
                             reloadedNode = _b.sent();
                             if (!isPrivateTreeInfo(reloadedNode)) {
@@ -58089,45 +63402,56 @@ message PBNode {
 
     var RootTree = /** @class */ (function () {
         function RootTree(_a) {
-            var links = _a.links, mmpt = _a.mmpt, privateLog = _a.privateLog, publicTree = _a.publicTree, prettyTree = _a.prettyTree, privateTree = _a.privateTree;
+            var links = _a.links, mmpt = _a.mmpt, privateLog = _a.privateLog, publicTree = _a.publicTree, prettyTree = _a.prettyTree, privateNodes = _a.privateNodes;
             this.links = links;
             this.mmpt = mmpt;
             this.privateLog = privateLog;
             this.publicTree = publicTree;
             this.prettyTree = prettyTree;
-            this.privateTree = privateTree;
+            this.privateNodes = privateNodes;
         }
         // INITIALISATION
         // --------------
         RootTree.empty = function (_a) {
-            var key = _a.key;
+            var rootKey = _a.rootKey;
             return __awaiter(this, void 0, void 0, function () {
-                var publicTree, prettyTree, mmpt, privateTree, tree;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
+                var publicTree, prettyTree, mmpt, rootPath, rootTree, tree;
+                var _b;
+                return __generator(this, function (_c) {
+                    switch (_c.label) {
                         case 0: return [4 /*yield*/, PublicTree.empty()];
                         case 1:
-                            publicTree = _b.sent();
+                            publicTree = _c.sent();
                             return [4 /*yield*/, BareTree.empty()];
                         case 2:
-                            prettyTree = _b.sent();
+                            prettyTree = _c.sent();
                             mmpt = MMPT.create();
-                            return [4 /*yield*/, PrivateTree.create(mmpt, key, null)];
+                            rootPath = toPosix(directory(Branch.Private));
+                            return [4 /*yield*/, PrivateTree.create(mmpt, rootKey, null)];
                         case 3:
-                            privateTree = _b.sent();
-                            return [4 /*yield*/, privateTree.put()
+                            rootTree = _c.sent();
+                            return [4 /*yield*/, rootTree.put()
                                 // Construct tree
                             ];
                         case 4:
-                            _b.sent();
+                            _c.sent();
                             tree = new RootTree({
                                 links: {},
                                 mmpt: mmpt,
                                 privateLog: [],
                                 publicTree: publicTree,
                                 prettyTree: prettyTree,
-                                privateTree: privateTree
+                                privateNodes: (_b = {},
+                                    _b[rootPath] = rootTree,
+                                    _b)
                             });
+                            // Store root key
+                            return [4 /*yield*/, RootTree.storeRootKey(rootKey)
+                                // Set version and store new sub trees
+                            ];
+                        case 5:
+                            // Store root key
+                            _c.sent();
                             // Set version and store new sub trees
                             tree.setVersion(v1);
                             return [4 /*yield*/, Promise.all([
@@ -58137,8 +63461,8 @@ message PBNode {
                                 ])
                                 // Fin
                             ];
-                        case 5:
-                            _b.sent();
+                        case 6:
+                            _c.sent();
                             // Fin
                             return [2 /*return*/, tree];
                     }
@@ -58147,80 +63471,86 @@ message PBNode {
         };
         RootTree.fromCID = function (_a) {
             var _b, _c, _d;
-            var cid = _a.cid, key = _a.key;
+            var cid = _a.cid, permissions = _a.permissions;
             return __awaiter(this, void 0, void 0, function () {
-                var links, publicCID, publicTree, _e, prettyTree, _f, privateCID, mmpt, privateTree, privateLogCid, privateLog, _g, tree;
-                return __generator(this, function (_h) {
-                    switch (_h.label) {
-                        case 0: return [4 /*yield*/, getLinks(cid)
-                            // Load public parts
-                        ];
+                var links, keys, _e, publicCID, publicTree, _f, prettyTree, _g, privateCID, mmpt, privateNodes, privateLogCid, privateLog, _h, tree;
+                return __generator(this, function (_j) {
+                    switch (_j.label) {
+                        case 0: return [4 /*yield*/, getLinks(cid)];
                         case 1:
-                            links = _h.sent();
-                            publicCID = ((_b = links[Branch.Public]) === null || _b === void 0 ? void 0 : _b.cid) || null;
-                            if (!(publicCID === null)) return [3 /*break*/, 3];
-                            return [4 /*yield*/, PublicTree.empty()];
+                            links = _j.sent();
+                            if (!permissions) return [3 /*break*/, 3];
+                            return [4 /*yield*/, permissionKeys(permissions)];
                         case 2:
-                            _e = _h.sent();
-                            return [3 /*break*/, 5];
-                        case 3: return [4 /*yield*/, PublicTree.fromCID(publicCID)];
+                            _e = _j.sent();
+                            return [3 /*break*/, 4];
+                        case 3:
+                            _e = [];
+                            _j.label = 4;
                         case 4:
-                            _e = _h.sent();
-                            _h.label = 5;
+                            keys = _e;
+                            publicCID = ((_b = links[Branch.Public]) === null || _b === void 0 ? void 0 : _b.cid) || null;
+                            if (!(publicCID === null)) return [3 /*break*/, 6];
+                            return [4 /*yield*/, PublicTree.empty()];
                         case 5:
-                            publicTree = _e;
-                            if (!links[Branch.Pretty]) return [3 /*break*/, 7];
+                            _f = _j.sent();
+                            return [3 /*break*/, 8];
+                        case 6: return [4 /*yield*/, PublicTree.fromCID(publicCID)];
+                        case 7:
+                            _f = _j.sent();
+                            _j.label = 8;
+                        case 8:
+                            publicTree = _f;
+                            if (!links[Branch.Pretty]) return [3 /*break*/, 10];
                             return [4 /*yield*/, BareTree.fromCID(links[Branch.Pretty].cid)];
-                        case 6:
-                            _f = _h.sent();
-                            return [3 /*break*/, 9];
-                        case 7: return [4 /*yield*/, BareTree.empty()
+                        case 9:
+                            _g = _j.sent();
+                            return [3 /*break*/, 12];
+                        case 10: return [4 /*yield*/, BareTree.empty()
                             // Load private bits
                         ];
-                        case 8:
-                            _f = _h.sent();
-                            _h.label = 9;
-                        case 9:
-                            prettyTree = _f;
-                            privateCID = ((_c = links[Branch.Private]) === null || _c === void 0 ? void 0 : _c.cid) || null;
-                            if (!(privateCID === null)) return [3 /*break*/, 12];
-                            return [4 /*yield*/, MMPT.create()];
-                        case 10:
-                            mmpt = _h.sent();
-                            return [4 /*yield*/, PrivateTree.create(mmpt, key, null)];
                         case 11:
-                            privateTree = _h.sent();
-                            return [3 /*break*/, 15];
-                        case 12: return [4 /*yield*/, MMPT.fromCID(privateCID)];
+                            _g = _j.sent();
+                            _j.label = 12;
+                        case 12:
+                            prettyTree = _g;
+                            privateCID = ((_c = links[Branch.Private]) === null || _c === void 0 ? void 0 : _c.cid) || null;
+                            if (!(privateCID === null)) return [3 /*break*/, 14];
+                            return [4 /*yield*/, MMPT.create()];
                         case 13:
-                            mmpt = _h.sent();
-                            return [4 /*yield*/, PrivateTree.fromBaseKey(mmpt, key)];
-                        case 14:
-                            privateTree = _h.sent();
-                            _h.label = 15;
+                            mmpt = _j.sent();
+                            privateNodes = {};
+                            return [3 /*break*/, 17];
+                        case 14: return [4 /*yield*/, MMPT.fromCID(privateCID)];
                         case 15:
+                            mmpt = _j.sent();
+                            return [4 /*yield*/, loadPrivateNodes(keys, mmpt)];
+                        case 16:
+                            privateNodes = _j.sent();
+                            _j.label = 17;
+                        case 17:
                             privateLogCid = (_d = links[Branch.PrivateLog]) === null || _d === void 0 ? void 0 : _d.cid;
-                            if (!privateLogCid) return [3 /*break*/, 17];
+                            if (!privateLogCid) return [3 /*break*/, 19];
                             return [4 /*yield*/, dagGet(privateLogCid)
                                     .then(function (dagNode) { return dagNode.Links.map(fromDAGLink); })
                                     .then(function (links) { return links.sort(function (a, b) {
                                     return parseInt(a.name, 10) - parseInt(b.name, 10);
                                 }); })];
-                        case 16:
-                            _g = _h.sent();
-                            return [3 /*break*/, 18];
-                        case 17:
-                            _g = [];
-                            _h.label = 18;
                         case 18:
-                            privateLog = _g;
+                            _h = _j.sent();
+                            return [3 /*break*/, 20];
+                        case 19:
+                            _h = [];
+                            _j.label = 20;
+                        case 20:
+                            privateLog = _h;
                             tree = new RootTree({
                                 links: links,
                                 mmpt: mmpt,
                                 privateLog: privateLog,
                                 publicTree: publicTree,
                                 prettyTree: prettyTree,
-                                privateTree: privateTree
+                                privateNodes: privateNodes
                             });
                             // Fin
                             return [2 /*return*/, tree];
@@ -58269,6 +63599,29 @@ message PBNode {
                 });
             });
         };
+        // PRIVATE TREES
+        // -------------
+        RootTree.storeRootKey = function (rootKey) {
+            return __awaiter(this, void 0, void 0, function () {
+                var path, rootKeyId;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            path = directory(Branch.Private);
+                            return [4 /*yield*/, readKey({ path: path })];
+                        case 1:
+                            rootKeyId = _a.sent();
+                            return [4 /*yield*/, keystore$2.importSymmKey(rootKey, rootKeyId)];
+                        case 2:
+                            _a.sent();
+                            return [2 /*return*/];
+                    }
+                });
+            });
+        };
+        RootTree.prototype.findPrivateNode = function (path) {
+            return findPrivateNode(this.privateNodes, path);
+        };
         RootTree.prototype.addPrivateLogEntry = function (cid) {
             var _a;
             return __awaiter(this, void 0, void 0, function () {
@@ -58294,7 +63647,7 @@ message PBNode {
                                 idx = idx + 1;
                                 lastChunk = [];
                             }
-                            return [4 /*yield*/, sha256Str(cid)];
+                            return [4 /*yield*/, hash.sha256Str(cid)];
                         case 4:
                             hashedCid = _f.sent();
                             updatedChunk = __spreadArrays(lastChunk, [hashedCid]);
@@ -58350,28 +63703,143 @@ message PBNode {
         RootTree.LOG_CHUNK_SIZE = 1020; // Math.floor((1024 * 256) / (256 + 1))
         return RootTree;
     }());
+    function findBareNameFilter(map, path) {
+        return __awaiter(this, void 0, void 0, function () {
+            var bareNameFilterId, bareNameFilter$1, _a, nodePath, node, unwrappedPath, relativePath;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0: return [4 /*yield*/, bareNameFilter({ path: path })];
+                    case 1:
+                        bareNameFilterId = _b.sent();
+                        return [4 /*yield*/, getItem$1(bareNameFilterId)];
+                    case 2:
+                        bareNameFilter$1 = _b.sent();
+                        if (bareNameFilter$1)
+                            return [2 /*return*/, bareNameFilter$1];
+                        _a = findPrivateNode(map, path), nodePath = _a[0], node = _a[1];
+                        if (!node)
+                            return [2 /*return*/, null];
+                        unwrappedPath = unwrap(path);
+                        relativePath = unwrappedPath.slice(unwrap(nodePath).length);
+                        if (PrivateFile.instanceOf(node)) {
+                            return [2 /*return*/, relativePath.length === 0 ? node.header.bareNameFilter : null];
+                        }
+                        if (!!node.exists(relativePath)) return [3 /*break*/, 6];
+                        if (!isDirectory(path)) return [3 /*break*/, 4];
+                        return [4 /*yield*/, node.mkdir(relativePath)];
+                    case 3:
+                        _b.sent();
+                        return [3 /*break*/, 6];
+                    case 4: return [4 /*yield*/, node.add(relativePath, "")];
+                    case 5:
+                        _b.sent();
+                        _b.label = 6;
+                    case 6: return [2 /*return*/, node.get(relativePath).then(function (t) { return t ? t.header.bareNameFilter : null; })];
+                }
+            });
+        });
+    }
+    function findPrivateNode(map, path) {
+        var t = map[toPosix(path)];
+        if (t)
+            return [path, t];
+        var parent$1 = parent(path);
+        return parent$1
+            ? findPrivateNode(map, parent$1)
+            : [path, null];
+    }
+    function loadPrivateNodes(pathKeys, mmpt) {
+        var _this = this;
+        return sortedPathKeys(pathKeys).reduce(function (acc, _a) {
+            var path = _a.path, key = _a.key;
+            return acc.then(function (map) { return __awaiter(_this, void 0, void 0, function () {
+                var privateNode, unwrappedPath, bareNameFilter, posixPath;
+                var _a;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0:
+                            unwrappedPath = unwrap(path);
+                            if (!(unwrappedPath.length === 1 && unwrappedPath[0] === Branch.Private)) return [3 /*break*/, 2];
+                            return [4 /*yield*/, PrivateTree.fromBaseKey(mmpt, key)];
+                        case 1:
+                            privateNode = _b.sent();
+                            return [3 /*break*/, 7];
+                        case 2: return [4 /*yield*/, findBareNameFilter(map, path)];
+                        case 3:
+                            bareNameFilter = _b.sent();
+                            if (!bareNameFilter)
+                                throw new Error("Was trying to load the PrivateTree for the path `" + path + "`, but couldn't find the bare name filter for it.");
+                            if (!isDirectory(path)) return [3 /*break*/, 5];
+                            return [4 /*yield*/, PrivateTree.fromBareNameFilter(mmpt, bareNameFilter, key)];
+                        case 4:
+                            privateNode = _b.sent();
+                            return [3 /*break*/, 7];
+                        case 5: return [4 /*yield*/, PrivateFile.fromBareNameFilter(mmpt, bareNameFilter, key)];
+                        case 6:
+                            privateNode = _b.sent();
+                            _b.label = 7;
+                        case 7:
+                            posixPath = toPosix(path);
+                            return [2 /*return*/, __assign(__assign({}, map), (_a = {}, _a[posixPath] = privateNode, _a))];
+                    }
+                });
+            }); });
+        }, Promise.resolve({}));
+    }
+    function permissionKeys(permissions) {
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                return [2 /*return*/, paths(permissions).reduce(function (acc, path) { return __awaiter(_this, void 0, void 0, function () {
+                        var name, key, pk;
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0:
+                                    if (isBranch(Branch.Public, path))
+                                        return [2 /*return*/, acc];
+                                    return [4 /*yield*/, readKey({ path: path })];
+                                case 1:
+                                    name = _a.sent();
+                                    return [4 /*yield*/, keystore$2.exportSymmKey(name)];
+                                case 2:
+                                    key = _a.sent();
+                                    pk = { path: path, key: key };
+                                    return [2 /*return*/, acc.then(function (list) { return __spreadArrays(list, [pk]); })];
+                            }
+                        });
+                    }); }, Promise.resolve([]))];
+            });
+        });
+    }
+    /**
+     * Sort keys alphabetically by path.
+     * This is used to sort paths by parent first.
+     */
+    function sortedPathKeys(list) {
+        return list.sort(function (a, b) { return toPosix(a.path).localeCompare(toPosix(b.path)); });
+    }
 
     var FS_CID_LOG_PREFIX = "webnative.wnfs_cid_log";
     function key() {
         return FS_CID_LOG_PREFIX + "-" + setup.endpoints.lobby;
     }
     // QUERYING
-    function get$3() {
+    function get$4() {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, localforage.getItem(key())];
+                    case 0: return [4 /*yield*/, getItem$1(key())];
                     case 1: return [2 /*return*/, (_a.sent()) || []];
                 }
             });
         });
     }
-    function index$3(cid) {
+    function index$4(cid) {
         return __awaiter(this, void 0, void 0, function () {
             var log;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, get$3()];
+                    case 0: return [4 /*yield*/, get$4()];
                     case 1:
                         log = _a.sent();
                         return [2 /*return*/, [log.indexOf(cid), log.length]];
@@ -58383,7 +63851,7 @@ message PBNode {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, get$3()];
+                    case 0: return [4 /*yield*/, get$4()];
                     case 1: return [2 /*return*/, (_a.sent())[0]];
                 }
             });
@@ -58395,11 +63863,11 @@ message PBNode {
             var log, newLog;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, get$3()];
+                    case 0: return [4 /*yield*/, get$4()];
                     case 1:
                         log = _a.sent();
                         newLog = __spreadArrays([cid], log).slice(0, 1000);
-                        return [4 /*yield*/, localforage.setItem(key(), newLog)];
+                        return [4 /*yield*/, setItem$1(key(), newLog)];
                     case 2:
                         _a.sent();
                         return [2 /*return*/];
@@ -58407,11 +63875,11 @@ message PBNode {
             });
         });
     }
-    function clear$1() {
+    function clear$3() {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, localforage.removeItem(key())];
+                    case 0: return [4 /*yield*/, removeItem$1(key())];
                     case 1:
                         _a.sent();
                         return [2 /*return*/];
@@ -58420,7 +63888,7 @@ message PBNode {
         });
     }
 
-    function log$1() {
+    function log$2() {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
@@ -58429,899 +63897,6 @@ message PBNode {
             console.log.apply(console, args);
     }
 
-    /**
-     * Base-N/Base-X encoding/decoding functions.
-     *
-     * Original implementation from base-x:
-     * https://github.com/cryptocoinjs/base-x
-     *
-     * Which is MIT licensed:
-     *
-     * The MIT License (MIT)
-     *
-     * Copyright base-x contributors (c) 2016
-     *
-     * Permission is hereby granted, free of charge, to any person obtaining a copy
-     * of this software and associated documentation files (the "Software"), to deal
-     * in the Software without restriction, including without limitation the rights
-     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-     * copies of the Software, and to permit persons to whom the Software is
-     * furnished to do so, subject to the following conditions:
-     *
-     * The above copyright notice and this permission notice shall be included in
-     * all copies or substantial portions of the Software.
-     *
-     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-     * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-     * DEALINGS IN THE SOFTWARE.
-     */
-
-    // baseN alphabet indexes
-    const _reverseAlphabets = {};
-
-    /**
-     * BaseN-encodes a Uint8Array using the given alphabet.
-     *
-     * @param {Uint8Array} input the bytes to encode in a Uint8Array.
-     * @param {number} maxline the maximum number of encoded characters per line to
-     *          use, defaults to none.
-     *
-     * @return {string} the baseN-encoded output string.
-     */
-    function encode$9(input, alphabet, maxline) {
-      if(!(input instanceof Uint8Array)) {
-        throw new TypeError('"input" must be a Uint8Array.');
-      }
-      if(typeof alphabet !== 'string') {
-        throw new TypeError('"alphabet" must be a string.');
-      }
-      if(maxline !== undefined && typeof maxline !== 'number') {
-        throw new TypeError('"maxline" must be a number.');
-      }
-      if(input.length === 0) {
-        return '';
-      }
-
-      let output = '';
-
-      let i = 0;
-      const base = alphabet.length;
-      const first = alphabet.charAt(0);
-      const digits = [0];
-      for(i = 0; i < input.length; ++i) {
-        let carry = input[i];
-        for(let j = 0; j < digits.length; ++j) {
-          carry += digits[j] << 8;
-          digits[j] = carry % base;
-          carry = (carry / base) | 0;
-        }
-
-        while(carry > 0) {
-          digits.push(carry % base);
-          carry = (carry / base) | 0;
-        }
-      }
-
-      // deal with leading zeros
-      for(i = 0; input[i] === 0 && i < input.length - 1; ++i) {
-        output += first;
-      }
-      // convert digits to a string
-      for(i = digits.length - 1; i >= 0; --i) {
-        output += alphabet[digits[i]];
-      }
-
-      if(maxline) {
-        const regex = new RegExp('.{1,' + maxline + '}', 'g');
-        output = output.match(regex).join('\r\n');
-      }
-
-      return output;
-    }
-
-    /**
-     * Decodes a baseN-encoded (using the given alphabet) string to a
-     * Uint8Array.
-     *
-     * @param {string} input the baseN-encoded input string.
-     *
-     * @return {Uint8Array} the decoded bytes in a Uint8Array.
-     */
-    function decode$8(input, alphabet) {
-      if(typeof input !== 'string') {
-        throw new TypeError('"input" must be a string.');
-      }
-      if(typeof alphabet !== 'string') {
-        throw new TypeError('"alphabet" must be a string.');
-      }
-      if(input.length === 0) {
-        return new Uint8Array();
-      }
-
-      let table = _reverseAlphabets[alphabet];
-      if(!table) {
-        // compute reverse alphabet
-        table = _reverseAlphabets[alphabet] = [];
-        for(let i = 0; i < alphabet.length; ++i) {
-          table[alphabet.charCodeAt(i)] = i;
-        }
-      }
-
-      // remove whitespace characters
-      input = input.replace(/\s/g, '');
-
-      const base = alphabet.length;
-      const first = alphabet.charAt(0);
-      const bytes = [0];
-      for(let i = 0; i < input.length; i++) {
-        const value = table[input.charCodeAt(i)];
-        if(value === undefined) {
-          return;
-        }
-
-        let carry = value;
-        for(let j = 0; j < bytes.length; ++j) {
-          carry += bytes[j] * base;
-          bytes[j] = carry & 0xff;
-          carry >>= 8;
-        }
-
-        while(carry > 0) {
-          bytes.push(carry & 0xff);
-          carry >>= 8;
-        }
-      }
-
-      // deal with leading zeros
-      for(let k = 0; input[k] === first && k < input.length - 1; ++k) {
-        bytes.push(0);
-      }
-
-      return new Uint8Array(bytes.reverse());
-    }
-
-    /*!
-     * Copyright (c) 2019-2020 Digital Bazaar, Inc. All rights reserved.
-     */
-
-    // base58 characters (Bitcoin alphabet)
-    const alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-
-    function encode$a(input, maxline) {
-      return encode$9(input, alphabet, maxline);
-    }
-
-    function decode$9(input) {
-      return decode$8(input, alphabet);
-    }
-
-    var errors = createCommonjsModule(function (module, exports) {
-    Object.defineProperty(exports, "__esModule", { value: true });
-
-    exports.KeyDoesNotExist = new Error("Key does not exist. Make sure you properly instantiated the keystore.");
-    exports.NotKeyPair = new Error("Retrieved a symmetric key when an asymmetric keypair was expected. Please use a different key name.");
-    exports.NotKey = new Error("Retrieved an asymmetric keypair when an symmetric key was expected. Please use a different key name.");
-    exports.ECCNotEnabled = new Error("ECC is not enabled for this browser. Please use RSA instead.");
-    exports.UnsupportedCrypto = new Error("Cryptosystem not supported. Please use ECC or RSA");
-    exports.InvalidKeyUse = new Error("Invalid key use. Please use 'read' or 'write");
-    function checkIsKeyPair(keypair) {
-        if (!keypair || keypair === null) {
-            throw exports.KeyDoesNotExist;
-        }
-        else if (keypair.privateKey === undefined) {
-            throw exports.NotKeyPair;
-        }
-        return keypair;
-    }
-    exports.checkIsKeyPair = checkIsKeyPair;
-    function checkIsKey(key) {
-        if (!key || key === null) {
-            throw exports.KeyDoesNotExist;
-        }
-        else if (key.privateKey !== undefined || key.algorithm === undefined) {
-            throw exports.NotKey;
-        }
-        return key;
-    }
-    exports.checkIsKey = checkIsKey;
-    function checkValidCryptoSystem(type) {
-        checkValid(type, [types.CryptoSystem.ECC, types.CryptoSystem.RSA], exports.UnsupportedCrypto);
-    }
-    exports.checkValidCryptoSystem = checkValidCryptoSystem;
-    function checkValidKeyUse(use) {
-        checkValid(use, [types.KeyUse.Read, types.KeyUse.Write], exports.InvalidKeyUse);
-    }
-    exports.checkValidKeyUse = checkValidKeyUse;
-    function checkValid(toCheck, opts, error) {
-        var match = opts.some(function (opt) { return opt === toCheck; });
-        if (!match) {
-            throw error;
-        }
-    }
-    exports.default = {
-        KeyDoesNotExist: exports.KeyDoesNotExist,
-        NotKeyPair: exports.NotKeyPair,
-        NotKey: exports.NotKey,
-        ECCNotEnabled: exports.ECCNotEnabled,
-        UnsupportedCrypto: exports.UnsupportedCrypto,
-        InvalidKeyUse: exports.InvalidKeyUse,
-        checkIsKeyPair: checkIsKeyPair,
-        checkIsKey: checkIsKey,
-        checkValidCryptoSystem: checkValidCryptoSystem,
-        checkValidKeyUse: checkValidKeyUse,
-    };
-
-    });
-
-    var __awaiter$3 = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
-        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-        return new (P || (P = Promise))(function (resolve, reject) {
-            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-            step((generator = generator.apply(thisArg, _arguments || [])).next());
-        });
-    };
-    var __generator$5 = (commonjsGlobal && commonjsGlobal.__generator) || function (thisArg, body) {
-        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-        function verb(n) { return function (v) { return step([n, v]); }; }
-        function step(op) {
-            if (f) throw new TypeError("Generator is already executing.");
-            while (_) try {
-                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-                if (y = 0, t) op = [op[0] & 2, t.value];
-                switch (op[0]) {
-                    case 0: case 1: t = op; break;
-                    case 4: _.label++; return { value: op[1], done: false };
-                    case 5: _.label++; y = op[1]; op = [0]; continue;
-                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                    default:
-                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                        if (t[2]) _.ops.pop();
-                        _.trys.pop(); continue;
-                }
-                op = body.call(thisArg, _);
-            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-        }
-    };
-
-
-
-
-
-    function makeKeypair(curve, use) {
-        return __awaiter$3(this, void 0, void 0, function () {
-            var alg, uses;
-            return __generator$5(this, function (_a) {
-                errors.checkValidKeyUse(use);
-                alg = use === types.KeyUse.Read ? constants.ECC_READ_ALG : constants.ECC_WRITE_ALG;
-                uses = use === types.KeyUse.Read ? ['deriveKey', 'deriveBits'] : ['sign', 'verify'];
-                return [2 /*return*/, globalThis.crypto.subtle.generateKey({ name: alg, namedCurve: curve }, false, uses)];
-            });
-        });
-    }
-    var makeKeypair_1 = makeKeypair;
-    function importPublicKey(base64Key, curve, use) {
-        return __awaiter$3(this, void 0, void 0, function () {
-            var alg, uses, buf;
-            return __generator$5(this, function (_a) {
-                errors.checkValidKeyUse(use);
-                alg = use === types.KeyUse.Read ? constants.ECC_READ_ALG : constants.ECC_WRITE_ALG;
-                uses = use === types.KeyUse.Read ? [] : ['verify'];
-                buf = utils.default.base64ToArrBuf(base64Key);
-                return [2 /*return*/, globalThis.crypto.subtle.importKey('raw', buf, { name: alg, namedCurve: curve }, true, uses)];
-            });
-        });
-    }
-    var importPublicKey_1 = importPublicKey;
-    var _default$e = {
-        makeKeypair: makeKeypair,
-        importPublicKey: importPublicKey
-    };
-    //# sourceMappingURL=keys.js.map
-
-    var keys$1 = /*#__PURE__*/Object.defineProperty({
-    	makeKeypair: makeKeypair_1,
-    	importPublicKey: importPublicKey_1,
-    	default: _default$e
-    }, '__esModule', {value: true});
-
-    var __awaiter$4 = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
-        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-        return new (P || (P = Promise))(function (resolve, reject) {
-            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-            step((generator = generator.apply(thisArg, _arguments || [])).next());
-        });
-    };
-    var __generator$6 = (commonjsGlobal && commonjsGlobal.__generator) || function (thisArg, body) {
-        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-        function verb(n) { return function (v) { return step([n, v]); }; }
-        function step(op) {
-            if (f) throw new TypeError("Generator is already executing.");
-            while (_) try {
-                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-                if (y = 0, t) op = [op[0] & 2, t.value];
-                switch (op[0]) {
-                    case 0: case 1: t = op; break;
-                    case 4: _.label++; return { value: op[1], done: false };
-                    case 5: _.label++; y = op[1]; op = [0]; continue;
-                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                    default:
-                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                        if (t[2]) _.ops.pop();
-                        _.trys.pop(); continue;
-                }
-                op = body.call(thisArg, _);
-            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-        }
-    };
-
-
-
-
-
-
-    function sign(msg, privateKey, charSize, hashAlg) {
-        if (charSize === void 0) { charSize = constants.DEFAULT_CHAR_SIZE; }
-        if (hashAlg === void 0) { hashAlg = constants.DEFAULT_HASH_ALG; }
-        return __awaiter$4(this, void 0, void 0, function () {
-            return __generator$6(this, function (_a) {
-                return [2 /*return*/, globalThis.crypto.subtle.sign({ name: constants.ECC_WRITE_ALG, hash: { name: hashAlg } }, privateKey, utils.normalizeUnicodeToBuf(msg, charSize))];
-            });
-        });
-    }
-    var sign_1 = sign;
-    function verify(msg, sig, publicKey, charSize, curve, hashAlg) {
-        if (charSize === void 0) { charSize = constants.DEFAULT_CHAR_SIZE; }
-        if (curve === void 0) { curve = constants.DEFAULT_ECC_CURVE; }
-        if (hashAlg === void 0) { hashAlg = constants.DEFAULT_HASH_ALG; }
-        return __awaiter$4(this, void 0, void 0, function () {
-            var _a, _b, _c, _d;
-            return __generator$6(this, function (_e) {
-                switch (_e.label) {
-                    case 0:
-                        _b = (_a = globalThis.crypto.subtle).verify;
-                        _c = [{ name: constants.ECC_WRITE_ALG, hash: { name: hashAlg } }];
-                        if (!(typeof publicKey === "string")) return [3 /*break*/, 2];
-                        return [4 /*yield*/, keys$1.default.importPublicKey(publicKey, curve, types.KeyUse.Write)];
-                    case 1:
-                        _d = _e.sent();
-                        return [3 /*break*/, 3];
-                    case 2:
-                        _d = publicKey;
-                        _e.label = 3;
-                    case 3: return [2 /*return*/, _b.apply(_a, _c.concat([_d, utils.normalizeBase64ToBuf(sig),
-                            utils.normalizeUnicodeToBuf(msg, charSize)]))];
-                }
-            });
-        });
-    }
-    var verify_1 = verify;
-    function encrypt$2(msg, privateKey, publicKey, charSize, curve, opts) {
-        if (charSize === void 0) { charSize = constants.DEFAULT_CHAR_SIZE; }
-        if (curve === void 0) { curve = constants.DEFAULT_ECC_CURVE; }
-        return __awaiter$4(this, void 0, void 0, function () {
-            var importedPublicKey, _a, cipherKey;
-            return __generator$6(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        if (!(typeof publicKey === "string")) return [3 /*break*/, 2];
-                        return [4 /*yield*/, keys$1.default.importPublicKey(publicKey, curve, types.KeyUse.Read)];
-                    case 1:
-                        _a = _b.sent();
-                        return [3 /*break*/, 3];
-                    case 2:
-                        _a = publicKey;
-                        _b.label = 3;
-                    case 3:
-                        importedPublicKey = _a;
-                        return [4 /*yield*/, getSharedKey(privateKey, importedPublicKey, opts)];
-                    case 4:
-                        cipherKey = _b.sent();
-                        return [2 /*return*/, aes.default.encryptBytes(utils.normalizeUnicodeToBuf(msg, charSize), cipherKey, opts)];
-                }
-            });
-        });
-    }
-    var encrypt_1$1 = encrypt$2;
-    function decrypt$2(msg, privateKey, publicKey, curve, opts) {
-        if (curve === void 0) { curve = constants.DEFAULT_ECC_CURVE; }
-        return __awaiter$4(this, void 0, void 0, function () {
-            var importedPublicKey, _a, cipherKey;
-            return __generator$6(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        if (!(typeof publicKey === "string")) return [3 /*break*/, 2];
-                        return [4 /*yield*/, keys$1.default.importPublicKey(publicKey, curve, types.KeyUse.Read)];
-                    case 1:
-                        _a = _b.sent();
-                        return [3 /*break*/, 3];
-                    case 2:
-                        _a = publicKey;
-                        _b.label = 3;
-                    case 3:
-                        importedPublicKey = _a;
-                        return [4 /*yield*/, getSharedKey(privateKey, importedPublicKey, opts)];
-                    case 4:
-                        cipherKey = _b.sent();
-                        return [2 /*return*/, aes.default.decryptBytes(utils.normalizeBase64ToBuf(msg), cipherKey, opts)];
-                }
-            });
-        });
-    }
-    var decrypt_1$1 = decrypt$2;
-    function getPublicKey(keypair) {
-        return __awaiter$4(this, void 0, void 0, function () {
-            var raw;
-            return __generator$6(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, globalThis.crypto.subtle.exportKey('raw', keypair.publicKey)];
-                    case 1:
-                        raw = _a.sent();
-                        return [2 /*return*/, utils.default.arrBufToBase64(raw)];
-                }
-            });
-        });
-    }
-    var getPublicKey_1 = getPublicKey;
-    function getSharedKey(privateKey, publicKey, opts) {
-        return __awaiter$4(this, void 0, void 0, function () {
-            return __generator$6(this, function (_a) {
-                return [2 /*return*/, globalThis.crypto.subtle.deriveKey({ name: constants.ECC_READ_ALG, public: publicKey }, privateKey, {
-                        name: (opts === null || opts === void 0 ? void 0 : opts.alg) || constants.DEFAULT_SYMM_ALG,
-                        length: (opts === null || opts === void 0 ? void 0 : opts.length) || constants.DEFAULT_SYMM_LEN
-                    }, false, ['encrypt', 'decrypt'])];
-            });
-        });
-    }
-    var getSharedKey_1 = getSharedKey;
-    var _default$f = {
-        sign: sign,
-        verify: verify,
-        encrypt: encrypt$2,
-        decrypt: decrypt$2,
-        getPublicKey: getPublicKey,
-        getSharedKey: getSharedKey
-    };
-    //# sourceMappingURL=operations.js.map
-
-    /*#__PURE__*/Object.defineProperty({
-    	sign: sign_1,
-    	verify: verify_1,
-    	encrypt: encrypt_1$1,
-    	decrypt: decrypt_1$1,
-    	getPublicKey: getPublicKey_1,
-    	getSharedKey: getSharedKey_1,
-    	default: _default$f
-    }, '__esModule', {value: true});
-
-    var __awaiter$5 = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
-        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-        return new (P || (P = Promise))(function (resolve, reject) {
-            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-            step((generator = generator.apply(thisArg, _arguments || [])).next());
-        });
-    };
-    var __generator$7 = (commonjsGlobal && commonjsGlobal.__generator) || function (thisArg, body) {
-        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-        function verb(n) { return function (v) { return step([n, v]); }; }
-        function step(op) {
-            if (f) throw new TypeError("Generator is already executing.");
-            while (_) try {
-                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-                if (y = 0, t) op = [op[0] & 2, t.value];
-                switch (op[0]) {
-                    case 0: case 1: t = op; break;
-                    case 4: _.label++; return { value: op[1], done: false };
-                    case 5: _.label++; y = op[1]; op = [0]; continue;
-                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                    default:
-                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                        if (t[2]) _.ops.pop();
-                        _.trys.pop(); continue;
-                }
-                op = body.call(thisArg, _);
-            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-        }
-    };
-
-
-
-
-
-    function makeKeypair$1(size, hashAlg, use) {
-        return __awaiter$5(this, void 0, void 0, function () {
-            var alg, uses;
-            return __generator$7(this, function (_a) {
-                errors.checkValidKeyUse(use);
-                alg = use === types.KeyUse.Read ? constants.RSA_READ_ALG : constants.RSA_WRITE_ALG;
-                uses = use === types.KeyUse.Read ? ['encrypt', 'decrypt'] : ['sign', 'verify'];
-                return [2 /*return*/, globalThis.crypto.subtle.generateKey({
-                        name: alg,
-                        modulusLength: size,
-                        publicExponent: utils.default.publicExponent(),
-                        hash: { name: hashAlg }
-                    }, false, uses)];
-            });
-        });
-    }
-    var makeKeypair_1$1 = makeKeypair$1;
-    function stripKeyHeader(base64Key) {
-        return base64Key
-            .replace('-----BEGIN PUBLIC KEY-----\n', '')
-            .replace('\n-----END PUBLIC KEY-----', '');
-    }
-    function importPublicKey$1(base64Key, hashAlg, use) {
-        return __awaiter$5(this, void 0, void 0, function () {
-            var alg, uses, buf;
-            return __generator$7(this, function (_a) {
-                errors.checkValidKeyUse(use);
-                alg = use === types.KeyUse.Read ? constants.RSA_READ_ALG : constants.RSA_WRITE_ALG;
-                uses = use === types.KeyUse.Read ? ['encrypt'] : ['verify'];
-                buf = utils.default.base64ToArrBuf(stripKeyHeader(base64Key));
-                return [2 /*return*/, globalThis.crypto.subtle.importKey('spki', buf, { name: alg, hash: { name: hashAlg } }, true, uses)];
-            });
-        });
-    }
-    var importPublicKey_1$1 = importPublicKey$1;
-    var _default$g = {
-        makeKeypair: makeKeypair$1,
-        importPublicKey: importPublicKey$1
-    };
-    //# sourceMappingURL=keys.js.map
-
-    var keys$2 = /*#__PURE__*/Object.defineProperty({
-    	makeKeypair: makeKeypair_1$1,
-    	importPublicKey: importPublicKey_1$1,
-    	default: _default$g
-    }, '__esModule', {value: true});
-
-    var __awaiter$6 = (commonjsGlobal && commonjsGlobal.__awaiter) || function (thisArg, _arguments, P, generator) {
-        function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-        return new (P || (P = Promise))(function (resolve, reject) {
-            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-            function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-            step((generator = generator.apply(thisArg, _arguments || [])).next());
-        });
-    };
-    var __generator$8 = (commonjsGlobal && commonjsGlobal.__generator) || function (thisArg, body) {
-        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-        function verb(n) { return function (v) { return step([n, v]); }; }
-        function step(op) {
-            if (f) throw new TypeError("Generator is already executing.");
-            while (_) try {
-                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-                if (y = 0, t) op = [op[0] & 2, t.value];
-                switch (op[0]) {
-                    case 0: case 1: t = op; break;
-                    case 4: _.label++; return { value: op[1], done: false };
-                    case 5: _.label++; y = op[1]; op = [0]; continue;
-                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                    default:
-                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                        if (t[2]) _.ops.pop();
-                        _.trys.pop(); continue;
-                }
-                op = body.call(thisArg, _);
-            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-        }
-    };
-
-
-
-
-
-    function sign$1(msg, privateKey, charSize) {
-        if (charSize === void 0) { charSize = constants.DEFAULT_CHAR_SIZE; }
-        return __awaiter$6(this, void 0, void 0, function () {
-            return __generator$8(this, function (_a) {
-                return [2 /*return*/, globalThis.crypto.subtle.sign({ name: constants.RSA_WRITE_ALG, saltLength: constants.SALT_LENGTH }, privateKey, utils.normalizeUnicodeToBuf(msg, charSize))];
-            });
-        });
-    }
-    var sign_1$1 = sign$1;
-    function verify$1(msg, sig, publicKey, charSize, hashAlg) {
-        if (charSize === void 0) { charSize = constants.DEFAULT_CHAR_SIZE; }
-        if (hashAlg === void 0) { hashAlg = constants.DEFAULT_HASH_ALG; }
-        return __awaiter$6(this, void 0, void 0, function () {
-            var _a, _b, _c, _d;
-            return __generator$8(this, function (_e) {
-                switch (_e.label) {
-                    case 0:
-                        _b = (_a = globalThis.crypto.subtle).verify;
-                        _c = [{ name: constants.RSA_WRITE_ALG, saltLength: constants.SALT_LENGTH }];
-                        if (!(typeof publicKey === "string")) return [3 /*break*/, 2];
-                        return [4 /*yield*/, keys$2.default.importPublicKey(publicKey, hashAlg, types.KeyUse.Write)];
-                    case 1:
-                        _d = _e.sent();
-                        return [3 /*break*/, 3];
-                    case 2:
-                        _d = publicKey;
-                        _e.label = 3;
-                    case 3: return [2 /*return*/, _b.apply(_a, _c.concat([_d, utils.normalizeBase64ToBuf(sig),
-                            utils.normalizeUnicodeToBuf(msg, charSize)]))];
-                }
-            });
-        });
-    }
-    var verify_1$1 = verify$1;
-    function encrypt$3(msg, publicKey, charSize, hashAlg) {
-        if (charSize === void 0) { charSize = constants.DEFAULT_CHAR_SIZE; }
-        if (hashAlg === void 0) { hashAlg = constants.DEFAULT_HASH_ALG; }
-        return __awaiter$6(this, void 0, void 0, function () {
-            var _a, _b, _c, _d;
-            return __generator$8(this, function (_e) {
-                switch (_e.label) {
-                    case 0:
-                        _b = (_a = globalThis.crypto.subtle).encrypt;
-                        _c = [{ name: constants.RSA_READ_ALG }];
-                        if (!(typeof publicKey === "string")) return [3 /*break*/, 2];
-                        return [4 /*yield*/, keys$2.default.importPublicKey(publicKey, hashAlg, types.KeyUse.Read)];
-                    case 1:
-                        _d = _e.sent();
-                        return [3 /*break*/, 3];
-                    case 2:
-                        _d = publicKey;
-                        _e.label = 3;
-                    case 3: return [2 /*return*/, _b.apply(_a, _c.concat([_d, utils.normalizeUnicodeToBuf(msg, charSize)]))];
-                }
-            });
-        });
-    }
-    var encrypt_1$2 = encrypt$3;
-    function decrypt$3(msg, privateKey) {
-        return __awaiter$6(this, void 0, void 0, function () {
-            var normalized;
-            return __generator$8(this, function (_a) {
-                normalized = utils.normalizeBase64ToBuf(msg);
-                return [2 /*return*/, globalThis.crypto.subtle.decrypt({ name: constants.RSA_READ_ALG }, privateKey, normalized)];
-            });
-        });
-    }
-    var decrypt_1$2 = decrypt$3;
-    function getPublicKey$1(keypair) {
-        return __awaiter$6(this, void 0, void 0, function () {
-            var spki;
-            return __generator$8(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, globalThis.crypto.subtle.exportKey('spki', keypair.publicKey)];
-                    case 1:
-                        spki = _a.sent();
-                        return [2 /*return*/, utils.default.arrBufToBase64(spki)];
-                }
-            });
-        });
-    }
-    var getPublicKey_1$1 = getPublicKey$1;
-    var _default$h = {
-        sign: sign$1,
-        verify: verify$1,
-        encrypt: encrypt$3,
-        decrypt: decrypt$3,
-        getPublicKey: getPublicKey$1,
-    };
-    //# sourceMappingURL=operations.js.map
-
-    /*#__PURE__*/Object.defineProperty({
-    	sign: sign_1$1,
-    	verify: verify_1$1,
-    	encrypt: encrypt_1$2,
-    	decrypt: decrypt_1$2,
-    	getPublicKey: getPublicKey_1$1,
-    	default: _default$h
-    }, '__esModule', {value: true});
-
-    var ECC_DID_PREFIX = new Uint8Array([0xed, 0x01]).buffer;
-    var RSA_DID_PREFIX = new Uint8Array([0x00, 0xf5, 0x02]).buffer;
-    var BASE58_DID_PREFIX = 'did:key:z';
-    // KINDS
-    /**
-     * Create a DID based on the exchange key-pair.
-     */
-    function exchange() {
-        return __awaiter(this, void 0, void 0, function () {
-            var ks, pubKeyB64;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, get()];
-                    case 1:
-                        ks = _a.sent();
-                        return [4 /*yield*/, ks.publicReadKey()];
-                    case 2:
-                        pubKeyB64 = _a.sent();
-                        return [2 /*return*/, publicKeyToDid(pubKeyB64, ks.cfg.type)];
-                }
-            });
-        });
-    }
-    /**
-     * Get the root write-key DID for a user.
-     * Stored at `_did.${username}.${endpoints.user}`
-     */
-    function root(username) {
-        return __awaiter(this, void 0, void 0, function () {
-            var domain, maybeDid;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        domain = setup.endpoints.user;
-                        _a.label = 1;
-                    case 1:
-                        _a.trys.push([1, 3, , 4]);
-                        return [4 /*yield*/, lookupTxtRecord("_did." + username + "." + domain)];
-                    case 2:
-                        maybeDid = _a.sent();
-                        if (maybeDid !== null)
-                            return [2 /*return*/, maybeDid];
-                        return [3 /*break*/, 4];
-                    case 3:
-                        _a.sent();
-                        return [3 /*break*/, 4];
-                    case 4: throw new Error("Could not locate user DID in DNS.");
-                }
-            });
-        });
-    }
-    /**
-     * Create a DID based on the write key-pair.
-     */
-    function write$1() {
-        return __awaiter(this, void 0, void 0, function () {
-            var ks, pubKeyB64;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, get()];
-                    case 1:
-                        ks = _a.sent();
-                        return [4 /*yield*/, ks.publicWriteKey()];
-                    case 2:
-                        pubKeyB64 = _a.sent();
-                        return [2 /*return*/, publicKeyToDid(pubKeyB64, ks.cfg.type)];
-                }
-            });
-        });
-    }
-    // TRANSFORMERS
-    /**
-     * Convert a base64 public key to a DID (did:key).
-     */
-    function publicKeyToDid(publicKey, type) {
-        var pubKeyBuf = utils$1.base64ToArrBuf(publicKey);
-        // Prefix public-write key
-        var prefix = magicBytes(type) || new ArrayBuffer(0);
-        var prefixedBuf = utils$1.joinBufs(prefix, pubKeyBuf);
-        // Encode prefixed
-        return BASE58_DID_PREFIX + encode$a(new Uint8Array(prefixedBuf));
-    }
-    /**
-     * Convert a DID (did:key) to a base64 public key.
-     */
-    function didToPublicKey(did) {
-        if (!did.startsWith(BASE58_DID_PREFIX)) {
-            throw new Error("Please use a base58-encoded DID formatted `did:key:z...`");
-        }
-        var didWithoutPrefix = did.substr(BASE58_DID_PREFIX.length);
-        var magicalBuf = decode$9(didWithoutPrefix).buffer;
-        var _a = parseMagicBytes(magicalBuf), keyBuffer = _a.keyBuffer, type = _a.type;
-        return {
-            publicKey: utils$1.arrBufToBase64(keyBuffer),
-            type: type
-        };
-    }
-    // VALIDATION
-    /**
-     * Verify the signature of some data (string, ArrayBuffer or Uint8Array), given a DID.
-     */
-    function verifySignedData(_a) {
-        var _b = _a.charSize, charSize = _b === void 0 ? 16 : _b, data = _a.data, did = _a.did, signature = _a.signature;
-        return __awaiter(this, void 0, void 0, function () {
-            var _c, type, publicKey, _d;
-            return __generator(this, function (_e) {
-                switch (_e.label) {
-                    case 0:
-                        _e.trys.push([0, 7, , 8]);
-                        _c = didToPublicKey(did), type = _c.type, publicKey = _c.publicKey;
-                        _d = type;
-                        switch (_d) {
-                            case "ecc": return [3 /*break*/, 1];
-                            case "rsa": return [3 /*break*/, 3];
-                        }
-                        return [3 /*break*/, 5];
-                    case 1: return [4 /*yield*/, _default$f.verify(data, signature, publicKey, charSize)];
-                    case 2: return [2 /*return*/, _e.sent()];
-                    case 3: return [4 /*yield*/, _default$h.verify(data, signature, publicKey, charSize)];
-                    case 4: return [2 /*return*/, _e.sent()];
-                    case 5: return [2 /*return*/, false];
-                    case 6: return [3 /*break*/, 8];
-                    case 7:
-                        _e.sent();
-                        return [2 /*return*/, false];
-                    case 8: return [2 /*return*/];
-                }
-            });
-        });
-    }
-    // ㊙️
-    /**
-     * Magic bytes.
-     */
-    function magicBytes(cryptoSystem) {
-        switch (cryptoSystem) {
-            case types.CryptoSystem.RSA: return RSA_DID_PREFIX;
-            default: return null;
-        }
-    }
-    /**
-     * Parse magic bytes on prefixed key-buffer
-     * to determine cryptosystem & the unprefixed key-buffer.
-     */
-    var parseMagicBytes = function (prefixedKey) {
-        // RSA
-        if (hasPrefix(prefixedKey, RSA_DID_PREFIX)) {
-            return {
-                keyBuffer: prefixedKey.slice(RSA_DID_PREFIX.byteLength),
-                type: types.CryptoSystem.RSA
-            };
-            // ECC
-        }
-        else if (hasPrefix(prefixedKey, ECC_DID_PREFIX)) {
-            return {
-                keyBuffer: prefixedKey.slice(ECC_DID_PREFIX.byteLength),
-                type: types.CryptoSystem.ECC
-            };
-        }
-        throw new Error("Unsupported key algorithm. Try using RSA.");
-    };
-    /**
-     * Determines if an ArrayBuffer has a given indeterminate length-prefix.
-     */
-    var hasPrefix = function (prefixedKey, prefix) {
-        return equal(prefix, prefixedKey.slice(0, prefix.byteLength));
-    };
-    //# sourceMappingURL=did.js.map
-
-    var did$1 = /*#__PURE__*/Object.freeze({
-        __proto__: null,
-        exchange: exchange,
-        root: root,
-        ucan: write$1,
-        write: write$1,
-        publicKeyToDid: publicKeyToDid,
-        didToPublicKey: didToPublicKey,
-        verifySignedData: verifySignedData
-    });
-
-    // Controller for data-root-update fetches
-    var fetchController = null;
     /**
      * CID representing an empty string. We use to to speed up DNS propagation
      * However, we treat that as a null value in the code
@@ -59386,7 +63961,7 @@ message PBNode {
                         return [2 /*return*/, cid];
                     case 3:
                         err_2 = _a.sent();
-                        log$1('Could not locate user root on Fission server: ', err_2.toString());
+                        log$2('Could not locate user root on Fission server: ', err_2.toString());
                         return [2 /*return*/, null];
                     case 4: return [2 /*return*/];
                 }
@@ -59401,42 +63976,37 @@ message PBNode {
      */
     function update(cid, proof) {
         return __awaiter(this, void 0, void 0, function () {
-            var apiEndpoint, signal;
+            var apiEndpoint;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         apiEndpoint = setup.endpoints.api;
                         // Debug
-                        log$1("🌊 Updating your DNSLink:", cid);
-                        // Cancel previous updates
-                        if (fetchController)
-                            fetchController.abort();
-                        fetchController = new AbortController();
-                        signal = fetchController.signal;
-                        // Make API call
+                        log$2("🌊 Updating your DNSLink:", cid);
                         return [4 /*yield*/, fetchWithRetry(apiEndpoint + "/user/data/" + cid, {
                                 headers: function () { return __awaiter(_this, void 0, void 0, function () {
-                                    var jwt, _a, _b;
-                                    var _c;
-                                    return __generator(this, function (_d) {
-                                        switch (_d.label) {
+                                    var jwt, _a, _b, _c, _d;
+                                    var _e;
+                                    return __generator(this, function (_f) {
+                                        switch (_f.label) {
                                             case 0:
-                                                _b = (_a = ucan).build;
-                                                _c = {};
+                                                _b = (_a = ucan).encode;
+                                                _d = (_c = ucan).build;
+                                                _e = {};
                                                 return [4 /*yield*/, did()];
                                             case 1:
-                                                _c.audience = _d.sent();
+                                                _e.audience = _f.sent();
                                                 return [4 /*yield*/, write$1()];
-                                            case 2: return [4 /*yield*/, _b.apply(_a, [(_c.issuer = _d.sent(),
-                                                        _c.potency = "APPEND",
-                                                        _c.proof = proof,
+                                            case 2: return [4 /*yield*/, _d.apply(_c, [(_e.issuer = _f.sent(),
+                                                        _e.potency = "APPEND",
+                                                        _e.proof = proof,
                                                         // TODO: Waiting on API change.
                                                         //       Should be `username.fission.name/*`
-                                                        _c.resource = decode(proof).payload.rsc,
-                                                        _c)])];
+                                                        _e.resource = decode$a(proof).payload.rsc,
+                                                        _e)])];
                                             case 3:
-                                                jwt = _d.sent();
+                                                jwt = _b.apply(_a, [_f.sent()]);
                                                 return [2 /*return*/, { 'authorization': "Bearer " + jwt }];
                                         }
                                     });
@@ -59445,26 +64015,21 @@ message PBNode {
                                 retryDelay: 5000,
                                 retryOn: [502, 503, 504],
                             }, {
-                                method: 'PATCH',
-                                signal: signal
+                                method: 'PATCH'
                             }).then(function (response) {
                                 if (response.status < 300)
-                                    log$1("🪴 DNSLink updated:", cid);
+                                    log$2("🪴 DNSLink updated:", cid);
                                 else
-                                    log$1("🔥 Failed to update DNSLink for:", cid);
+                                    log$2("🔥 Failed to update DNSLink for:", cid);
+                                return { success: response.status < 300 };
                             }).catch(function (err) {
-                                if (signal.aborted) {
-                                    log$1("⛄️ Cancelling DNSLink update for:", cid);
-                                }
-                                else {
-                                    log$1("🔥 Failed to update DNSLink for:", cid);
-                                    console.error(err);
-                                }
+                                log$2("🔥 Failed to update DNSLink for:", cid);
+                                console.error(err);
+                                return { success: false };
                             })];
-                    case 1:
-                        // Make API call
-                        _a.sent();
-                        return [2 /*return*/];
+                    case 1: 
+                    // Make API call
+                    return [2 /*return*/, _a.sent()];
                 }
             });
         });
@@ -59522,8 +64087,14 @@ message PBNode {
             this.localOnly = localOnly || false;
             this.proofs = {};
             this.publishHooks = [];
-            this.publishWhenOnline = [];
             this.root = root;
+            this._publishWhenOnline = [];
+            this._publishing = false;
+            this._whenOnline = this._whenOnline.bind(this);
+            this._beforeLeaving = this._beforeLeaving.bind(this);
+            var globe = globalThis;
+            globe.filesystems = globe.filesystems || [];
+            globe.filesystems.push(this);
             if (permissions &&
                 permissions.app &&
                 permissions.app.creator &&
@@ -59534,18 +64105,26 @@ message PBNode {
             // (reverse list, newest cid first)
             var logCid = function (cid) {
                 add$2(cid);
-                log$1("📓 Adding to the CID ledger:", cid);
+                log$2("📓 Adding to the CID ledger:", cid);
             };
             // Update the user's data root when making changes
             var updateDataRootWhenOnline = index_umd$1.throttle(3000, false, function (cid, proof) {
-                if (globalThis.navigator.onLine)
-                    return update(cid, proof);
-                _this.publishWhenOnline.push([cid, proof]);
+                if (globalThis.navigator.onLine) {
+                    _this._publishing = [cid, true];
+                    return update(cid, proof).then(function () {
+                        if (_this._publishing && _this._publishing[0] === cid) {
+                            _this._publishing = false;
+                        }
+                    });
+                }
+                _this._publishWhenOnline.push([cid, proof]);
             }, false);
             this.publishHooks.push(logCid);
             this.publishHooks.push(updateDataRootWhenOnline);
             // Publish when coming back online
-            globalThis.addEventListener('online', function () { return _this._whenOnline(); });
+            globalThis.addEventListener('online', this._whenOnline);
+            // Show an alert when leaving the page while updating the data root
+            globalThis.addEventListener('beforeunload', this._beforeLeaving);
         }
         // INITIALISATION
         // --------------
@@ -59555,16 +64134,21 @@ message PBNode {
         FileSystem.empty = function (opts) {
             if (opts === void 0) { opts = {}; }
             return __awaiter(this, void 0, void 0, function () {
-                var _a, keyName, permissions, localOnly, key, root, fs;
+                var permissions, localOnly, rootKey, _a, root, fs;
                 return __generator(this, function (_b) {
                     switch (_b.label) {
                         case 0:
-                            _a = opts.keyName, keyName = _a === void 0 ? 'filesystem-root' : _a, permissions = opts.permissions, localOnly = opts.localOnly;
-                            return [4 /*yield*/, getKeyByName(keyName)];
+                            permissions = opts.permissions, localOnly = opts.localOnly;
+                            _a = opts.rootKey;
+                            if (_a) return [3 /*break*/, 2];
+                            return [4 /*yield*/, aes$2.genKeyStr()];
                         case 1:
-                            key = _b.sent();
-                            return [4 /*yield*/, RootTree.empty({ key: key })];
+                            _a = (_b.sent());
+                            _b.label = 2;
                         case 2:
+                            rootKey = _a;
+                            return [4 /*yield*/, RootTree.empty({ rootKey: rootKey })];
+                        case 3:
                             root = _b.sent();
                             fs = new FileSystem({
                                 root: root,
@@ -59582,17 +64166,14 @@ message PBNode {
         FileSystem.fromCID = function (cid, opts) {
             if (opts === void 0) { opts = {}; }
             return __awaiter(this, void 0, void 0, function () {
-                var _a, keyName, permissions, localOnly, key, root, fs;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
+                var permissions, localOnly, root, fs;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
                         case 0:
-                            _a = opts.keyName, keyName = _a === void 0 ? 'filesystem-root' : _a, permissions = opts.permissions, localOnly = opts.localOnly;
-                            return [4 /*yield*/, getKeyByName(keyName)];
+                            permissions = opts.permissions, localOnly = opts.localOnly;
+                            return [4 /*yield*/, RootTree.fromCID({ cid: cid, permissions: permissions })];
                         case 1:
-                            key = _b.sent();
-                            return [4 /*yield*/, RootTree.fromCID({ cid: cid, key: key })];
-                        case 2:
-                            root = _b.sent();
+                            root = _a.sent();
                             fs = new FileSystem({
                                 root: root,
                                 permissions: permissions,
@@ -59612,18 +64193,46 @@ message PBNode {
          * The only function of this is to stop listing to online/offline events.
          */
         FileSystem.prototype.deactivate = function () {
-            globalThis.removeEventListener('online', this._whenOnline);
+            var _this = this;
+            var globe = globalThis;
+            globe.filesystems = globe.filesystems.filter(function (a) { return a !== _this; });
+            globe.removeEventListener('online', this._whenOnline);
+            globe.removeEventListener('beforeunload', this._beforeLeaving);
         };
-        // POSIX INTERFACE
-        // ---------------
+        // POSIX INTERFACE (DIRECTORIES)
+        // -----------------------------
+        FileSystem.prototype.ls = function (path) {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    if (isFile(path))
+                        throw new Error("`ls` only accepts directory paths");
+                    return [2 /*return*/, this.runOnNode(path, false, function (node, relPath) {
+                            if (isFile$1(node)) {
+                                throw new Error("Tried to `ls` a file");
+                            }
+                            else {
+                                return node.ls(relPath);
+                            }
+                        })];
+                });
+            });
+        };
         FileSystem.prototype.mkdir = function (path, options) {
             if (options === void 0) { options = {}; }
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.runOnTree(path, true, function (tree, relPath) {
-                                return tree.mkdir(relPath);
-                            })];
+                        case 0:
+                            if (isFile(path))
+                                throw new Error("`mkdir` only accepts directory paths");
+                            return [4 /*yield*/, this.runOnNode(path, true, function (node, relPath) {
+                                    if (isFile$1(node)) {
+                                        throw new Error("Tried to `mkdir` a file");
+                                    }
+                                    else {
+                                        return node.mkdir(relPath);
+                                    }
+                                })];
                         case 1:
                             _a.sent();
                             if (!options.publish) return [3 /*break*/, 3];
@@ -59636,23 +64245,24 @@ message PBNode {
                 });
             });
         };
-        FileSystem.prototype.ls = function (path) {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    return [2 /*return*/, this.runOnTree(path, false, function (tree, relPath) {
-                            return tree.ls(relPath);
-                        })];
-                });
-            });
-        };
+        // POSIX INTERFACE (FILES)
+        // -----------------------
         FileSystem.prototype.add = function (path, content, options) {
             if (options === void 0) { options = {}; }
             return __awaiter(this, void 0, void 0, function () {
+                var _this = this;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.runOnTree(path, true, function (tree, relPath) {
-                                return tree.add(relPath, content);
-                            })];
+                        case 0:
+                            if (isDirectory(path))
+                                throw new Error("`add` only accepts file paths");
+                            return [4 /*yield*/, this.runOnNode(path, true, function (node, relPath) { return __awaiter(_this, void 0, void 0, function () {
+                                    return __generator(this, function (_a) {
+                                        return [2 /*return*/, isFile$1(node)
+                                                ? node.updateContent(content)
+                                                : node.add(relPath, content)];
+                                    });
+                                }); })];
                         case 1:
                             _a.sent();
                             if (!options.publish) return [3 /*break*/, 3];
@@ -59667,75 +64277,25 @@ message PBNode {
         };
         FileSystem.prototype.cat = function (path) {
             return __awaiter(this, void 0, void 0, function () {
+                var _this = this;
                 return __generator(this, function (_a) {
-                    return [2 /*return*/, this.runOnTree(path, false, function (tree, relPath) {
-                            return tree.cat(relPath);
-                        })];
-                });
-            });
-        };
-        FileSystem.prototype.exists = function (path) {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    return [2 /*return*/, this.runOnTree(path, false, function (tree, relPath) {
-                            return tree.exists(relPath);
-                        })];
-                });
-            });
-        };
-        FileSystem.prototype.rm = function (path) {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.runOnTree(path, true, function (tree, relPath) {
-                                return tree.rm(relPath);
-                            })];
-                        case 1:
-                            _a.sent();
-                            return [2 /*return*/, this];
-                    }
-                });
-            });
-        };
-        FileSystem.prototype.get = function (path) {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    return [2 /*return*/, this.runOnTree(path, false, function (tree, relPath) {
-                            return tree.get(relPath);
-                        })];
-                });
-            });
-        };
-        // This is only implemented on the same tree for now and will error otherwise
-        FileSystem.prototype.mv = function (from, to) {
-            return __awaiter(this, void 0, void 0, function () {
-                var sameTree;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            sameTree = sameParent(from, to);
-                            if (!sameTree) {
-                                throw new Error("`mv` is only supported on the same tree for now");
-                            }
-                            return [4 /*yield*/, this.exists(to)];
-                        case 1:
-                            if (_a.sent()) {
-                                throw new Error("Destination already exists");
-                            }
-                            return [4 /*yield*/, this.runOnTree(from, true, function (tree, relPath) {
-                                    var nextPath = takeHead(to).nextPath;
-                                    return tree.mv(relPath, nextPath || '');
-                                })];
-                        case 2:
-                            _a.sent();
-                            return [2 /*return*/, this];
-                    }
+                    if (isDirectory(path))
+                        throw new Error("`cat` only accepts file paths");
+                    return [2 /*return*/, this.runOnNode(path, false, function (node, relPath) { return __awaiter(_this, void 0, void 0, function () {
+                            return __generator(this, function (_a) {
+                                return [2 /*return*/, isFile$1(node)
+                                        ? node.content
+                                        : node.cat(relPath)];
+                            });
+                        }); })];
                 });
             });
         };
         FileSystem.prototype.read = function (path) {
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
+                    if (isDirectory(path))
+                        throw new Error("`read` only accepts file paths");
                     return [2 /*return*/, this.cat(path)];
                 });
             });
@@ -59744,7 +64304,93 @@ message PBNode {
             if (options === void 0) { options = {}; }
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
+                    if (isDirectory(path))
+                        throw new Error("`write` only accepts file paths");
                     return [2 /*return*/, this.add(path, content, options)];
+                });
+            });
+        };
+        // POSIX INTERFACE (GENERAL)
+        // -------------------------
+        FileSystem.prototype.exists = function (path) {
+            return __awaiter(this, void 0, void 0, function () {
+                var _this = this;
+                return __generator(this, function (_a) {
+                    return [2 /*return*/, this.runOnNode(path, false, function (node, relPath) { return __awaiter(_this, void 0, void 0, function () {
+                            return __generator(this, function (_a) {
+                                return [2 /*return*/, isFile$1(node)
+                                        ? true // tried to check the existance of itself
+                                        : node.exists(relPath)];
+                            });
+                        }); })];
+                });
+            });
+        };
+        FileSystem.prototype.get = function (path) {
+            return __awaiter(this, void 0, void 0, function () {
+                var _this = this;
+                return __generator(this, function (_a) {
+                    return [2 /*return*/, this.runOnNode(path, false, function (node, relPath) { return __awaiter(_this, void 0, void 0, function () {
+                            return __generator(this, function (_a) {
+                                return [2 /*return*/, isFile$1(node)
+                                        ? node // tried to get itself
+                                        : node.get(relPath)];
+                            });
+                        }); })];
+                });
+            });
+        };
+        // This is only implemented on the same tree for now and will error otherwise
+        FileSystem.prototype.mv = function (from, to) {
+            return __awaiter(this, void 0, void 0, function () {
+                var sameTree, kindFrom, kindTo;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            sameTree = isSameBranch(from, to);
+                            if (!isSameKind(from, to)) {
+                                kindFrom = kind(from);
+                                kindTo = kind(to);
+                                throw new Error("Can't move to a different kind of path, from is a " + kindFrom + " and to is a " + kindTo);
+                            }
+                            if (!sameTree) {
+                                throw new Error("`mv` is only supported on the same tree for now");
+                            }
+                            return [4 /*yield*/, this.exists(to)];
+                        case 1:
+                            if (_a.sent()) {
+                                throw new Error("Destination already exists");
+                            }
+                            return [4 /*yield*/, this.runOnNode(from, true, function (node, relPath) {
+                                    if (isFile$1(node)) {
+                                        throw new Error("Tried to `mv` within a file");
+                                    }
+                                    var _a = unwrap(to); _a[0]; var nextPath = _a.slice(1);
+                                    return node.mv(relPath, nextPath);
+                                })];
+                        case 2:
+                            _a.sent();
+                            return [2 /*return*/, this];
+                    }
+                });
+            });
+        };
+        FileSystem.prototype.rm = function (path) {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.runOnNode(path, true, function (node, relPath) {
+                                if (isFile$1(node)) {
+                                    throw new Error("Cannot `rm` a file you've asked permission for");
+                                }
+                                else {
+                                    return node.rm(relPath);
+                                }
+                            })];
+                        case 1:
+                            _a.sent();
+                            return [2 /*return*/, this];
+                    }
                 });
             });
         };
@@ -59768,8 +64414,7 @@ message PBNode {
                             cid = _a.sent();
                             proofs.forEach(function (_a) {
                                 _a[0]; var proof = _a[1];
-                                var encodedProof = encode(proof);
-                                _this.publishHooks.forEach(function (hook) { return hook(cid, encodedProof); });
+                                _this.publishHooks.forEach(function (hook) { return hook(cid, proof); });
                             });
                             return [2 /*return*/, cid];
                     }
@@ -59779,33 +64424,37 @@ message PBNode {
         // INTERNAL
         // --------
         /** @internal */
-        FileSystem.prototype.runOnTree = function (path, isMutation, fn) {
+        FileSystem.prototype.runOnNode = function (path, isMutation, fn) {
             return __awaiter(this, void 0, void 0, function () {
-                var parts, head, relPath, proof, result, resultPretty, cid;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
+                var parts, head, relPath, operation, proof, decodedProof, result, resultPretty, _a, nodePath, node, cid;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
                         case 0:
-                            parts = splitParts(path);
+                            parts = unwrap(path);
                             head = parts[0];
-                            relPath = join(parts.slice(1));
+                            relPath = parts.slice(1);
+                            operation = isMutation
+                                ? "make changes to"
+                                : "query";
                             if (!!this.localOnly) return [3 /*break*/, 2];
                             return [4 /*yield*/, lookupFilesystemUcan(path)];
                         case 1:
-                            proof = _a.sent();
-                            if (!proof || isExpired(proof)) {
-                                throw new NoPermissionError("I don't have the necessary permissions to make these changes to the file system");
+                            proof = _b.sent();
+                            decodedProof = proof && decode$a(proof);
+                            if (!proof || !decodedProof || isExpired(decodedProof) || !decodedProof.signature) {
+                                throw new NoPermissionError("I don't have the necessary permissions to " + operation + " the file system at \"" + toPosix(path) + "\"");
                             }
-                            this.proofs[proof.signature] = proof;
-                            _a.label = 2;
+                            this.proofs[decodedProof.signature] = proof;
+                            _b.label = 2;
                         case 2:
                             if (!(head === Branch.Public)) return [3 /*break*/, 7];
                             return [4 /*yield*/, fn(this.root.publicTree, relPath)];
                         case 3:
-                            result = _a.sent();
+                            result = _b.sent();
                             if (!(isMutation && PublicTree.instanceOf(result))) return [3 /*break*/, 6];
                             return [4 /*yield*/, fn(this.root.prettyTree, relPath)];
                         case 4:
-                            resultPretty = _a.sent();
+                            resultPretty = _b.sent();
                             this.root.publicTree = result;
                             this.root.prettyTree = resultPretty;
                             return [4 /*yield*/, Promise.all([
@@ -59813,38 +64462,46 @@ message PBNode {
                                     this.root.updatePuttable(Branch.Pretty, this.root.prettyTree)
                                 ])];
                         case 5:
-                            _a.sent();
-                            _a.label = 6;
-                        case 6: return [3 /*break*/, 17];
+                            _b.sent();
+                            _b.label = 6;
+                        case 6: return [3 /*break*/, 18];
                         case 7:
-                            if (!(head === Branch.Private)) return [3 /*break*/, 13];
-                            return [4 /*yield*/, fn(this.root.privateTree, relPath)];
+                            if (!(head === Branch.Private)) return [3 /*break*/, 14];
+                            _a = this.root.findPrivateNode(path), nodePath = _a[0], node = _a[1];
+                            if (!node) {
+                                throw new NoPermissionError("I don't have the necessary permissions to " + operation + " the file system at \"" + toPosix(path) + "\"");
+                            }
+                            return [4 /*yield*/, fn(node, parts.slice(unwrap(nodePath).length))];
                         case 8:
-                            result = _a.sent();
-                            if (!(isMutation && PrivateTree.instanceOf(result))) return [3 /*break*/, 12];
-                            this.root.privateTree = result;
-                            return [4 /*yield*/, this.root.privateTree.put()];
+                            result = _b.sent();
+                            if (!(isMutation &&
+                                (PrivateTree.instanceOf(result) || PrivateFile.instanceOf(result)))) return [3 /*break*/, 13];
+                            this.root.privateNodes[toPosix(nodePath)] = result;
+                            return [4 /*yield*/, result.put()];
                         case 9:
-                            cid = _a.sent();
+                            _b.sent();
                             return [4 /*yield*/, this.root.updatePuttable(Branch.Private, this.root.mmpt)];
                         case 10:
-                            _a.sent();
-                            return [4 /*yield*/, this.root.addPrivateLogEntry(cid)];
+                            _b.sent();
+                            return [4 /*yield*/, this.root.mmpt.put()];
                         case 11:
-                            _a.sent();
-                            _a.label = 12;
-                        case 12: return [3 /*break*/, 17];
-                        case 13:
-                            if (!(head === Branch.Pretty && isMutation)) return [3 /*break*/, 14];
-                            throw new Error("The pretty path is read only");
+                            cid = _b.sent();
+                            return [4 /*yield*/, this.root.addPrivateLogEntry(cid)];
+                        case 12:
+                            _b.sent();
+                            _b.label = 13;
+                        case 13: return [3 /*break*/, 18];
                         case 14:
-                            if (!(head === Branch.Pretty)) return [3 /*break*/, 16];
-                            return [4 /*yield*/, fn(this.root.prettyTree, relPath)];
+                            if (!(head === Branch.Pretty && isMutation)) return [3 /*break*/, 15];
+                            throw new Error("The pretty path is read only");
                         case 15:
-                            result = _a.sent();
-                            return [3 /*break*/, 17];
-                        case 16: throw new Error("Not a valid FileSystem path");
-                        case 17: return [2 /*return*/, result];
+                            if (!(head === Branch.Pretty)) return [3 /*break*/, 17];
+                            return [4 /*yield*/, fn(this.root.prettyTree, relPath)];
+                        case 16:
+                            result = _b.sent();
+                            return [3 /*break*/, 18];
+                        case 17: throw new Error("Not a valid FileSystem path");
+                        case 18: return [2 /*return*/, result];
                     }
                 });
             });
@@ -59852,21 +64509,33 @@ message PBNode {
         /** @internal */
         FileSystem.prototype._whenOnline = function () {
             var _this = this;
-            var toPublish = __spreadArrays(this.publishWhenOnline);
-            this.publishWhenOnline = [];
+            var toPublish = __spreadArrays(this._publishWhenOnline);
+            this._publishWhenOnline = [];
             toPublish.forEach(function (_a) {
                 var cid = _a[0], proof = _a[1];
                 _this.publishHooks.forEach(function (hook) { return hook(cid, proof); });
             });
         };
+        /** @internal */
+        FileSystem.prototype._beforeLeaving = function (e) {
+            var msg = "Are you sure you want to leave? We don't control the browser so you may lose your data.";
+            if (this._publishing || this._publishWhenOnline.length) {
+                (e || globalThis.event).returnValue = msg;
+                return msg;
+            }
+        };
         return FileSystem;
     }());
     // ㊙️
     function appPath(permissions) {
-        return function (path) { return (Branch.Private + "/Apps/"
-            + (permissions.app ? permissions.app.creator + '/' : '')
-            + (permissions.app ? permissions.app.name : '')
-            + (path ? '/' + (typeof path == 'object' ? path.join('/') : path) : '')); };
+        if (!permissions.app)
+            throw Error("Only works with app permissions");
+        var base = appDataPath(permissions.app);
+        return function (path) {
+            if (path)
+                return combine(base, path);
+            return base;
+        };
     }
 
     /**
@@ -59877,10 +64546,12 @@ message PBNode {
      * @param username Optional, username of the user to load the file system from.
      *                 Will try to load the file system of the authenticated user
      *                 by default. Throws an error if there's no authenticated user.
+     * @param rootKey Optional, AES key to be the root key of a new filesystem.
+     *                Will be used if a filesystem hasn't been created yet.
      */
-    function loadFileSystem(permissions, username) {
+    function loadFileSystem(permissions, username, rootKey) {
         return __awaiter(this, void 0, void 0, function () {
-            var cid, fs, _a, dataCid, _b, _c, logIdx, _d, idxLog, keyName, p, _e;
+            var cid, fs, _a, dataCid, _b, _c, logIdx, _d, idxLog, p, _e;
             return __generator(this, function (_f) {
                 switch (_f.label) {
                     case 0:
@@ -59913,7 +64584,7 @@ message PBNode {
                     case 6:
                         dataCid = _b;
                         if (!dataCid) return [3 /*break*/, 8];
-                        return [4 /*yield*/, index$3(dataCid)];
+                        return [4 /*yield*/, index$4(dataCid)];
                     case 7:
                         _d = _f.sent();
                         return [3 /*break*/, 9];
@@ -59935,15 +64606,15 @@ message PBNode {
                         // No DNS CID yet
                         cid = _f.sent();
                         if (cid)
-                            log$1("📓 No DNSLink, using local CID:", cid);
+                            log$2("📓 No DNSLink, using local CID:", cid);
                         else
-                            log$1("📓 Creating a new file system");
+                            log$2("📓 Creating a new file system");
                         return [3 /*break*/, 18];
                     case 13:
                         if (!(logIdx === 0)) return [3 /*break*/, 14];
                         // DNS is up to date
                         cid = dataCid;
-                        log$1("📓 DNSLink is up to date:", cid);
+                        log$2("📓 DNSLink is up to date:", cid);
                         return [3 /*break*/, 18];
                     case 14:
                         if (!(logIdx > 0)) return [3 /*break*/, 16];
@@ -59952,7 +64623,7 @@ message PBNode {
                         // DNS is outdated
                         cid = _f.sent();
                         idxLog = logIdx === 1 ? "1 newer local entry" : logIdx + " newer local entries";
-                        log$1("📓 DNSLink is outdated (" + idxLog + "), using local CID:", cid);
+                        log$2("📓 DNSLink is outdated (" + idxLog + "), using local CID:", cid);
                         return [3 /*break*/, 18];
                     case 16:
                         // DNS is newer
@@ -59960,13 +64631,12 @@ message PBNode {
                         return [4 /*yield*/, add$2(cid)];
                     case 17:
                         _f.sent();
-                        log$1("📓 DNSLink is newer:", cid);
+                        log$2("📓 DNSLink is newer:", cid);
                         _f.label = 18;
                     case 18:
-                        keyName = READ_KEY_FROM_LOBBY_NAME;
                         p = permissions || undefined;
                         if (!cid) return [3 /*break*/, 20];
-                        return [4 /*yield*/, FileSystem.fromCID(cid, { keyName: keyName, permissions: p })];
+                        return [4 /*yield*/, FileSystem.fromCID(cid, { permissions: p })];
                     case 19:
                         _e = _f.sent();
                         return [3 /*break*/, 21];
@@ -59979,9 +64649,11 @@ message PBNode {
                             return [2 /*return*/, fs
                                 // Otherwise make a new one
                             ];
-                        return [4 /*yield*/, FileSystem.empty({ keyName: keyName, permissions: p })];
-                    case 22:
                         // Otherwise make a new one
+                        if (!rootKey)
+                            throw new Error("Can't make new filesystem without a root AES key");
+                        return [4 /*yield*/, FileSystem.empty({ permissions: p, rootKey: rootKey })];
+                    case 22:
                         fs = _f.sent();
                         return [4 /*yield*/, addSampleData(fs)
                             // Fin
@@ -59999,19 +64671,19 @@ message PBNode {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, fs.mkdir("private/Apps")];
+                    case 0: return [4 /*yield*/, fs.mkdir({ directory: [Branch.Private, "Apps"] })];
                     case 1:
                         _a.sent();
-                        return [4 /*yield*/, fs.mkdir("private/Audio")];
+                        return [4 /*yield*/, fs.mkdir({ directory: [Branch.Private, "Audio"] })];
                     case 2:
                         _a.sent();
-                        return [4 /*yield*/, fs.mkdir("private/Documents")];
+                        return [4 /*yield*/, fs.mkdir({ directory: [Branch.Private, "Documents"] })];
                     case 3:
                         _a.sent();
-                        return [4 /*yield*/, fs.mkdir("private/Photos")];
+                        return [4 /*yield*/, fs.mkdir({ directory: [Branch.Private, "Photos"] })];
                     case 4:
                         _a.sent();
-                        return [4 /*yield*/, fs.mkdir("private/Video")];
+                        return [4 /*yield*/, fs.mkdir({ directory: [Branch.Private, "Video"] })];
                     case 5:
                         _a.sent();
                         return [4 /*yield*/, fs.publish()];
@@ -60044,18 +64716,19 @@ message PBNode {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_c) {
                 switch (_c.label) {
-                    case 0: return [4 /*yield*/, localforage.removeItem(USERNAME_STORAGE_KEY)];
+                    case 0: return [4 /*yield*/, removeItem$1(USERNAME_STORAGE_KEY)];
                     case 1:
                         _c.sent();
                         return [4 /*yield*/, clearStorage()];
                     case 2:
                         _c.sent();
-                        return [4 /*yield*/, clear$1()];
+                        return [4 /*yield*/, clear$3()];
                     case 3:
                         _c.sent();
-                        return [4 /*yield*/, clear()];
+                        return [4 /*yield*/, keystore$2.clear()];
                     case 4:
                         _c.sent();
+                        (globalThis.filesystems || []).forEach(function (f) { return f.deactivate(); });
                         if (!withoutRedirect && globalThis.location) {
                             globalThis.location.href = setup.endpoints.lobby;
                         }
@@ -60076,24 +64749,35 @@ message PBNode {
      */
     function redirectToLobby(permissions, redirectTo) {
         return __awaiter(this, void 0, void 0, function () {
-            var app, fs, exchangeDid, writeDid, params;
+            var app, fs, platform, exchangeDid, writeDid, sharedRepo, params;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        app = permissions ? permissions.app : undefined;
-                        fs = permissions ? permissions.fs : undefined;
+                        app = permissions === null || permissions === void 0 ? void 0 : permissions.app;
+                        fs = permissions === null || permissions === void 0 ? void 0 : permissions.fs;
+                        platform = permissions === null || permissions === void 0 ? void 0 : permissions.platform;
                         return [4 /*yield*/, exchange()];
                     case 1:
                         exchangeDid = _a.sent();
                         return [4 /*yield*/, write$1()];
                     case 2:
                         writeDid = _a.sent();
+                        sharedRepo = !!document.body.querySelector("iframe#webnative-ipfs") && typeof SharedWorker === "function";
                         redirectTo = redirectTo || window.location.href;
                         params = [
                             ["didExchange", exchangeDid],
                             ["didWrite", writeDid],
-                            ["redirectTo", redirectTo]
-                        ].concat(app ? [["appFolder", app.creator + "/" + app.name]] : [], fs && fs.privatePaths ? fs.privatePaths.map(function (path) { return ["privatePath", path]; }) : [], fs && fs.publicPaths ? fs.publicPaths.map(function (path) { return ["publicPath", path]; }) : []);
+                            ["redirectTo", redirectTo],
+                            ["sdk", VERSION.toString()],
+                            ["sharedRepo", sharedRepo ? "t" : "f"]
+                        ].concat(app ? [["appFolder", app.creator + "/" + app.name]] : [], (fs === null || fs === void 0 ? void 0 : fs.private) ? fs.private.map(function (p) { return ["privatePath", toPosix(p, { absolute: true })]; }) : [], (fs === null || fs === void 0 ? void 0 : fs.public) ? fs.public.map(function (p) { return ["publicPath", toPosix(p, { absolute: true })]; }) : []).concat((function () {
+                            var apps = platform === null || platform === void 0 ? void 0 : platform.apps;
+                            switch (typeof apps) {
+                                case "string": return [["app", apps]];
+                                case "object": return apps.map(function (a) { return ["app", a]; });
+                                default: return [];
+                            }
+                        })());
                         // And, go!
                         window.location.href = setup.endpoints.lobby + "?" +
                             params
@@ -60111,32 +64795,33 @@ message PBNode {
     /**
      * Get A list of all of your apps and their associated domain names
      */
-    function index$4() {
+    function index$5() {
         return __awaiter(this, void 0, void 0, function () {
-            var apiEndpoint, localUcan, jwt, _a, _b, response, data;
-            var _c;
-            return __generator(this, function (_d) {
-                switch (_d.label) {
+            var apiEndpoint, localUcan, jwt, _a, _b, _c, _d, response, data;
+            var _e;
+            return __generator(this, function (_f) {
+                switch (_f.label) {
                     case 0:
                         apiEndpoint = setup.endpoints.api;
-                        return [4 /*yield*/, lookupFilesystemUcan("*")];
+                        return [4 /*yield*/, lookupAppUcan("*")];
                     case 1:
-                        localUcan = _d.sent();
+                        localUcan = _f.sent();
                         if (localUcan === null) {
                             throw "Could not find your local UCAN";
                         }
-                        _b = (_a = ucan).build;
-                        _c = {};
+                        _b = (_a = ucan).encode;
+                        _d = (_c = ucan).build;
+                        _e = {};
                         return [4 /*yield*/, did()];
                     case 2:
-                        _c.audience = _d.sent();
+                        _e.audience = _f.sent();
                         return [4 /*yield*/, write$1()];
-                    case 3: return [4 /*yield*/, _b.apply(_a, [(_c.issuer = _d.sent(),
-                                _c.proof = encode(localUcan),
-                                _c.potency = null,
-                                _c)])];
+                    case 3: return [4 /*yield*/, _d.apply(_c, [(_e.issuer = _f.sent(),
+                                _e.proof = localUcan,
+                                _e.potency = null,
+                                _e)])];
                     case 4:
-                        jwt = _d.sent();
+                        jwt = _b.apply(_a, [_f.sent()]);
                         return [4 /*yield*/, fetch(apiEndpoint + "/app", {
                                 method: 'GET',
                                 headers: {
@@ -60144,11 +64829,14 @@ message PBNode {
                                 }
                             })];
                     case 5:
-                        response = _d.sent();
+                        response = _f.sent();
                         return [4 /*yield*/, response.json()];
                     case 6:
-                        data = _d.sent();
-                        return [2 /*return*/, data];
+                        data = _f.sent();
+                        return [2 /*return*/, Object
+                                .values(data)
+                                .filter(function (v) { return v.length > 0; })
+                                .map(function (v) { return ({ domain: v[0] }); })];
                 }
             });
         });
@@ -60158,33 +64846,36 @@ message PBNode {
      *
      * @param subdomain Subdomain to create the fission app with
      */
-    function create(subdomain) {
+    function create$1(subdomain) {
         return __awaiter(this, void 0, void 0, function () {
-            var apiEndpoint, localUcan, jwt, _a, _b, url, response, data;
-            var _c;
-            return __generator(this, function (_d) {
-                switch (_d.label) {
+            var apiEndpoint, localUcan, jwt, _a, _b, _c, _d, url, response, data;
+            var _e;
+            return __generator(this, function (_f) {
+                switch (_f.label) {
                     case 0:
                         apiEndpoint = setup.endpoints.api;
-                        return [4 /*yield*/, lookupFilesystemUcan("*")];
+                        return [4 /*yield*/, lookupAppUcan("*")];
                     case 1:
-                        localUcan = _d.sent();
+                        localUcan = _f.sent();
                         if (localUcan === null) {
                             throw "Could not find your local UCAN";
                         }
-                        _b = (_a = ucan).build;
-                        _c = {};
+                        _b = (_a = ucan).encode;
+                        _d = (_c = ucan).build;
+                        _e = {};
                         return [4 /*yield*/, did()];
                     case 2:
-                        _c.audience = _d.sent();
+                        _e.audience = _f.sent();
                         return [4 /*yield*/, write$1()];
-                    case 3: return [4 /*yield*/, _b.apply(_a, [(_c.issuer = _d.sent(),
-                                _c.proof = encode(localUcan),
-                                _c.potency = null,
-                                _c)])];
+                    case 3: return [4 /*yield*/, _d.apply(_c, [(_e.issuer = _f.sent(),
+                                _e.proof = localUcan,
+                                _e.potency = null,
+                                _e)])];
                     case 4:
-                        jwt = _d.sent();
-                        url = isDefined(subdomain) ? apiEndpoint + "/app?" + subdomain : apiEndpoint + "/app";
+                        jwt = _b.apply(_a, [_f.sent()]);
+                        url = isString(subdomain)
+                            ? apiEndpoint + "/app?subdomain=" + encodeURIComponent(subdomain)
+                            : apiEndpoint + "/app";
                         return [4 /*yield*/, fetch(url, {
                                 method: 'POST',
                                 headers: {
@@ -60192,65 +64883,131 @@ message PBNode {
                                 }
                             })];
                     case 5:
-                        response = _d.sent();
+                        response = _f.sent();
                         return [4 /*yield*/, response.json()];
                     case 6:
-                        data = _d.sent();
-                        return [2 /*return*/, data];
+                        data = _f.sent();
+                        return [2 /*return*/, { domain: data }];
                 }
             });
         });
     }
     /**
-     * Destroy app by any associated URL
+     * Destroy app by any associated domain
      *
-     * @param url The url we want to delete
+     * @param domain The domain associated with the app we want to delete
      */
-    function deleteByURL(url) {
+    function deleteByDomain(domain) {
         return __awaiter(this, void 0, void 0, function () {
-            var apiEndpoint, localUcan, jwt, _a, _b;
-            var _c;
-            return __generator(this, function (_d) {
-                switch (_d.label) {
+            var apiEndpoint, localUcan, jwt, _a, _b, _c, _d, appIndexResponse, index, appToDelete;
+            var _e;
+            return __generator(this, function (_f) {
+                switch (_f.label) {
                     case 0:
                         apiEndpoint = setup.endpoints.api;
-                        return [4 /*yield*/, lookupFilesystemUcan("*")];
+                        return [4 /*yield*/, lookupAppUcan(domain)];
                     case 1:
-                        localUcan = _d.sent();
+                        localUcan = _f.sent();
                         if (localUcan === null) {
                             throw new Error("Could not find your local UCAN");
                         }
-                        _b = (_a = ucan).build;
-                        _c = {};
+                        _b = (_a = ucan).encode;
+                        _d = (_c = ucan).build;
+                        _e = {};
                         return [4 /*yield*/, did()];
                     case 2:
-                        _c.audience = _d.sent();
+                        _e.audience = _f.sent();
                         return [4 /*yield*/, write$1()];
-                    case 3: return [4 /*yield*/, _b.apply(_a, [(_c.issuer = _d.sent(),
-                                _c.proof = encode(localUcan),
-                                _c.potency = null,
-                                _c)])];
+                    case 3: return [4 /*yield*/, _d.apply(_c, [(_e.issuer = _f.sent(),
+                                _e.proof = localUcan,
+                                _e.potency = null,
+                                _e)])];
                     case 4:
-                        jwt = _d.sent();
-                        return [4 /*yield*/, fetch(apiEndpoint + "/app/associated/" + url, {
-                                method: 'DELETE',
+                        jwt = _b.apply(_a, [_f.sent()]);
+                        return [4 /*yield*/, fetch(apiEndpoint + "/app", {
+                                method: 'GET',
                                 headers: {
                                     'authorization': "Bearer " + jwt
                                 }
                             })];
                     case 5:
-                        _d.sent();
+                        appIndexResponse = _f.sent();
+                        return [4 /*yield*/, appIndexResponse.json()];
+                    case 6:
+                        index = _f.sent();
+                        appToDelete = Object.entries(index).find(function (_a) {
+                            _a[0]; var domains = _a[1];
+                            return domains.includes(domain);
+                        });
+                        if (appToDelete == null) {
+                            throw new Error("Couldn't find an app with domain " + domain);
+                        }
+                        return [4 /*yield*/, fetch(apiEndpoint + "/app/" + encodeURIComponent(appToDelete[0]), {
+                                method: 'DELETE',
+                                headers: {
+                                    'authorization': "Bearer " + jwt
+                                }
+                            })];
+                    case 7:
+                        _f.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    }
+    /**
+     * Updates an app by CID
+     *
+     * @param subdomain Subdomain to create the fission app with
+     */
+    function publish(domain, cid) {
+        return __awaiter(this, void 0, void 0, function () {
+            var apiEndpoint, localUcan, jwt, _a, _b, _c, _d, url;
+            var _e;
+            return __generator(this, function (_f) {
+                switch (_f.label) {
+                    case 0:
+                        apiEndpoint = setup.endpoints.api;
+                        return [4 /*yield*/, lookupAppUcan(domain)];
+                    case 1:
+                        localUcan = _f.sent();
+                        if (localUcan === null) {
+                            throw "Could not find your local UCAN";
+                        }
+                        _b = (_a = ucan).encode;
+                        _d = (_c = ucan).build;
+                        _e = {};
+                        return [4 /*yield*/, did()];
+                    case 2:
+                        _e.audience = _f.sent();
+                        return [4 /*yield*/, write$1()];
+                    case 3: return [4 /*yield*/, _d.apply(_c, [(_e.issuer = _f.sent(),
+                                _e.proof = localUcan,
+                                _e.potency = null,
+                                _e)])];
+                    case 4:
+                        jwt = _b.apply(_a, [_f.sent()]);
+                        url = apiEndpoint + "/app/" + domain + "/" + cid;
+                        return [4 /*yield*/, fetch(url, {
+                                method: 'PATCH',
+                                headers: {
+                                    'authorization': "Bearer " + jwt
+                                }
+                            })];
+                    case 5:
+                        _f.sent();
                         return [2 /*return*/];
                 }
             });
         });
     }
 
-    var apps = /*#__PURE__*/Object.freeze({
+    var index$6 = /*#__PURE__*/Object.freeze({
         __proto__: null,
-        index: index$4,
-        create: create,
-        deleteByURL: deleteByURL
+        index: index$5,
+        create: create$1,
+        deleteByDomain: deleteByDomain,
+        publish: publish
     });
 
     /**
@@ -60811,44 +65568,6 @@ message PBNode {
     ];
 
     /**
-     * Create a user account.
-     */
-    function createAccount(userProps) {
-        return __awaiter(this, void 0, void 0, function () {
-            var apiEndpoint, jwt, _a, _b, response;
-            var _c;
-            return __generator(this, function (_d) {
-                switch (_d.label) {
-                    case 0:
-                        apiEndpoint = setup.endpoints.api;
-                        _b = (_a = ucan).build;
-                        _c = {};
-                        return [4 /*yield*/, did()];
-                    case 1:
-                        _c.audience = _d.sent();
-                        return [4 /*yield*/, write$1()];
-                    case 2: return [4 /*yield*/, _b.apply(_a, [(_c.issuer = _d.sent(),
-                                _c)])];
-                    case 3:
-                        jwt = _d.sent();
-                        return [4 /*yield*/, fetch(apiEndpoint + "/user", {
-                                method: 'PUT',
-                                headers: {
-                                    'authorization': "Bearer " + jwt,
-                                    'content-type': 'application/json'
-                                },
-                                body: JSON.stringify(userProps)
-                            })];
-                    case 4:
-                        response = _d.sent();
-                        return [2 /*return*/, {
-                                success: response.status < 300
-                            }];
-                }
-            });
-        });
-    }
-    /**
      * Check if a username is available.
      */
     function isUsernameAvailable(username) {
@@ -60870,13 +65589,109 @@ message PBNode {
     function isUsernameValid(username) {
         return !username.startsWith("-") &&
             !username.endsWith("-") &&
-            !!username.match(/[a-zA-Z1-9-]+/) &&
-            !USERNAME_BLOCKLIST.includes(username);
+            !username.startsWith("_") &&
+            /^[a-zA-Z0-9_-]+$/.test(username) &&
+            !USERNAME_BLOCKLIST.includes(username.toLowerCase());
     }
 
-    var index$5 = /*#__PURE__*/Object.freeze({
+    /**
+     * Create a user account.
+     */
+    function createAccount(userProps) {
+        return __awaiter(this, void 0, void 0, function () {
+            var apiEndpoint, jwt, _a, _b, _c, _d, response;
+            var _e;
+            return __generator(this, function (_f) {
+                switch (_f.label) {
+                    case 0:
+                        apiEndpoint = setup.endpoints.api;
+                        _b = (_a = ucan).encode;
+                        _d = (_c = ucan).build;
+                        _e = {};
+                        return [4 /*yield*/, did()];
+                    case 1:
+                        _e.audience = _f.sent();
+                        return [4 /*yield*/, write$1()];
+                    case 2: return [4 /*yield*/, _d.apply(_c, [(_e.issuer = _f.sent(),
+                                _e)])];
+                    case 3:
+                        jwt = _b.apply(_a, [_f.sent()]);
+                        return [4 /*yield*/, fetch(apiEndpoint + "/user", {
+                                method: 'PUT',
+                                headers: {
+                                    'authorization': "Bearer " + jwt,
+                                    'content-type': 'application/json'
+                                },
+                                body: JSON.stringify(userProps)
+                            })];
+                    case 4:
+                        response = _f.sent();
+                        return [2 /*return*/, {
+                                success: response.status < 300
+                            }];
+                }
+            });
+        });
+    }
+    /**
+     * Ask the fission server to send another verification email to the
+     * user currently logged in.
+     *
+     * Throws if the user is not logged in.
+     */
+    function resendVerificationEmail() {
+        return __awaiter(this, void 0, void 0, function () {
+            var apiEndpoint, localUcan, jwt, _a, _b, response;
+            var _c;
+            return __generator(this, function (_d) {
+                switch (_d.label) {
+                    case 0:
+                        apiEndpoint = setup.endpoints.api;
+                        return [4 /*yield*/, lookupFilesystemUcan("*")];
+                    case 1:
+                        localUcan = _d.sent();
+                        if (localUcan === null) {
+                            throw "Could not find your local UCAN";
+                        }
+                        _b = (_a = ucan).build;
+                        _c = {};
+                        return [4 /*yield*/, did()];
+                    case 2:
+                        _c.audience = _d.sent();
+                        return [4 /*yield*/, write$1()];
+                    case 3: return [4 /*yield*/, _b.apply(_a, [(_c.issuer = _d.sent(),
+                                _c.proof = localUcan,
+                                _c.potency = null,
+                                _c)])];
+                    case 4:
+                        jwt = _d.sent();
+                        return [4 /*yield*/, fetch(apiEndpoint + "/user/email/resend", {
+                                method: 'POST',
+                                headers: {
+                                    'authorization': "Bearer " + jwt
+                                }
+                            })];
+                    case 5:
+                        response = _d.sent();
+                        return [2 /*return*/, {
+                                success: response.status < 300
+                            }];
+                }
+            });
+        });
+    }
+    /**
+     * Store the read key for the root `PrivateTree` (ie. `/private`)
+     */
+    function storeFileSystemRootKey(key) {
+        return RootTree.storeRootKey(key);
+    }
+
+    var index$7 = /*#__PURE__*/Object.freeze({
         __proto__: null,
         createAccount: createAccount,
+        resendVerificationEmail: resendVerificationEmail,
+        storeFileSystemRootKey: storeFileSystemRootKey,
         isUsernameAvailable: isUsernameAvailable,
         isUsernameValid: isUsernameValid
     });
@@ -60912,7 +65727,8 @@ message PBNode {
     var setup$1 = /*#__PURE__*/Object.freeze({
         __proto__: null,
         debug: debug,
-        endpoints: endpoints
+        endpoints: endpoints,
+        setDependencies: setDependencies
     });
 
     (function (Scenario) {
@@ -60935,14 +65751,14 @@ message PBNode {
      */
     function initialise(options) {
         return __awaiter(this, void 0, void 0, function () {
-            var permissions, _a, autoRemoveUrlParams, _b, maybeLoadFs, url, cancellation, ucans, newUser, encryptedReadKey, username, ks, readKey, _c, _d, c, authedUsername, _e, _f, _g;
+            var permissions, _a, autoRemoveUrlParams, rootKey, _b, maybeLoadFs, url, authorised, cancellation, newUser, username, _c, _d, _e, _f, _g, c, authedUsername, validSecrets, validUcans, _h, _j, _k, _l;
             var _this = this;
-            return __generator(this, function (_h) {
-                switch (_h.label) {
+            return __generator(this, function (_m) {
+                switch (_m.label) {
                     case 0:
                         options = options || {};
                         permissions = options.permissions || null;
-                        _a = options.autoRemoveUrlParams, autoRemoveUrlParams = _a === void 0 ? true : _a;
+                        _a = options.autoRemoveUrlParams, autoRemoveUrlParams = _a === void 0 ? true : _a, rootKey = options.rootKey;
                         _b = permissions || {}, _b.app, _b.fs;
                         maybeLoadFs = function (username) { return __awaiter(_this, void 0, void 0, function () {
                             var _a;
@@ -60952,7 +65768,7 @@ message PBNode {
                                         if (!(options.loadFileSystem === false)) return [3 /*break*/, 1];
                                         _a = undefined;
                                         return [3 /*break*/, 3];
-                                    case 1: return [4 /*yield*/, loadFileSystem(permissions, username)];
+                                    case 1: return [4 /*yield*/, loadFileSystem(permissions, username, rootKey)];
                                     case 2:
                                         _a = _b.sent();
                                         _b.label = 3;
@@ -60965,51 +65781,58 @@ message PBNode {
                             throw exports.InitialisationError.InsecureContext;
                         return [4 /*yield*/, isSupported()];
                     case 1:
-                        if ((_h.sent()) === false)
+                        if ((_m.sent()) === false)
                             throw exports.InitialisationError.UnsupportedBrowser;
                         url = new URL(window.location.href);
+                        authorised = url.searchParams.get("authorised");
                         cancellation = url.searchParams.get("cancelled");
-                        ucans = url.searchParams.get("ucans");
-                        // Add UCANs to the storage
-                        return [4 /*yield*/, store(ucans ? ucans.split(",") : [])
-                            // Determine scenario
-                        ];
-                    case 2:
-                        // Add UCANs to the storage
-                        _h.sent();
-                        if (!ucans) return [3 /*break*/, 8];
+                        if (!authorised) return [3 /*break*/, 11];
                         newUser = url.searchParams.get("newUser") === "t";
-                        encryptedReadKey = url.searchParams.get("readKey") || "";
                         username = url.searchParams.get("username") || "";
-                        return [4 /*yield*/, get()];
-                    case 3:
-                        ks = _h.sent();
-                        return [4 /*yield*/, ks.decrypt(makeUrlUnsafe(encryptedReadKey))];
+                        _c = importClassifiedInfo;
+                        if (!(authorised === "via-postmessage")) return [3 /*break*/, 3];
+                        return [4 /*yield*/, getClassifiedViaPostMessage()];
+                    case 2:
+                        _d = _m.sent();
+                        return [3 /*break*/, 5];
+                    case 3: return [4 /*yield*/, cat(authorised)]; // in any other case we expect it to be a CID
                     case 4:
-                        readKey = _h.sent();
-                        return [4 /*yield*/, ks.importSymmKey(readKey, READ_KEY_FROM_LOBBY_NAME)];
-                    case 5:
-                        _h.sent();
-                        return [4 /*yield*/, localforage.setItem(USERNAME_STORAGE_KEY, username)];
+                        _d = _m.sent(); // in any other case we expect it to be a CID
+                        _m.label = 5;
+                    case 5: return [4 /*yield*/, _c.apply(void 0, [_d])];
                     case 6:
-                        _h.sent();
+                        _m.sent();
+                        return [4 /*yield*/, setItem$1(USERNAME_STORAGE_KEY, username)];
+                    case 7:
+                        _m.sent();
                         if (autoRemoveUrlParams) {
+                            url.searchParams.delete("authorised");
                             url.searchParams.delete("newUser");
-                            url.searchParams.delete("readKey");
-                            url.searchParams.delete("ucans");
                             url.searchParams.delete("username");
                             history.replaceState(null, document.title, url.toString());
                         }
-                        if (permissions && validatePermissions(permissions) === false) {
+                        _e = permissions;
+                        if (!_e) return [3 /*break*/, 9];
+                        return [4 /*yield*/, validateSecrets(permissions)];
+                    case 8:
+                        _e = (_m.sent()) === false;
+                        _m.label = 9;
+                    case 9:
+                        if (_e) {
+                            console.warn("Unable to validate filesystem secrets");
                             return [2 /*return*/, scenarioNotAuthorised(permissions)];
                         }
-                        _c = scenarioAuthSucceeded;
-                        _d = [permissions,
+                        if (permissions && validatePermissions(permissions) === false) {
+                            console.warn("Unable to validate UCAN permissions");
+                            return [2 /*return*/, scenarioNotAuthorised(permissions)];
+                        }
+                        _f = scenarioAuthSucceeded;
+                        _g = [permissions,
                             newUser,
                             username];
                         return [4 /*yield*/, maybeLoadFs(username)];
-                    case 7: return [2 /*return*/, _c.apply(void 0, _d.concat([_h.sent()]))];
-                    case 8:
+                    case 10: return [2 /*return*/, _f.apply(void 0, _g.concat([_m.sent()]))];
+                    case 11:
                         if (cancellation) {
                             c = (function (_) {
                                 switch (cancellation) {
@@ -61019,22 +65842,34 @@ message PBNode {
                             })();
                             return [2 /*return*/, scenarioAuthCancelled(permissions, c)];
                         }
-                        _h.label = 9;
-                    case 9: return [4 /*yield*/, authenticatedUsername()];
-                    case 10:
-                        authedUsername = _h.sent();
-                        if (!(authedUsername &&
-                            (permissions ? validatePermissions(permissions) : true))) return [3 /*break*/, 12];
-                        _f = scenarioContinuation;
-                        _g = [permissions, authedUsername];
+                        else {
+                            // trigger build for internal ucan dictionary
+                            store([]);
+                        }
+                        _m.label = 12;
+                    case 12: return [4 /*yield*/, authenticatedUsername()];
+                    case 13:
+                        authedUsername = _m.sent();
+                        if (!(authedUsername && permissions)) return [3 /*break*/, 18];
+                        return [4 /*yield*/, validateSecrets(permissions)];
+                    case 14:
+                        validSecrets = _m.sent();
+                        validUcans = validatePermissions(permissions);
+                        if (!(validSecrets && validUcans)) return [3 /*break*/, 16];
+                        _h = scenarioContinuation;
+                        _j = [permissions, authedUsername];
                         return [4 /*yield*/, maybeLoadFs(authedUsername)];
-                    case 11:
-                        _e = _f.apply(void 0, _g.concat([_h.sent()]));
-                        return [3 /*break*/, 13];
-                    case 12:
-                        _e = scenarioNotAuthorised(permissions);
-                        _h.label = 13;
-                    case 13: return [2 /*return*/, _e];
+                    case 15: return [2 /*return*/, _h.apply(void 0, _j.concat([_m.sent()]))];
+                    case 16: return [2 /*return*/, scenarioNotAuthorised(permissions)];
+                    case 17: return [3 /*break*/, 21];
+                    case 18:
+                        if (!authedUsername) return [3 /*break*/, 20];
+                        _k = scenarioContinuation;
+                        _l = [permissions, authedUsername];
+                        return [4 /*yield*/, maybeLoadFs(authedUsername)];
+                    case 19: return [2 /*return*/, _k.apply(void 0, _l.concat([_m.sent()]))];
+                    case 20: return [2 /*return*/, scenarioNotAuthorised(permissions)];
+                    case 21: return [2 /*return*/];
                 }
             });
         });
@@ -61101,9 +65936,144 @@ message PBNode {
             authenticated: false
         };
     }
+    function importClassifiedInfo(classified) {
+        return __awaiter(this, void 0, void 0, function () {
+            var info, rawSessionKey, secretsStr, secrets, fsSecrets, ucans;
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        info = JSON.parse(classified);
+                        return [4 /*yield*/, keystore$2.decrypt(info.sessionKey)
+                            // Decrypt secrets
+                        ];
+                    case 1:
+                        rawSessionKey = _a.sent();
+                        return [4 /*yield*/, aes$2.decryptGCM(info.secrets, rawSessionKey, info.iv)];
+                    case 2:
+                        secretsStr = _a.sent();
+                        secrets = JSON.parse(secretsStr);
+                        fsSecrets = secrets.fs;
+                        ucans = secrets.ucans;
+                        // Import read keys and bare name filters
+                        return [4 /*yield*/, Promise.all(Object.entries(fsSecrets).map(function (_a) {
+                                var posixPath = _a[0], _b = _a[1], bareNameFilter$1 = _b.bareNameFilter, key = _b.key;
+                                return __awaiter(_this, void 0, void 0, function () {
+                                    var path, readKeyId, bareNameFilterId;
+                                    return __generator(this, function (_c) {
+                                        switch (_c.label) {
+                                            case 0:
+                                                path = fromPosix(posixPath);
+                                                return [4 /*yield*/, readKey({ path: path })];
+                                            case 1:
+                                                readKeyId = _c.sent();
+                                                return [4 /*yield*/, bareNameFilter({ path: path })];
+                                            case 2:
+                                                bareNameFilterId = _c.sent();
+                                                return [4 /*yield*/, keystore$2.importSymmKey(key, readKeyId)];
+                                            case 3:
+                                                _c.sent();
+                                                return [4 /*yield*/, setItem$1(bareNameFilterId, bareNameFilter$1)];
+                                            case 4:
+                                                _c.sent();
+                                                return [2 /*return*/];
+                                        }
+                                    });
+                                });
+                            }))
+                            // Add UCANs to the storage
+                        ];
+                    case 3:
+                        // Import read keys and bare name filters
+                        _a.sent();
+                        // Add UCANs to the storage
+                        return [4 /*yield*/, store(ucans)];
+                    case 4:
+                        // Add UCANs to the storage
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    }
+    function getClassifiedViaPostMessage() {
+        return __awaiter(this, void 0, void 0, function () {
+            var iframe, answer, message;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, new Promise(function (resolve, reject) {
+                            var iframe = document.createElement("iframe");
+                            iframe.id = "webnative-secret-exchange";
+                            iframe.style.width = "0";
+                            iframe.style.height = "0";
+                            iframe.style.border = "none";
+                            iframe.style.display = "none";
+                            document.body.appendChild(iframe);
+                            iframe.onload = function () {
+                                resolve(iframe);
+                            };
+                            iframe.src = setup.endpoints.lobby + "/exchange.html";
+                        })];
+                    case 1:
+                        iframe = _a.sent();
+                        _a.label = 2;
+                    case 2:
+                        _a.trys.push([2, , 4, 5]);
+                        answer = new Promise(function (resolve, reject) {
+                            window.addEventListener("message", listen);
+                            function listen(event) {
+                                window.removeEventListener("message", listen);
+                                if (event.data) {
+                                    resolve(event.data);
+                                }
+                                else {
+                                    reject(new Error("Can't import UCANs & readKey(s): Missing data"));
+                                }
+                            }
+                        });
+                        if (iframe.contentWindow == null)
+                            throw new Error("Can't import UCANs & readKey(s): No access to its contentWindow");
+                        message = { webnative: "exchange-secrets" };
+                        iframe.contentWindow.postMessage(message, iframe.src);
+                        return [4 /*yield*/, answer];
+                    case 3: return [2 /*return*/, _a.sent()];
+                    case 4:
+                        document.body.removeChild(iframe);
+                        return [7 /*endfinally*/];
+                    case 5: return [2 /*return*/];
+                }
+            });
+        });
+    }
+    function validateSecrets(permissions) {
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                return [2 /*return*/, paths(permissions).reduce(function (acc, path) { return acc.then(function (bool) { return __awaiter(_this, void 0, void 0, function () {
+                        var keyName;
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0:
+                                    if (bool === false)
+                                        return [2 /*return*/, bool];
+                                    if (isBranch(Branch.Public, path))
+                                        return [2 /*return*/, bool];
+                                    return [4 /*yield*/, readKey({ path: path })];
+                                case 1:
+                                    keyName = _a.sent();
+                                    return [4 /*yield*/, keystore$2.keyExists(keyName)];
+                                case 2: return [2 /*return*/, _a.sent()];
+                            }
+                        });
+                    }); }); }, Promise.resolve(true))];
+            });
+        });
+    }
 
-    exports.apps = apps;
+    exports.VERSION = VERSION;
+    exports.apps = index$6;
     exports.authenticatedUsername = authenticatedUsername$1;
+    exports.crypto = index$2;
     exports.dataRoot = dataRoot;
     exports.did = did$1;
     exports.dns = index;
@@ -61111,12 +66081,14 @@ message PBNode {
     exports.fs = fs;
     exports.initialise = initialise;
     exports.initialize = initialise;
-    exports.ipfs = index$2;
+    exports.ipfs = index$3;
     exports.isSupported = isSupported;
-    exports.keystore = index$1;
+    exports.keystore = keystore$1;
     exports.leave = leave;
     exports.loadFileSystem = loadFileSystem;
-    exports.lobby = index$5;
+    exports.lobby = index$7;
+    exports.machinery = index$1;
+    exports.path = pathing;
     exports.redirectToLobby = redirectToLobby;
     exports.setup = setup$1;
     exports.ucan = ucan;

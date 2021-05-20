@@ -34,8 +34,12 @@ Browse the Webnative filing system here:
 
 <div class="tc-fission-file-picker">
 
-#.tc-fission-file-picker-private {{private/||$:/plugins/tiddlywiki/fission/list-directory}}
-#.tc-fission-file-picker-public {{public/||$:/plugins/tiddlywiki/fission/list-directory}}
+#.tc-fission-file-picker-private {{private||$:/plugins/tiddlywiki/fission/list-directory}}
+#.tc-fission-file-picker-public {{public||$:/plugins/tiddlywiki/fission/list-directory}}
+
+<$button message="tm-fission-leave">
+Log out of Fission
+</$button>
 
 </div>
 

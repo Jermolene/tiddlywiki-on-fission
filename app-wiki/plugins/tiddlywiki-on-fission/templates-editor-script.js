@@ -6,15 +6,6 @@ This script is run as part of the editor loader, and doesn't run under TiddlyWik
 
 "use strict";
 
-const fissionInit = {
-	permissions: {
-		app: {
-			name: "tiddlywiki-on-fission",
-			creator: "tiddlywiki"
-		}
-	}
-};
-
 window.webnativeDetails = {
 	fs: null,
 	permissions: null
@@ -47,6 +38,14 @@ document.addEventListener("DOMContentLoaded",function(event) {
 });
 
 function initialiseWebnative(callback) {
+	const fissionInit = {
+		permissions: {
+			app: {
+				name: "tiddlywiki-on-fission",
+				creator: "tiddlywiki"
+			}
+		}
+	};
 	window.webnative.initialize(fissionInit).then(function(state) {
 		console.log("state",state)
 		switch (state.scenario) {
@@ -70,14 +69,14 @@ function initialiseWebnative(callback) {
 
 async function loadWiki(userFilepath,editionPath,initialisationHandler) {
 	editionPath = editionPath || "editions/tiddlywiki.com/index.html";
-	const realFilepath = convertUserFilepath(userFilepath);
-	console.log(`Loading wiki from userpath ${userFilepath} (absolute path ${realFilepath})`);
+	const realFilepath = convertUserFilepathToSystemFilepath(cleanPath(userFilepath));
+	console.log(`Loading wiki from userpath ${userFilepath} (absolute path ${realFilepath.file.join("/")})`);
 	const iframe = document.getElementsByTagName("iframe")[0];
 	// Set up the message channel for talking to the iframe
 	iframe.addEventListener("load",function() {
 		// Subscribe to saving messages
 		enableSaving(iframe.contentDocument,function(text,callback) {
-			console.log("Saving to: " + realFilepath)
+			console.log("Saving to: " + realFilepath.file.join("/"))
 			webnativeDetails.fs.write(realFilepath,text).then(function() {
 				webnativeDetails.fs.publish().then(function() {
 					callback(null);
@@ -125,14 +124,33 @@ async function loadWiki(userFilepath,editionPath,initialisationHandler) {
 }
 
 /*
+Clean up a path by removing leading and trailing slashes and returning the parts as an array
+*/
+function cleanPath(filepath) {
+	return filepath.split("/").filter(part => part !== "");
+}
+
+/*
 Convert a user-facing path to a real absolute path by replacing `private/` with the app folder
 */
-function convertUserFilepath(userFilepath) {
-	if(webnativeDetails.fs && userFilepath.startsWith("private")) {
-		return webnativeDetails.fs.appPath() + userFilepath.slice("private".length);
-	} else {
-		return userFilepath;
+function convertUserFilepathToSystemFilepath(userFilepathParts) {
+	let root;
+	switch(userFilepathParts[0]) {
+		case "private":
+			root = webnativeDetails.fs.appPath().directory;
+			break;
+		case "public":
+			root = [webnative.path.Branch.Public];
+			break;
+		case "pretty":
+			root = [webnative.path.Branch.Pretty];
+			break;
+		default:
+			userFilepathParts.unshift("private");
+			root = [webnative.path.Branch.Private];
+			break;
 	}
+	return webnative.path.file.apply(null,root.concat(userFilepathParts.slice(1)));
 }
 
 

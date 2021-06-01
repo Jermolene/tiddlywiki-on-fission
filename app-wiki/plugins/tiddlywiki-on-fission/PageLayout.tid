@@ -13,5 +13,5 @@ description: ~TiddlyWiki on Fission Custom Page Layout
 <$transclude tiddler="HelloThere" mode="block"/>
 <$button set="$:/layout" setTo="$:/core/ui/PageTemplate">
 Switch to ~TiddlyWiki user interface
-</$button>
+</$button> (or type <kbd>ctrl-shift-L</kbd>)
 </div>

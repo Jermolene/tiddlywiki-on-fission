@@ -1,0 +1,78 @@
+title: $:/plugins/tiddlywiki/tiddlywiki-on-fission/readme
+
+! Fission Status
+
+The tiddler `$:/state/fission/status` provides a code indicating the current status of the connection to Fission. It may contain the following values:
+
+* ''INITIALISING'': Fission is initialising
+* ''AUTHORISED'': Fission is authorised
+* ''NOTAUTHORISED'': Fission is not authorised
+
+! Authorising with Fission
+
+The authorisation process is initialised with the `tm-fission-authorise` message:
+
+```
+<$button message="tm-fission-authorise">
+Authorise with Fission
+</$button>
+```
+
+! Logging out of Fission
+
+The user is logged out of Fission with the `tm-fission-leave` message:
+
+```
+<$button message="tm-fission-leave">
+Log out of Fission
+</$button>
+```
+
+! Obtaining Directory Listings
+
+Initiate reading information about the entries in a Fission file directory with the `tm-fission-list-directory` message. A tiddler is created to describe each directory entry (see below)
+
+The `tm-fission-list-directory` takes the following parameters:
+
+* ''path'': path of folder. The special root directory ''private'' refers to the TiddlyWiki on Fission application folder
+* ''statusTitle'': optional title of tiddler to contain status information while the directory is being read
+* ''resultPrefix'': prefix to be used for titles of directory entry tiddlers. Defaults to `$:/temp/fission/filesystem/` plus the path and an extra slash
+
+The status information is as follows:
+
+* ''PENDING'': The request is pending
+* ''FINISHED'': The request is finished
+
+Note that any existing tiddlers with the specified result prefix will be overwritten or deleted by this operation.
+
+The directory entry tiddlers have the following fields:
+
+* ''title'': The result prefix plus the name of the directory entry
+* ''tags'': "$:/tags/FissionFileListing"
+* ''parent'': Parent path of this directory entry
+* ''name'': Name of this directory entry
+* ''path'': Full path of this directory entry
+* ''public-path'': If available, the full public URL corresponding to this 
+* ''modified'': Last modification date and time of this directory entry
+* ''size'': Size of this directory entry
+* ''is-file'': `yes` if this directory entry is a file, or `no` if not
+
+```
+<$button>
+<$action-sendmessage $message="tm-list-directory" path="public"/>
+List directory "public"
+</$button>
+
+<ul>
+<$list filter="[prefix[$:/temp/fission/filesystem/]sort[name]]">
+<li>
+<$link><$view field="path"/></$link>
+</li>
+</$list>
+<ul>
+```
+
+! Opening TiddlyWiki documents
+
+tm-fission-open-tiddlywiki
+

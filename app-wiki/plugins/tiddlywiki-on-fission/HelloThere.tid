@@ -8,11 +8,19 @@ This tool lets you directly edit [[TiddlyWiki|https://tiddlywiki.com/]] files st
 
 <div class="tc-fission-warning">
 
-This is a very early proof of concept release, and is not yet in a state where you should trust it with important data. Please see the warnings below.
+~TiddlyWiki on Fission is under active development, and is not yet in a state where you should trust it with important data. Please see the warnings below.
 
 </div>
 
-<$reveal stateTitle="$:/state/UserName" type="match" text="" default="">
+<$reveal stateTitle="$:/state/fission/status" type="match" text="INITIALISING" tag="div" class="tc-fission-authorising">
+
+<$image width="80px" source="$:/plugins/tiddlywiki/fission/spacecat"/>
+
+''(Authorising with Fission)''
+
+</$reveal>
+
+<$reveal stateTitle="$:/state/fission/status" type="match" text="NOTAUTHORISED">
 
 Before starting, you'll need to authorise with Fission by clicking this button. Then you'll be able to create a new account or log into an existing account:
 
@@ -22,26 +30,29 @@ Authorise with Fission
 
 </$reveal>
 
-<$reveal stateTitle="$:/state/UserName" type="nomatch" text="" default="">
+<$reveal stateTitle="$:/state/fission/status" type="match" text="AUTHORISED">
 
 You are logged into Fission as: ''<$text text={{$:/state/UserName}}/>''
 
-Browse the Webnative filing system here:
+Browse the Webnative filing system:
+
+<div class="tc-fission-file-picker-wrapper">
+
+@@.tc-fission-file-picker
+#.tc-fission-file-picker-private {{private||$:/plugins/tiddlywiki/fission/list-directory}}
+#.tc-fission-file-picker-public {{public||$:/plugins/tiddlywiki/fission/list-directory}}
+@@
+
+</div>
 
 * Click on a folder to open it and see the contents
 * Click on the "+" next to a folder to create a new empty ~TiddlyWiki in that folder
 * Click on a green `.html` file to open it for editing
 
-<div class="tc-fission-file-picker">
-
-#.tc-fission-file-picker-private {{private||$:/plugins/tiddlywiki/fission/list-directory}}
-#.tc-fission-file-picker-public {{public||$:/plugins/tiddlywiki/fission/list-directory}}
-
 <$button message="tm-fission-leave">
 Log out of Fission
 </$button>
 
-</div>
 
 </$reveal>
 

@@ -30,7 +30,12 @@ function Fission() {
 	this.webnative = require("$:/plugins/tiddlywiki/fission/webnative.js");
 	this.webnative.setup.debug({ enabled: true });
 	this.windows = [];
+	this.setStatus("INITIALISING");
 }
+
+Fission.prototype.setStatus = function(status) {
+	$tw.wiki.addTiddler({title: "$:/state/fission/status",text: status});
+};
 
 Fission.prototype.initialise = function(callback) {
 	var self = this;
@@ -48,15 +53,23 @@ Fission.prototype.initialise = function(callback) {
 		return false;
 	});
 	$tw.rootWidget.addEventListener("tm-fission-list-directory",function(event) {
-		if(self.fs && self.permissions) {
-			const userFilepath = self.cleanPath(event.param),
-				systemFilepath = self.convertUserDirpathToSystemDirpath(userFilepath);
+		if(self.fs && self.permissions && event.paramObject && event.paramObject.path) {
+			const userFilepath = self.cleanPath(event.paramObject.path),
+				systemFilepath = self.convertUserDirpathToSystemDirpath(userFilepath),
+				resultPrefix = event.paramObject.resultPrefix || ("$:/temp/fission/filesystem/" + userFilepath + "/"),
+				statusTitle = event.paramObject.statusTitle;
+			if(statusTitle) {
+				$tw.wiki.addTiddler({title: statusTitle, text: "PENDING"});
+			}
 			self.fs.ls(systemFilepath).then(function(data) {
-				$tw.utils.each(Object.keys(data),function(name) {
+					if(statusTitle) {
+						$tw.wiki.addTiddler({title: statusTitle, text: "FINISHED"});
+					}
+					$tw.utils.each(Object.keys(data),function(name) {
 					var info = data[name],
 						userFilepathString = userFilepath.join("/");
 					$tw.wiki.addTiddler({
-						title: "$:/temp/fission/filesystem/" + userFilepathString + "/" + name,
+						title: resultPrefix + name,
 						tags: "$:/tags/FissionFileListing",
 						parent: userFilepathString,
 						name: name,
@@ -119,6 +132,7 @@ Fission.prototype.initialise = function(callback) {
 				console.log("webnative.Scenario.AuthSucceeded");
 			case self.webnative.Scenario.Continuation:
 				console.log("webnative.Scenario.Continuation");
+				self.setStatus("AUTHORISED");
 				self.fs = state.fs;
 				self.username = state.username;
 				self.setUserName(state.username);
@@ -136,6 +150,7 @@ Fission.prototype.initialise = function(callback) {
 			console.log("webnative.Scenario.NotAuthorised");
 		case self.webnative.Scenario.AuthCancelled:
 			console.log("webnative.Scenario.AuthCancelled");
+			self.setStatus("NOTAUTHORISED");
 			self.setUserName("");
 			callback();
 			break;

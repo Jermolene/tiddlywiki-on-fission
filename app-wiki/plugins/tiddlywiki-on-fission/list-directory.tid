@@ -4,7 +4,7 @@ title: $:/plugins/tiddlywiki/fission/list-directory
 <$set name="currentTiddler" value={{{ [tag[$:/tags/FissionFileListing]!is[draft]field:path<path>] }}}>
 <div class="tc-fission-file-picker-heading">
 <$button class="tc-fission-file-picker-folder-button" tooltip="Open this folder">
-<$action-sendmessage $message="tm-fission-list-directory" $param=<<path>>/>
+<$action-sendmessage $message="tm-fission-list-directory" path=<<path>>/>
 {{$:/core/images/folder}} ''<$text text=<<path>>/>''
 </$button>
 <$button class="tc-btn-invisible">

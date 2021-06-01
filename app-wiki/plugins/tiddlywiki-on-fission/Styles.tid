@@ -58,9 +58,30 @@ tags: $:/tags/Stylesheet
  
 @keyframes marching-ants { to { background-position: 100% 100% } }
 
+/* Authentication Animation */
+
+.tc-fission-authorising {
+	padding-top: 3em;
+	text-align: center;
+}
+
+.tc-fission-authorising img {
+	transform-origin: 50% 50%;
+	animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin { 100% { transform:rotate(360deg); } }
+
 /* File Picker */
 
-.tc-fission-file-picker ol {
+.tc-fission-file-picker-wrapper {
+	border: 1px solid <<colour muted-foreground>>;
+	border-radius: 4px;
+	background-color: #f8f8fe;
+	<<box-shadow "inset 1px 2px 3px rgba(0,0,0,0.1)">>
+}
+
+ol.tc-fission-file-picker {
 	list-style: none;
 	padding-left: 1em;
 }
@@ -82,22 +103,28 @@ tags: $:/tags/Stylesheet
 	fill: <<colour foreground>>;
     padding: 4px 8px;
     border-radius: 6px;
-    margin-bottom: 8px;
+    margin-bottom: 0.5em;
 }
 
-.tc-fission-file-picker ol > li.tc-fission-file-picker-private .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                                                   {background: #c2d5ff}
-.tc-fission-file-picker ol > li.tc-fission-file-picker-private > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                                         {background: #afe0f9}
-.tc-fission-file-picker ol > li.tc-fission-file-picker-private > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                               {background: #99ebf8}
-.tc-fission-file-picker ol > li.tc-fission-file-picker-private > ol > li > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                     {background: #8feaf0}
-.tc-fission-file-picker ol > li.tc-fission-file-picker-private > ol > li > ol > li > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button           {background: #8fddd9}
-.tc-fission-file-picker ol > li.tc-fission-file-picker-private > ol > li > ol > li > ol > li > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button {background: #96c3ba}
+.tc-fission-file-picker-folder-button svg,
+.tc-fission-file-picker-file-button svg,
+.tc-fission-file-picker-unknown-file svg {
+    vertical-align: text-bottom;
+}
 
-.tc-fission-file-picker ol > li.tc-fission-file-picker-public .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                                                    {background: #ff8a8f}
-.tc-fission-file-picker ol > li.tc-fission-file-picker-public > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                                          {background: #ff9082}
-.tc-fission-file-picker ol > li.tc-fission-file-picker-public > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                                {background: #ffa56d}
-.tc-fission-file-picker ol > li.tc-fission-file-picker-public > ol > li > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                      {background: #ffcd57}
-.tc-fission-file-picker ol > li.tc-fission-file-picker-public > ol > li > ol > li > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button            {background: #ffe948}
-.tc-fission-file-picker ol > li.tc-fission-file-picker-public > ol > li > ol > li > ol > li > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button  {background: #fff143}
+ol.tc-fission-file-picker > li.tc-fission-file-picker-private .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                                                   {background: #c2d5ff}
+ol.tc-fission-file-picker > li.tc-fission-file-picker-private > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                                         {background: #afe0f9}
+ol.tc-fission-file-picker > li.tc-fission-file-picker-private > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                               {background: #99ebf8}
+ol.tc-fission-file-picker > li.tc-fission-file-picker-private > ol > li > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                     {background: #8feaf0}
+ol.tc-fission-file-picker > li.tc-fission-file-picker-private > ol > li > ol > li > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button           {background: #8fddd9}
+ol.tc-fission-file-picker > li.tc-fission-file-picker-private > ol > li > ol > li > ol > li > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button {background: #96c3ba}
+
+ol.tc-fission-file-picker > li.tc-fission-file-picker-public .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                                                    {background: #ff8a8f}
+ol.tc-fission-file-picker > li.tc-fission-file-picker-public > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                                          {background: #ff9082}
+ol.tc-fission-file-picker > li.tc-fission-file-picker-public > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                                {background: #ffa56d}
+ol.tc-fission-file-picker > li.tc-fission-file-picker-public > ol > li > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button                      {background: #ffcd57}
+ol.tc-fission-file-picker > li.tc-fission-file-picker-public > ol > li > ol > li > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button            {background: #ffe948}
+ol.tc-fission-file-picker > li.tc-fission-file-picker-public > ol > li > ol > li > ol > li > ol > li > ol > li .tc-fission-file-picker-heading .tc-fission-file-picker-folder-button  {background: #fff143}
 
 .tc-fission-file-picker-file-button {
 	background: #8aec6b;	
@@ -105,7 +132,7 @@ tags: $:/tags/Stylesheet
 
 .tc-fission-file-picker-unknown-file {
 	display: inline-block;
-	background: #eeeeee;
+	background: #d9d9d9;
 }
 
 /* Create New Wiki Modal */

@@ -3,7 +3,7 @@ footer: <$button message="tm-close-tiddler">Cancel</$button>
 subtitle: Create a new ~TiddlyWiki file
 
 \define create-new-wiki()
-<$action-sendmessage $message="tm-fission-open-tiddlywiki" $param={{{ [<wikiNameTiddler>get[text]!suffix[.html]addsuffix[.html]] [<wikiNameTiddler>get[text]suffix[.html]] ~[[index.html]] +[addprefix[/]addprefix<path>] }}} edition={{{ [<editionTitleTiddler>get[text]else<defaultEditionTitle>get[file-path]] }}}/>
+<$action-sendmessage $message="tm-fission-open-tiddlywiki" path={{{ [<wikiNameTiddler>get[text]!suffix[.html]addsuffix[.html]] [<wikiNameTiddler>get[text]suffix[.html]] ~[[index.html]] +[addprefix[/]addprefix<path>] }}} edition={{{ [<editionTitleTiddler>get[text]else<defaultEditionTitle>get[file-path]] }}}/>
 <$action-log/>
 <$action-deletetiddler $tiddler=<<popupState>>/>
 <$action-sendmessage $message="tm-close-tiddler"/>

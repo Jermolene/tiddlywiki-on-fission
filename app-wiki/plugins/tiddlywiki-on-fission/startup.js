@@ -88,10 +88,10 @@ Fission.prototype.initialise = function(callback) {
 		return false;
 	});
 	$tw.rootWidget.addEventListener("tm-fission-open-tiddlywiki",function(event) {
-		if(self.fs && self.permissions) {
+		if(self.fs && self.permissions && event.paramObject && event.paramObject.path) {
 			// Open the wiki
 			var domLink = document.createElement("a");
-			const filepath = self.cleanPath(event.param).join("/");
+			const filepath = self.cleanPath(event.paramObject.path).join("/");
 			var params = [`path=${filepath}`];
 			if(event.paramObject && event.paramObject.edition) {
 				const editionURL = event.paramObject.edition;

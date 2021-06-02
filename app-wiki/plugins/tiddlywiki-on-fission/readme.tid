@@ -32,9 +32,9 @@ Log out of Fission
 
 Initiate reading information about the entries in a Fission file directory with the `tm-fission-list-directory` message. A tiddler is created to describe each directory entry (see below)
 
-The `tm-fission-list-directory` takes the following parameters:
+The `tm-fission-list-directory` message takes the following parameters:
 
-* ''path'': path of folder. The special root directory ''private'' refers to the TiddlyWiki on Fission application folder
+* ''path'': path of folder. The special root directory ''private'' refers to the ~TiddlyWiki on Fission application folder
 * ''statusTitle'': optional title of tiddler to contain status information while the directory is being read
 * ''resultPrefix'': prefix to be used for titles of directory entry tiddlers. Defaults to `$:/temp/fission/filesystem/` plus the path and an extra slash
 
@@ -48,7 +48,7 @@ Note that any existing tiddlers with the specified result prefix will be overwri
 The directory entry tiddlers have the following fields:
 
 * ''title'': The result prefix plus the name of the directory entry
-* ''tags'': "$:/tags/FissionFileListing"
+* ''tags'': `$:/tags/FissionFileListing`
 * ''parent'': Parent path of this directory entry
 * ''name'': Name of this directory entry
 * ''path'': Full path of this directory entry
@@ -72,7 +72,31 @@ List directory "public"
 <ul>
 ```
 
-! Opening TiddlyWiki documents
+! Opening ~TiddlyWiki documents
 
-tm-fission-open-tiddlywiki
+A ~TiddlyWiki document can be opened for editing with the `tm-fission-open-tiddlywiki` message.
 
+The `tm-fission-open-tiddlywiki` message takes the following parameters:
+
+* ''path'': Full path to the file
+* ''edition'': Optional application path to edition to be used to initialise missing files (see below)
+
+```
+<$button message="tm-fission-open-tiddlywiki" path="public/mypath/myfile.html" edition="tiddlywiki.com-prerelease/index.html">
+Log out of Fission
+</$button>
+```
+
+! Edition information
+
+The available editions are described by configuration tiddlers with the following fields:
+
+* ''title'': The prefix `$:/config/Fission/EditionInfo/` plus the name of the edition
+* ''tags'': `$:/tags/FissionEditionInfo`
+* ''thumbnail-path'': Application path to the thumbnail image for the edition (typicall 1280x1024 pixels)
+* ''file-path'': Application path to the HTML file for the edition
+* ''size'': Size of the HTML file for the edition in bytes
+* ''version'': ~TiddlyWiki version number of the edition
+* ''details'': A wikitext table listing the plugins used by the edition
+* ''name'': Short name
+* ''text'': Brief description

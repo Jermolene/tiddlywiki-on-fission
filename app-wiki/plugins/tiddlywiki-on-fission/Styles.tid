@@ -84,6 +84,7 @@ tags: $:/tags/Stylesheet
 ol.tc-fission-file-picker {
 	list-style: none;
 	padding-left: 1em;
+    margin-bottom: 0.25em;
 }
 
 .tc-fission-file-picker > ol {

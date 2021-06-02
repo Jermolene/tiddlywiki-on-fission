@@ -4,7 +4,7 @@ title: HelloThere
 
 !! Welcome
 
-This tool lets you directly edit [[TiddlyWiki|https://tiddlywiki.com/]] files stored in [[Fission|https://fission.codes]]'s Webnative file system. You can choose to make them publicly accessible or to keep them entirely private. End-to-end encryption is used so even Fission can't read private data stored on their servers.
+This tool lets you directly edit [[TiddlyWiki|https://tiddlywiki.com/]] files stored in [[Fission|https://fission.codes]]'s Webnative file system. You can choose to make them publicly accessible or to keep them entirely private. End-to-end encryption is used which means that even Fission cannot read private data stored on their servers.
 
 <div class="tc-fission-warning">
 
@@ -34,7 +34,7 @@ Authorise with Fission
 
 You are logged into Fission as: ''<$text text={{$:/state/UserName}}/>''
 
-Browse the Webnative filing system:
+Browse the Fission filing system:
 
 <div class="tc-fission-file-picker-wrapper">
 

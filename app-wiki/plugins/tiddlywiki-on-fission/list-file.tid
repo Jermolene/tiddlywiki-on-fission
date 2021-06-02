@@ -1,4 +1,4 @@
-title: $:/plugins/tiddlywiki/fission/list-file
+title: $:/plugins/tiddlywiki/tiddlywiki-on-fission/list-file
 
 <div class="tc-fission-file-picker-heading">
 <$list filter="[{!!name}suffix[.html]]" emptyMessage="""<span class="tc-fission-file-picker-unknown-file"><$text text={{!!name}}/></span>""" variable="ignore">

@@ -1,7 +1,7 @@
 description: A fusion of TiddlyWiki and Fission colours
 name: TiddlyWiki on Fission
 tags: $:/tags/Palette
-title: $:/plugins/tiddlywiki/fission/palette
+title: $:/plugins/tiddlywiki/tiddlywiki-on-fission/palette
 type: application/x-tiddler-dictionary
 
 alert-background: #ffe476

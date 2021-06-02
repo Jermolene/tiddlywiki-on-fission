@@ -1,5 +1,5 @@
 /*\
-title: $:/plugins/tiddlywiki/fission/fission-publisher.js
+title: $:/plugins/tiddlywiki/tiddlywiki-on-fission/fission-publisher.js
 type: application/javascript
 module-type: library
 

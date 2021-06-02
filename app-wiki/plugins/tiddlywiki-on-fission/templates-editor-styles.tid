@@ -1,4 +1,4 @@
-title: $:/plugins/tiddlywiki/fission/templates/editor/styles
+title: $:/plugins/tiddlywiki/tiddlywiki-on-fission/templates/editor/styles
 
 body {
 	margin: 0;

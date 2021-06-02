@@ -14,7 +14,7 @@ This tool lets you directly edit [[TiddlyWiki|https://tiddlywiki.com/]] files st
 
 <$reveal stateTitle="$:/state/fission/status" type="match" text="INITIALISING" tag="div" class="tc-fission-authorising">
 
-<$image width="80px" source="$:/plugins/tiddlywiki/fission/spacecat"/>
+<$image width="80px" source="$:/plugins/tiddlywiki/tiddlywiki-on-fission/spacecat"/>
 
 ''(Authorising with Fission)''
 
@@ -39,8 +39,8 @@ Browse the Fission filing system:
 <div class="tc-fission-file-picker-wrapper">
 
 @@.tc-fission-file-picker
-#.tc-fission-file-picker-private {{private||$:/plugins/tiddlywiki/fission/list-directory}}
-#.tc-fission-file-picker-public {{public||$:/plugins/tiddlywiki/fission/list-directory}}
+#.tc-fission-file-picker-private {{private||$:/plugins/tiddlywiki/tiddlywiki-on-fission/list-directory}}
+#.tc-fission-file-picker-public {{public||$:/plugins/tiddlywiki/tiddlywiki-on-fission/list-directory}}
 @@
 
 </div>

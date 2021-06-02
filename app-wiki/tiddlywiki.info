@@ -12,6 +12,6 @@
 	"build": {
 		"index": [
 			"--rendertiddler","$:/core/save/all","index.html","text/plain",
-			"--rendertiddler","$:/plugins/tiddlywiki/fission/templates/editor","editor.html","text/plain"]
+			"--rendertiddler","$:/plugins/tiddlywiki/tiddlywiki-on-fission/templates/editor","editor.html","text/plain"]
 	}
 }

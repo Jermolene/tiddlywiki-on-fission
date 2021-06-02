@@ -1,11 +1,11 @@
-title: $:/plugins/tiddlywiki/fission/templates/editor
+title: $:/plugins/tiddlywiki/tiddlywiki-on-fission/templates/editor
 
 `<!doctype html>
 <head>
 <title>TiddlyWiki on Fission Editor</title>
 <link id="faviconLink" rel="shortcut icon" href="favicon.ico">
 <style>`
-{{$:/plugins/tiddlywiki/fission/templates/editor/styles||$:/core/templates/plain-text-tiddler}}
+{{$:/plugins/tiddlywiki/tiddlywiki-on-fission/templates/editor/styles||$:/core/templates/plain-text-tiddler}}
 `</style>
 </head>
 <body>
@@ -18,10 +18,10 @@ This file is not recognised as a TiddlyWiki containing the TiddlyWiki on Fission
 </div>
 </body>
 <script>`
-{{$:/plugins/tiddlywiki/fission/webnative.js||$:/core/templates/plain-text-tiddler}}
-{{$:/plugins/tiddlywiki/fission/templates/editor/script||$:/core/templates/plain-text-tiddler}}
+{{$:/plugins/tiddlywiki/tiddlywiki-on-fission/webnative.js||$:/core/templates/plain-text-tiddler}}
+{{$:/plugins/tiddlywiki/tiddlywiki-on-fission/templates/editor/script||$:/core/templates/plain-text-tiddler}}
 `</script>
 <script type="application/json" id="publisher-script">`
-{{$:/plugins/tiddlywiki/fission/fission-publisher.js||$:/core/templates/plain-text-tiddler}}
+{{$:/plugins/tiddlywiki/tiddlywiki-on-fission/fission-publisher.js||$:/core/templates/plain-text-tiddler}}
 `</script>
 </html>`

@@ -1,4 +1,4 @@
-title: $:/plugins/tiddlywiki/fission/list-directory
+title: $:/plugins/tiddlywiki/tiddlywiki-on-fission/list-directory
 
 <$set name="path" value=<<currentTiddler>>>
 <$set name="currentTiddler" value={{{ [tag[$:/tags/FissionFileListing]!is[draft]field:path<path>] }}}>
@@ -8,16 +8,16 @@ title: $:/plugins/tiddlywiki/fission/list-directory
 {{$:/core/images/folder}} ''<$text text=<<path>>/>''
 </$button>
 <$button class="tc-btn-invisible">
-<$action-sendmessage $message="tm-modal" $param="$:/plugins/tiddlywiki/fission/create-wiki-modal" path=<<path>>/>
+<$action-sendmessage $message="tm-modal" $param="$:/plugins/tiddlywiki/tiddlywiki-on-fission/create-wiki-modal" path=<<path>>/>
 {{$:/core/images/new-button}}
 </$button>
 </div>
 <ol class="tc-fission-file-picker">
 <$list filter="[tag[$:/tags/FissionFileListing]!is[draft]field:parent<path>sort[name]]" variable="currentTiddler">
 <li>
-<$list filter="[<currentTiddler>field:is-file[no]]" variable="ignore" emptyMessage={{$:/plugins/tiddlywiki/fission/list-file}}>
+<$list filter="[<currentTiddler>field:is-file[no]]" variable="ignore" emptyMessage={{$:/plugins/tiddlywiki/tiddlywiki-on-fission/list-file}}>
 <$set name="currentTiddler" value={{!!path}}>
-<$transclude tiddler="$:/plugins/tiddlywiki/fission/list-directory"/>
+<$transclude tiddler="$:/plugins/tiddlywiki/tiddlywiki-on-fission/list-directory"/>
 </$set>
 </$list>
 </li>

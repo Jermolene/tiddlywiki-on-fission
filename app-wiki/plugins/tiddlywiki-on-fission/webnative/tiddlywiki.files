@@ -4,7 +4,7 @@
 			"file": "webnative.js",
 			"fields": {
 				"type": "application/javascript",
-				"title": "$:/plugins/tiddlywiki/fission/webnative.js",
+				"title": "$:/plugins/tiddlywiki/tiddlywiki-on-fission/webnative.js",
 				"module-type": "library"
 			}
 		}

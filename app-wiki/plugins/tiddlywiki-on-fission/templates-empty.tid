@@ -1,4 +1,4 @@
-title: $:/plugins/tiddlywiki/fission/templates/empty
+title: $:/plugins/tiddlywiki/tiddlywiki-on-fission/templates/empty
 
 \define saveTiddlerFilter()
 [[$:/core]] [[$:/isEncrypted]] [[$:/themes/tiddlywiki/snowwhite]] [[$:/themes/tiddlywiki/vanilla]] -[[$:/boot/boot.css]] -[type[application/javascript]library[yes]] -[[$:/boot/boot.js]] -[[$:/boot/bootprefix.js]] +[sort[title]] $:/config/OfficialPluginLibrary

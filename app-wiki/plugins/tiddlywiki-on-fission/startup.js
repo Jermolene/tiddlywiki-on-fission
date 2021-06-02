@@ -1,5 +1,5 @@
 /*\
-title: $:/plugins/tiddlywiki/fission/startup.js
+title: $:/plugins/tiddlywiki/tiddlywiki-on-fission/startup.js
 type: application/javascript
 module-type: startup
 
@@ -27,7 +27,7 @@ function Fission() {
 	this.fs = null;
 	this.permissions = null;
 	this.username = null;
-	this.webnative = require("$:/plugins/tiddlywiki/fission/webnative.js");
+	this.webnative = require("$:/plugins/tiddlywiki/tiddlywiki-on-fission/webnative.js");
 	this.webnative.setup.debug({ enabled: true });
 	this.windows = [];
 	this.setStatus("INITIALISING");

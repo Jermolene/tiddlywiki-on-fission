@@ -1,4 +1,4 @@
-title: $:/plugins/tiddlywiki/fission/PageLayout
+title: $:/plugins/tiddlywiki/tiddlywiki-on-fission/PageLayout
 tags: $:/tags/Layout
 name: ~TiddlyWiki-on-Fission
 description: ~TiddlyWiki on Fission Custom Page Layout
@@ -6,7 +6,7 @@ description: ~TiddlyWiki on Fission Custom Page Layout
 <div class="tc-fission-ui-wrapper">
 <div class="tc-fission-ui">
 <div class="tc-fission-branding">
-[img width=250 [$:/plugins/tiddlywiki/fission/spacecat]]
+[img width=250 [$:/plugins/tiddlywiki/tiddlywiki-on-fission/spacecat]]
 <br>
 <h1>~TiddlyWiki on Fission</h1>
 </div>

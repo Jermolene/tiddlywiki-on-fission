@@ -1,7 +1,7 @@
-title: $:/plugins/tiddlywiki/fission/SidebarSegment
+title: $:/plugins/tiddlywiki/tiddlywiki-on-fission/SidebarSegment
 tags: $:/tags/SideBarSegment
 list-after: $:/core/ui/SideBarSegments/site-subtitle
 
-<$button set="$:/layout" setTo="$:/plugins/tiddlywiki/fission/PageLayout">
+<$button set="$:/layout" setTo="$:/plugins/tiddlywiki/tiddlywiki-on-fission/PageLayout">
 Switch to ~TiddlyWiki on Fission user interface
 </$button>

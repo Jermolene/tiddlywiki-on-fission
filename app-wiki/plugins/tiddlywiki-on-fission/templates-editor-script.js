@@ -43,6 +43,9 @@ function initialiseWebnative(callback) {
 			app: {
 				name: "tiddlywiki-on-fission",
 				creator: "tiddlywiki"
+			},
+			fs: {
+				public: [ window.webnative.path.root() ]
 			}
 		}
 	};
@@ -106,7 +109,7 @@ async function loadWiki(userFilepath,editionPath,initialisationHandler) {
 		}
 		// Inject the Fission publisher module if the wiki has the publisher 
 		if(iframe.contentWindow.$tw.publisherHandler) {
-			iframe.contentWindow.$tw.modules.define("$:/plugins/tiddlywiki/fission/fission-publisher.js","publisher",document.getElementById("publisher-script").textContent);
+			iframe.contentWindow.$tw.modules.define("$:/plugins/tiddlywiki/tiddlywiki-on-fission/fission-publisher.js","publisher",document.getElementById("publisher-script").textContent);
 		}
 	});
 	// Try to load the file content

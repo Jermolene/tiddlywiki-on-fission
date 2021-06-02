@@ -1,4 +1,4 @@
-title: $:/plugins/tiddlywiki/fission/empty-wiki-template
+title: $:/plugins/tiddlywiki/tiddlywiki-on-fission/empty-wiki-template
 
 \define saveTiddlerFilter()
 $:/boot/boot.css
